@@ -36,6 +36,7 @@ const DailyEntry = () => {
     handleReceiptDataT1,
     handleReceiptDataT2,
     totalXhiro,
+    saveStatus,
   } = useTurnData({ products, coffeeTypes, selectedDate });
 
   // Date validation
@@ -274,13 +275,19 @@ const DailyEntry = () => {
               </ul>
             </div>
 
-            <div className="mt-4 flex gap-2 flex-wrap">
+            <div className="mt-4 flex gap-2 flex-wrap items-center">
               <Button onClick={handleSave} className="flex-1 md:flex-initial">
                 💾 Ruaj të Dhënat
               </Button>
               <Button onClick={testLocalStorage} variant="outline" className="flex-1 md:flex-initial">
                 🔍 Test Storage
               </Button>
+              {saveStatus === 'saving' && (
+                <span className="text-sm text-muted-foreground">💾 Duke ruajtur...</span>
+              )}
+              {saveStatus === 'saved' && (
+                <span className="text-sm text-success">✅ Ruajtur!</span>
+              )}
             </div>
           </CardContent>
         </Card>

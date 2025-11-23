@@ -11,6 +11,8 @@ interface UseTurnDataProps {
 }
 
 export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnDataProps) => {
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  
   const createEmptyTurnData = useCallback((): TurnData => ({
     products: Object.fromEntries(products.map(p => [p, {
       stokFillim: 0,
@@ -55,6 +57,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       return;
     }
     
+    setSaveStatus('saving');
     const timeoutId = setTimeout(() => {
       try {
         const dataToSave = {
@@ -66,15 +69,22 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
         
         // Verify save
         const verified = StorageService.getDailyEntryData(selectedDate);
-        if (!verified) {
+        if (verified) {
+          setSaveStatus('saved');
+          setTimeout(() => setSaveStatus('idle'), 2000);
+        } else {
+          setSaveStatus('idle');
           toast.error('❌ Të dhënat NUK u ruajtën!');
         }
       } catch (error) {
+        setSaveStatus('idle');
         toast.error(`❌ Gabim në ruajtje: ${error}`);
       }
     }, 500);
 
-    return () => clearTimeout(timeoutId);
+    return () => {
+      clearTimeout(timeoutId);
+    };
   }, [turn1, turn2, selectedDate]);
 
   // Auto-sync T1 stock to T2 when T1 changes
@@ -298,5 +308,6 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     handleReceiptDataT1,
     handleReceiptDataT2,
     totalXhiro,
+    saveStatus,
   };
 };
