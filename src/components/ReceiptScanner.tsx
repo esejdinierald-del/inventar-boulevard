@@ -6,19 +6,39 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { Loader2, Upload, Camera } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ReceiptScannerProps {
   products: string[];
   onDataExtracted: (data: { [key: string]: number }) => void;
   turnName: string;
+  turnData: {
+    products: {
+      [key: string]: {
+        stokFillim: number;
+        gjendje: number;
+        shiriti: number;
+        furnizime: number;
+      };
+    };
+  };
+  calculateDif: (stokFillim: number, furnizime: number, gjendje: number, shiriti: number) => number;
 }
 
-export const ReceiptScanner = ({ products, onDataExtracted, turnName }: ReceiptScannerProps) => {
+export const ReceiptScanner = ({ products, onDataExtracted, turnName, turnData, calculateDif }: ReceiptScannerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedText, setExtractedText] = useState<string>("");
   const [mappedData, setMappedData] = useState<{ [key: string]: string }>({});
+
+  // Check if there are any differences in current turn
+  const hasAnyDifferences = () => {
+    return Object.entries(turnData.products).some(([_, data]) => {
+      const dif = calculateDif(data.stokFillim, data.furnizime, data.gjendje, data.shiriti);
+      return dif !== 0;
+    });
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -37,32 +57,52 @@ export const ReceiptScanner = ({ products, onDataExtracted, turnName }: ReceiptS
       setIsProcessing(true);
 
       try {
-        // Use Lovable AI to analyze the receipt
-        // For now, we'll simulate OCR - in production this would call an AI service
         toast.info("Po analizon foton... Kjo mund të marrë disa sekonda.");
         
-        // Simulate processing time
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Call the edge function to analyze the receipt
+        const { data, error } = await supabase.functions.invoke('analyze-receipt', {
+          body: { imageBase64: imageData }
+        });
+
+        if (error) {
+          console.error("Error calling analyze-receipt:", error);
+          throw new Error(error.message || "Failed to analyze receipt");
+        }
+
+        if (!data || !data.items || !Array.isArray(data.items)) {
+          throw new Error("Invalid response from AI");
+        }
+
+        console.log("Receipt data:", data);
+
+        // Build extracted text from AI response
+        let text = "SHIRITI I SHITJEVE\n";
+        text += "------------------------\n";
+        text += "Emer          Sasia\n";
+        text += "------------------------\n";
         
-        // Placeholder extracted text - in production this would come from OCR
-        const simulatedText = `
-SHIRITI I SHITJEVE
-Data: ${new Date().toLocaleDateString()}
-------------------------
-Produkt 1: 5
-Produkt 2: 3
-Produkt 3: 8
-Produkt 4: 2
-Produkt 5: 12
-Produkt 6: 7
-------------------------
-Total: 37
-`;
-        setExtractedText(simulatedText);
+        data.items.forEach((item: { name: string; quantity: number }, index: number) => {
+          text += `${item.name.padEnd(15)} ${item.quantity}\n`;
+          // Pre-populate mappedData with smart matching
+          const matchedProduct = products.find(p => 
+            p.toLowerCase().includes(item.name.toLowerCase()) ||
+            item.name.toLowerCase().includes(p.toLowerCase())
+          );
+          if (matchedProduct) {
+            setMappedData(prev => ({
+              ...prev,
+              [index.toString()]: matchedProduct
+            }));
+          }
+        });
+        
+        text += "------------------------\n";
+        
+        setExtractedText(text);
         toast.success("Fotoja u analizua me sukses!");
       } catch (error) {
         console.error("Error processing image:", error);
-        toast.error("Gabim gjatë analizimit të fotos");
+        toast.error(error instanceof Error ? error.message : "Gabim gjatë analizimit të fotos");
       } finally {
         setIsProcessing(false);
       }
@@ -77,29 +117,52 @@ Total: 37
     }));
   };
 
-  const handleApplyData = () => {
-    // Extract numbers from text and map to products
-    const lines = extractedText.split('\n');
-    const data: { [key: string]: number } = {};
-    
-    Object.entries(mappedData).forEach(([lineNum, productName]) => {
-      const line = lines[parseInt(lineNum)];
-      if (line) {
-        // Extract number from line (assumes format like "Product: 5")
-        const match = line.match(/:\s*(\d+)/);
-        if (match) {
-          data[productName] = parseInt(match[1]);
-        }
-      }
-    });
+  const handleApplyData = async () => {
+    // Check for differences before applying
+    if (hasAnyDifferences()) {
+      toast.error("⚠️ Ka diferenca në shiriti aktual! Të gjitha diferencat duhet të jenë 0 para se të ngarkosh shiriti të ri.");
+      return;
+    }
 
-    if (Object.keys(data).length > 0) {
-      onDataExtracted(data);
-      toast.success(`${Object.keys(data).length} produkte u ngarkuan!`);
-      setIsOpen(false);
-      resetState();
-    } else {
-      toast.error("Nuk u gjetën të dhëna për t'u ngarkuar");
+    try {
+      // Get the AI response data stored in state
+      const { data: aiData, error } = await supabase.functions.invoke('analyze-receipt', {
+        body: { imageBase64: selectedImage }
+      });
+
+      if (error || !aiData || !aiData.items) {
+        toast.error("Gabim gjatë leximit të të dhënave");
+        return;
+      }
+
+      const data: { [key: string]: number } = {};
+      let hasUnmapped = false;
+      
+      aiData.items.forEach((item: { name: string; quantity: number }, index: number) => {
+        const productName = mappedData[index.toString()];
+        if (productName) {
+          data[productName] = item.quantity;
+        } else {
+          hasUnmapped = true;
+        }
+      });
+
+      if (hasUnmapped) {
+        toast.error("Duhet të maposh të gjitha produktet para se të aplikosh!");
+        return;
+      }
+
+      if (Object.keys(data).length > 0) {
+        onDataExtracted(data);
+        toast.success(`${Object.keys(data).length} produkte u ngarkuan!`);
+        setIsOpen(false);
+        resetState();
+      } else {
+        toast.error("Nuk u gjetën të dhëna për t'u ngarkuar");
+      }
+    } catch (error) {
+      console.error("Error applying data:", error);
+      toast.error("Gabim gjatë aplikimit të të dhënave");
     }
   };
 
@@ -193,10 +256,23 @@ Total: 37
 
                 <ScrollArea className="h-96">
                   <div className="space-y-2 pr-4">
-                    {extractedText.split('\n')
-                      .map((line, index) => line.trim())
-                      .filter(line => line && /\d/.test(line) && !line.includes('---'))
-                      .map((line, index) => (
+                    {(() => {
+                      // Only show product lines (skip headers and separators)
+                      const lines = extractedText.split('\n');
+                      const productLines: string[] = [];
+                      let startCapturing = false;
+                      
+                      for (const line of lines) {
+                        if (line.includes('Emer') && line.includes('Sasia')) {
+                          startCapturing = true;
+                          continue;
+                        }
+                        if (startCapturing && line.trim() && !line.includes('---')) {
+                          productLines.push(line);
+                        }
+                      }
+                      
+                      return productLines.map((line, index) => (
                         <div key={index} className="flex items-center gap-2 p-2 border rounded">
                           <div className="flex-1 text-sm font-mono bg-muted p-2 rounded">
                             {line}
@@ -214,7 +290,8 @@ Total: 37
                             ))}
                           </select>
                         </div>
-                      ))}
+                      ));
+                    })()}
                   </div>
                 </ScrollArea>
 
