@@ -2,3 +2,6 @@ project_id = "avjmjgopullzxkdxihmw"
 
 [functions.analyze-receipt]
 verify_jwt = false
+
+[functions.analyze-grinder]
+verify_jwt = false
