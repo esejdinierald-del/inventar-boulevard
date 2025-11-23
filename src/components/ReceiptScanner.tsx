@@ -180,12 +180,11 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
 
       const productData: { [key: string]: number } = {};
       const coffeeData: { [key: string]: number } = {};
-      let hasUnmapped = false;
-      let unmappedItems: string[] = [];
+      let unmappedCount = 0;
       
       receiptItems.forEach((item: { name: string; quantity: number }, index: number) => {
         const mapping = mappedData[index.toString()];
-        console.log(`Item ${index}: ${item.name} -> ${mapping ? `${mapping.type}:${mapping.name}` : 'UNMAPPED'}`);
+        console.log(`Item ${index}: ${item.name} -> ${mapping ? `${mapping.type}:${mapping.name}` : 'IGNORED'}`);
         
         if (mapping) {
           if (mapping.type === 'product') {
@@ -194,30 +193,27 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
             coffeeData[mapping.name] = (coffeeData[mapping.name] || 0) + item.quantity;
           }
         } else {
-          hasUnmapped = true;
-          unmappedItems.push(item.name);
+          unmappedCount++;
         }
       });
 
       console.log("Final product data:", productData);
       console.log("Final coffee data:", coffeeData);
-      console.log("Unmapped items:", unmappedItems);
-
-      if (hasUnmapped) {
-        toast.error(`Duhet të maposh të gjitha artikujt! Të pamapuara: ${unmappedItems.join(', ')}`);
-        return;
-      }
+      console.log("Unmapped/ignored items:", unmappedCount);
 
       if (Object.keys(productData).length > 0 || Object.keys(coffeeData).length > 0) {
         console.log("✅ Calling onDataExtracted with product and coffee data");
         onDataExtracted(productData, coffeeData);
         const total = Object.keys(productData).length + Object.keys(coffeeData).length;
-        toast.success(`${total} artikuj u ngarkuan (${Object.keys(productData).length} produkte, ${Object.keys(coffeeData).length} kafe)!`);
+        const message = unmappedCount > 0 
+          ? `${total} artikuj u ngarkuan (${unmappedCount} të pamapuar u injoruan)`
+          : `${total} artikuj u ngarkuan!`;
+        toast.success(message);
         setIsOpen(false);
         resetState();
       } else {
         console.error("❌ No data to apply");
-        toast.error("Nuk u gjetën të dhëna për t'u ngarkuar");
+        toast.error("Asnjë artikull i mapuar për t'u ngarkuar");
       }
     } catch (error) {
       console.error("Error applying data:", error);
@@ -310,9 +306,9 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
             {extractedText && (
               <div className="space-y-4 mt-6 pt-6 border-t">
                 <div>
-                  <Label className="text-base font-semibold">Hapi 2: Mapo Produktet</Label>
+                  <Label className="text-base font-semibold">Hapi 2: Mapo Produktet (Opsionale)</Label>
                   <p className="text-xs text-muted-foreground mt-1">
-                    ⚠️ Duhet të maposh të gjitha produktet para se të aplikosh!
+                    💡 Mapo vetëm produktet që dëshiron të gjurmosh. Të tjerët do të injiorohen.
                   </p>
                 </div>
 
@@ -355,7 +351,7 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
                                 isMapped ? 'border-green-500 bg-green-50' : 'border-orange-500'
                               }`}
                             >
-                              <option value="">🔴 Zgjidh kategorinë...</option>
+                              <option value="">⚪ Injoro (mos e mapo)</option>
                               <optgroup label="📦 Produkte">
                                 {products.map(product => (
                                   <option key={product} value={`product:${product}`}>
