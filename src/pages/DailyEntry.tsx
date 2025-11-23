@@ -13,6 +13,7 @@ interface ProductData {
   stokFillim: number;
   gjendje: number;
   shiriti: number;
+  furnizime: number;
 }
 
 interface CoffeeData {
@@ -43,7 +44,7 @@ const DailyEntry = () => {
   ];
 
   const [turn1, setTurn1] = useState<TurnData>({
-    products: Object.fromEntries(products.map(p => [p, { stokFillim: 0, gjendje: 0, shiriti: 0 }])),
+    products: Object.fromEntries(products.map(p => [p, { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 }])),
     coffee: Object.fromEntries(coffeeTypes.map(c => [c, 0])),
     xhiro: 0,
     xhiroEmbelsira: 0,
@@ -53,7 +54,7 @@ const DailyEntry = () => {
   });
 
   const [turn2, setTurn2] = useState<TurnData>({
-    products: Object.fromEntries(products.map(p => [p, { stokFillim: 0, gjendje: 0, shiriti: 0 }])),
+    products: Object.fromEntries(products.map(p => [p, { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 }])),
     coffee: Object.fromEntries(coffeeTypes.map(c => [c, 0])),
     xhiro: 0,
     xhiroEmbelsira: 0,
@@ -64,9 +65,9 @@ const DailyEntry = () => {
 
   const [furnizime, setFurnizime] = useState({ emertimi: "", vlera: 0 });
 
-  // Formula: Diferenca = Stok Fillim - Gjendje - Shiriti
-  const calculateDif = (stokFillim: number, gjendje: number, shiriti: number) => {
-    return stokFillim - gjendje - shiriti;
+  // Formula: Diferenca = Stok Fillim + Furnizime - Gjendje - Shiriti
+  const calculateDif = (stokFillim: number, furnizime: number, gjendje: number, shiriti: number) => {
+    return stokFillim + furnizime - gjendje - shiriti;
   };
 
   // Formula: Diferenca Mulliri = Mulliri Fillim - Mulliri Perfund
@@ -162,13 +163,14 @@ const DailyEntry = () => {
                         <TableHead>Stok Fillim</TableHead>
                         <TableHead>Gjendje</TableHead>
                         <TableHead>Shiriti</TableHead>
+                        <TableHead>Furnizime</TableHead>
                         <TableHead>Dif</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {products.map((product) => {
                         const data = turn1.products[product];
-                        const dif = calculateDif(data.stokFillim, data.gjendje, data.shiriti);
+                        const dif = calculateDif(data.stokFillim, data.furnizime, data.gjendje, data.shiriti);
                         return (
                           <TableRow key={product}>
                             <TableCell className="font-medium">{product}</TableCell>
@@ -196,6 +198,14 @@ const DailyEntry = () => {
                                 className="w-20" 
                               />
                             </TableCell>
+                            <TableCell>
+                              <Input 
+                                type="number" 
+                                value={data.furnizime || ""} 
+                                onChange={(e) => updateTurn1Product(product, 'furnizime', Number(e.target.value))}
+                                className="w-20 bg-success/10" 
+                              />
+                            </TableCell>
                             <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
                               {dif}
                             </TableCell>
@@ -207,7 +217,8 @@ const DailyEntry = () => {
                         <TableCell className="font-bold">{Object.values(turn1.products).reduce((sum, p) => sum + p.stokFillim, 0)}</TableCell>
                         <TableCell className="font-bold">{Object.values(turn1.products).reduce((sum, p) => sum + p.gjendje, 0)}</TableCell>
                         <TableCell className="font-bold text-primary">{calculateTotalProducts(turn1)}</TableCell>
-                        <TableCell className="font-bold">{Object.values(turn1.products).reduce((sum, p) => sum + calculateDif(p.stokFillim, p.gjendje, p.shiriti), 0)}</TableCell>
+                        <TableCell className="font-bold text-success">{Object.values(turn1.products).reduce((sum, p) => sum + p.furnizime, 0)}</TableCell>
+                        <TableCell className="font-bold">{Object.values(turn1.products).reduce((sum, p) => sum + calculateDif(p.stokFillim, p.furnizime, p.gjendje, p.shiriti), 0)}</TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
@@ -326,13 +337,14 @@ const DailyEntry = () => {
                         <TableHead>Stok Fillim</TableHead>
                         <TableHead>Gjendje</TableHead>
                         <TableHead>Shiriti</TableHead>
+                        <TableHead>Furnizime</TableHead>
                         <TableHead>Dif</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {products.map((product) => {
                         const data = turn2.products[product];
-                        const dif = calculateDif(data.stokFillim, data.gjendje, data.shiriti);
+                        const dif = calculateDif(data.stokFillim, data.furnizime, data.gjendje, data.shiriti);
                         return (
                           <TableRow key={product}>
                             <TableCell className="font-medium">{product}</TableCell>
@@ -360,6 +372,14 @@ const DailyEntry = () => {
                                 className="w-20" 
                               />
                             </TableCell>
+                            <TableCell>
+                              <Input 
+                                type="number" 
+                                value={data.furnizime || ""} 
+                                onChange={(e) => updateTurn2Product(product, 'furnizime', Number(e.target.value))}
+                                className="w-20 bg-success/10" 
+                              />
+                            </TableCell>
                             <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
                               {dif}
                             </TableCell>
@@ -371,7 +391,8 @@ const DailyEntry = () => {
                         <TableCell className="font-bold">{Object.values(turn2.products).reduce((sum, p) => sum + p.stokFillim, 0)}</TableCell>
                         <TableCell className="font-bold">{Object.values(turn2.products).reduce((sum, p) => sum + p.gjendje, 0)}</TableCell>
                         <TableCell className="font-bold text-primary">{calculateTotalProducts(turn2)}</TableCell>
-                        <TableCell className="font-bold">{Object.values(turn2.products).reduce((sum, p) => sum + calculateDif(p.stokFillim, p.gjendje, p.shiriti), 0)}</TableCell>
+                        <TableCell className="font-bold text-success">{Object.values(turn2.products).reduce((sum, p) => sum + p.furnizime, 0)}</TableCell>
+                        <TableCell className="font-bold">{Object.values(turn2.products).reduce((sum, p) => sum + calculateDif(p.stokFillim, p.furnizime, p.gjendje, p.shiriti), 0)}</TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
