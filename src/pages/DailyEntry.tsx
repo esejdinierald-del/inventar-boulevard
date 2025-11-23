@@ -1,10 +1,11 @@
 import { useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Lock, Unlock } from "lucide-react";
+import { Calendar, Lock, Unlock, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { ProductMappingManager } from "@/components/ProductMappingManager";
 import { AdminPasswordDialog } from "@/components/DailyEntry/AdminPasswordDialog";
@@ -15,6 +16,7 @@ import { useTurnData } from "@/hooks/useTurnData";
 import { TurnData } from "@/types/turn.types";
 
 const DailyEntry = () => {
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [editingProduct, setEditingProduct] = useState<string | null>(null);
   const [editedProductName, setEditedProductName] = useState("");
@@ -156,6 +158,28 @@ const DailyEntry = () => {
               />
             </div>
           </div>
+        </div>
+
+        {/* Quick links */}
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate("/daily/turn1")}
+            className="gap-2"
+          >
+            <ExternalLink className="h-3 w-3" />
+            Hap Turnin 1
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate("/daily/turn2")}
+            className="gap-2"
+          >
+            <ExternalLink className="h-3 w-3" />
+            Hap Turnin 2
+          </Button>
         </div>
 
         {/* Tabs */}
