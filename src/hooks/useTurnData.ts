@@ -31,54 +31,54 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
   // Load data for current date on mount and when date changes
   useEffect(() => {
     isInitialLoad.current = true;
-    const savedData = StorageService.getDailyEntryData(selectedDate);
     
-    console.log('🔍 Loading data for date:', selectedDate, 'Found data:', savedData);
-    
-    if (savedData) {
-      // Merge saved data with current product structure
-      const emptyTurn1 = createEmptyTurnData();
-      const emptyTurn2 = createEmptyTurnData();
+    try {
+      const savedData = StorageService.getDailyEntryData(selectedDate);
       
-      const mergedTurn1 = {
-        ...emptyTurn1,
-        ...savedData.turn1,
-        products: {
-          ...emptyTurn1.products,
-          ...savedData.turn1.products
-        },
-        coffee: {
-          ...emptyTurn1.coffee,
-          ...savedData.turn1.coffee
+      // CRITICAL: Check if we have saved data
+      if (savedData && savedData.turn1 && savedData.turn2) {
+        console.log('✅ Found saved data for', selectedDate);
+        console.log('Turn1 products:', Object.keys(savedData.turn1.products).length);
+        console.log('Turn2 products:', Object.keys(savedData.turn2.products).length);
+        
+        // Use saved data directly - don't merge with empty
+        setTurn1(savedData.turn1);
+        setTurn2(savedData.turn2);
+      } else {
+        console.log('⚠️ No saved data for', selectedDate, '- creating new');
+        const emptyT1 = createEmptyTurnData();
+        const emptyT2 = createEmptyTurnData();
+        
+        // Check if we have stock from previous day
+        const savedStock = StorageService.getStockForDate(selectedDate);
+        const savedMulliri = StorageService.getMulliriForDate(selectedDate);
+        
+        if (savedStock) {
+          console.log('📦 Loading stock from previous day');
+          Object.keys(emptyT1.products).forEach(key => {
+            if (savedStock[key] !== undefined) {
+              emptyT1.products[key].stokFillim = savedStock[key];
+            }
+          });
         }
-      };
-      
-      const mergedTurn2 = {
-        ...emptyTurn2,
-        ...savedData.turn2,
-        products: {
-          ...emptyTurn2.products,
-          ...savedData.turn2.products
-        },
-        coffee: {
-          ...emptyTurn2.coffee,
-          ...savedData.turn2.coffee
+        
+        if (savedMulliri !== null) {
+          emptyT1.mulliriFillim = savedMulliri;
         }
-      };
-      
-      console.log('✅ Merged turn1:', mergedTurn1);
-      console.log('✅ Merged turn2:', mergedTurn2);
-      
-      setTurn1(mergedTurn1);
-      setTurn2(mergedTurn2);
-    } else {
-      console.log('⚠️ No saved data, using empty');
+        
+        setTurn1(emptyT1);
+        setTurn2(emptyT2);
+      }
+    } catch (error) {
+      console.error('❌ Error loading data:', error);
       setTurn1(createEmptyTurnData());
       setTurn2(createEmptyTurnData());
     }
-    // Mark initial load as complete after a short delay
+    
+    // Mark initial load as complete
     setTimeout(() => {
       isInitialLoad.current = false;
+      console.log('🔓 Initial load complete - auto-save enabled');
     }, 100);
   }, [selectedDate, createEmptyTurnData]);
 
@@ -95,8 +95,13 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     
     const dataString = JSON.stringify(dataToSave);
     if (dataString !== lastSavedData.current) {
+      console.log('💾 Saving data for', selectedDate);
+      console.log('Turn1 xhiro:', turn1.xhiro, 'Turn2 xhiro:', turn2.xhiro);
       StorageService.setDailyEntryData(selectedDate, dataToSave);
       lastSavedData.current = dataString;
+      console.log('✅ Data saved successfully');
+    } else {
+      console.log('⏭️ Skip save - no changes');
     }
   }, [turn1, turn2, selectedDate]);
   
