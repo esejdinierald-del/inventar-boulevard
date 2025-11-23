@@ -31,6 +31,7 @@ export const ReceiptScanner = ({ products, onDataExtracted, turnName, turnData, 
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedText, setExtractedText] = useState<string>("");
   const [mappedData, setMappedData] = useState<{ [key: string]: string }>({});
+  const [receiptItems, setReceiptItems] = useState<Array<{ name: string; quantity: number }>>([]);
 
   // Check if there are any differences in current turn
   const hasAnyDifferences = () => {
@@ -73,7 +74,10 @@ export const ReceiptScanner = ({ products, onDataExtracted, turnName, turnData, 
           throw new Error("Invalid response from AI");
         }
 
-      console.log("Receipt data:", data);
+        console.log("Receipt data:", data);
+        
+        // Save the receipt items for later use
+        setReceiptItems(data.items);
 
         // Build extracted text from AI response
         let text = "SHIRITI I SHITJEVE\n";
@@ -130,7 +134,7 @@ export const ReceiptScanner = ({ products, onDataExtracted, turnName, turnData, 
     }));
   };
 
-  const handleApplyData = async () => {
+  const handleApplyData = () => {
     // Check for differences before applying
     if (hasAnyDifferences()) {
       toast.error("⚠️ Ka diferenca në shiriti aktual! Të gjitha diferencat duhet të jenë 0 para se të ngarkosh shiriti të ri.");
@@ -138,20 +142,16 @@ export const ReceiptScanner = ({ products, onDataExtracted, turnName, turnData, 
     }
 
     try {
-      // Get the AI response data stored in state
-      const { data: aiData, error } = await supabase.functions.invoke('analyze-receipt', {
-        body: { imageBase64: selectedImage }
-      });
-
-      if (error || !aiData || !aiData.items) {
-        toast.error("Gabim gjatë leximit të të dhënave");
+      // Use the stored receipt items instead of making another API call
+      if (!receiptItems || receiptItems.length === 0) {
+        toast.error("Nuk ka të dhëna për t'u ngarkuar");
         return;
       }
 
       const data: { [key: string]: number } = {};
       let hasUnmapped = false;
       
-      aiData.items.forEach((item: { name: string; quantity: number }, index: number) => {
+      receiptItems.forEach((item: { name: string; quantity: number }, index: number) => {
         const productName = mappedData[index.toString()];
         if (productName) {
           data[productName] = item.quantity;
@@ -183,6 +183,7 @@ export const ReceiptScanner = ({ products, onDataExtracted, turnName, turnData, 
     setSelectedImage(null);
     setExtractedText("");
     setMappedData({});
+    setReceiptItems([]);
   };
 
   const handleClose = () => {
