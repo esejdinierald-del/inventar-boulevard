@@ -75,7 +75,7 @@ export const useProductList = () => {
       const updatedMapping = { ...mapping };
       Object.entries(mapping).forEach(([key, value]) => {
         if (value.type === 'product' && value.name === oldName) {
-          updatedMapping[key] = { type: 'product', name: trimmed };
+          updatedMapping[key] = { type: 'product', name: trimmed, quantity: value.quantity || 1 };
         }
       });
       StorageService.setProductMapping(updatedMapping);

@@ -31,7 +31,7 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedText, setExtractedText] = useState<string>("");
-  const [mappedData, setMappedData] = useState<{ [key: string]: { type: 'product' | 'coffee'; name: string } }>({});
+  const [mappedData, setMappedData] = useState<{ [key: string]: { type: 'product' | 'coffee'; name: string; quantity: number } }>({});
   const [receiptItems, setReceiptItems] = useState<Array<{ name: string; quantity: number }>>([]);
 
   // Check if there are any differences in current turn
@@ -98,16 +98,16 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
             // Handle both old format (string) and new format (object)
             const mappingValue = mapping[item.name];
             if (typeof mappingValue === 'string') {
-              // Old format - assume it's a product
+              // Old format - assume it's a product with quantity 1
               setMappedData(prev => ({
                 ...prev,
-                [index.toString()]: { type: 'product', name: mappingValue }
+                [index.toString()]: { type: 'product', name: mappingValue, quantity: 1 }
               }));
             } else {
-              // New format
+              // New format - ensure quantity exists
               setMappedData(prev => ({
                 ...prev,
-                [index.toString()]: mappingValue
+                [index.toString()]: { ...mappingValue, quantity: mappingValue.quantity || 1 }
               }));
             }
           } else {
@@ -119,7 +119,7 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
             if (matchedProduct) {
               setMappedData(prev => ({
                 ...prev,
-                [index.toString()]: { type: 'product', name: matchedProduct }
+                [index.toString()]: { type: 'product', name: matchedProduct, quantity: 1 }
               }));
             } else {
               // Try smart matching for coffee types
@@ -130,7 +130,7 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
               if (matchedCoffee) {
                 setMappedData(prev => ({
                   ...prev,
-                  [index.toString()]: { type: 'coffee', name: matchedCoffee }
+                  [index.toString()]: { type: 'coffee', name: matchedCoffee, quantity: 1 }
                 }));
               }
             }
@@ -151,10 +151,10 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
     reader.readAsDataURL(file);
   };
 
-  const handleMapProduct = (lineNumber: string, type: 'product' | 'coffee', name: string) => {
+  const handleMapProduct = (lineNumber: string, type: 'product' | 'coffee', name: string, quantity: number) => {
     setMappedData(prev => ({
       ...prev,
-      [lineNumber]: { type, name }
+      [lineNumber]: { type, name, quantity }
     }));
   };
 
@@ -184,13 +184,14 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
       
       receiptItems.forEach((item: { name: string; quantity: number }, index: number) => {
         const mapping = mappedData[index.toString()];
-        console.log(`Item ${index}: ${item.name} -> ${mapping ? `${mapping.type}:${mapping.name}` : 'IGNORED'}`);
+        console.log(`Item ${index}: ${item.name} -> ${mapping ? `${mapping.type}:${mapping.name} x${mapping.quantity}` : 'IGNORED'}`);
         
         if (mapping) {
+          const adjustedQuantity = item.quantity * (mapping.quantity || 1);
           if (mapping.type === 'product') {
-            productData[mapping.name] = (productData[mapping.name] || 0) + item.quantity;
+            productData[mapping.name] = (productData[mapping.name] || 0) + adjustedQuantity;
           } else if (mapping.type === 'coffee') {
-            coffeeData[mapping.name] = (coffeeData[mapping.name] || 0) + item.quantity;
+            coffeeData[mapping.name] = (coffeeData[mapping.name] || 0) + adjustedQuantity;
           }
         } else {
           unmappedCount++;
@@ -339,37 +340,54 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
                             <div className="text-xs font-mono bg-muted p-2 rounded">
                               {line}
                             </div>
-                            <select
-                              value={currentValue}
-                              onChange={(e) => {
-                                const [type, name] = e.target.value.split(':');
-                                if (type && name) {
-                                  handleMapProduct(index.toString(), type as 'product' | 'coffee', name);
-                                }
-                              }}
-                              className={`w-full text-sm border rounded p-2 ${
-                                isMapped ? 'border-green-500 bg-green-50' : 'border-orange-500'
-                              }`}
-                            >
-                              <option value="">⚪ Injoro (mos e mapo)</option>
-                              <optgroup label="📦 Produkte">
-                                {products.map(product => (
-                                  <option key={product} value={`product:${product}`}>
-                                    {product}
-                                  </option>
-                                ))}
-                              </optgroup>
-                              <optgroup label="☕ Kafe">
-                                {coffeeTypes.map(coffee => (
-                                  <option key={coffee} value={`coffee:${coffee}`}>
-                                    {coffee}
-                                  </option>
-                                ))}
-                              </optgroup>
-                            </select>
+                            <div className="flex gap-2">
+                              <select
+                                value={currentValue}
+                                onChange={(e) => {
+                                  const [type, name] = e.target.value.split(':');
+                                  if (type && name) {
+                                    const currentQuantity = mapping?.quantity || 1;
+                                    handleMapProduct(index.toString(), type as 'product' | 'coffee', name, currentQuantity);
+                                  }
+                                }}
+                                className={`flex-1 text-sm border rounded p-2 ${
+                                  isMapped ? 'border-green-500 bg-green-50' : 'border-orange-500'
+                                }`}
+                              >
+                                <option value="">⚪ Injoro (mos e mapo)</option>
+                                <optgroup label="📦 Produkte">
+                                  {products.map(product => (
+                                    <option key={product} value={`product:${product}`}>
+                                      {product}
+                                    </option>
+                                  ))}
+                                </optgroup>
+                                <optgroup label="☕ Kafe">
+                                  {coffeeTypes.map(coffee => (
+                                    <option key={coffee} value={`coffee:${coffee}`}>
+                                      {coffee}
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              </select>
+                              {isMapped && (
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  min="0"
+                                  value={mapping.quantity || 1}
+                                  onChange={(e) => {
+                                    const quantity = parseFloat(e.target.value) || 1;
+                                    handleMapProduct(index.toString(), mapping.type, mapping.name, quantity);
+                                  }}
+                                  className="w-20 text-sm"
+                                  placeholder="Sasi"
+                                />
+                              )}
+                            </div>
                             {isMapped && (
                               <div className="text-xs text-green-600">
-                                ✓ {mapping.type === 'product' ? '📦 Produkt' : '☕ Kafe'}: {mapping.name}
+                                ✓ {mapping.type === 'product' ? '📦 Produkt' : '☕ Kafe'}: {mapping.name} x{mapping.quantity}
                               </div>
                             )}
                           </div>

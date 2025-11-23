@@ -74,9 +74,13 @@ export class StorageService {
     const converted: MappingData = {};
     Object.entries(mapping).forEach(([key, value]) => {
       if (typeof value === 'string') {
-        converted[key] = { type: 'product', name: value };
+        converted[key] = { type: 'product', name: value, quantity: 1 };
       } else if (value && typeof value === 'object' && 'type' in value && 'name' in value) {
-        converted[key] = value as { type: 'product' | 'coffee'; name: string };
+        converted[key] = { 
+          type: value.type as 'product' | 'coffee', 
+          name: value.name as string, 
+          quantity: (value as any).quantity || 1 
+        };
       }
     });
     return converted;
