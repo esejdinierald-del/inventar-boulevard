@@ -143,7 +143,7 @@ export const ProductTable = ({
                     value={data.furnizime || ""}
                     onChange={(e) => onProductUpdate(product, 'furnizime', Number(e.target.value))}
                     className="w-20 bg-success/10"
-                    disabled={isFieldDisabled}
+                    disabled={!isAdminUnlocked}
                   />
                 </TableCell>
                 <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
