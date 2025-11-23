@@ -1,9 +1,25 @@
 import Layout from "@/components/Layout";
 import StatsCard from "@/components/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, DollarSign, Package, ShoppingCart } from "lucide-react";
+import { TrendingUp, DollarSign, Package, ShoppingCart, Lock } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 const Dashboard = () => {
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [password, setPassword] = useState("");
+
+  const handleUnlock = () => {
+    if (password === "1983") {
+      setIsUnlocked(true);
+      toast.success("Dashboard u zhbllokua");
+    } else {
+      toast.error("Fjalëkalimi është i gabuar");
+    }
+  };
+
   // Të dhënat nga Excel
   const xhiroProgresive = 63000;
 
@@ -15,6 +31,26 @@ const Dashboard = () => {
           <p className="text-muted-foreground">Pasqyra e përgjithshme e aktivitetit të kafesë</p>
         </div>
 
+        {!isUnlocked && (
+          <Card className="border-warning">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <Lock className="h-5 w-5 text-warning" />
+                <Input
+                  type="password"
+                  placeholder="Fut fjalëkalimin për të parë të dhënat"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
+                  className="flex-1"
+                />
+                <Button onClick={handleUnlock}>Zhblloko</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className={!isUnlocked ? "blur-sm pointer-events-none select-none" : ""}>
         {/* Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
@@ -145,6 +181,7 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     </Layout>
   );
