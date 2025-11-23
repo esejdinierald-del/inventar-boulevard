@@ -63,6 +63,53 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     return () => clearTimeout(timeoutId);
   }, [turn1, turn2, selectedDate]);
 
+  // Auto-sync T1 stock to T2 when T1 changes
+  useEffect(() => {
+    if (isInitialLoad.current) return;
+    
+    const timeoutId = setTimeout(() => {
+      setTurn2(prev => ({
+        ...prev,
+        products: Object.fromEntries(
+          Object.entries(prev.products).map(([key, data]) => {
+            const t1Data = turn1.products[key];
+            if (t1Data) {
+              const calculatedStock = CalculationService.calculateNewStock(t1Data);
+              return [key, { ...data, stokFillim: calculatedStock }];
+            }
+            return [key, data];
+          })
+        ),
+        mulliriFillim: turn1.mulliriPerfund
+      }));
+    }, 800); // Run after main save
+
+    return () => clearTimeout(timeoutId);
+  }, [turn1]);
+
+  // Auto-save T2 stock to next day when T2 changes
+  useEffect(() => {
+    if (isInitialLoad.current) return;
+    
+    const timeoutId = setTimeout(() => {
+      const nextDayStock = Object.fromEntries(
+        Object.entries(turn2.products).map(([key, data]) => {
+          const calculatedStock = CalculationService.calculateNewStock(data);
+          return [key, calculatedStock];
+        })
+      );
+
+      const nextDay = new Date(selectedDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const nextDayDate = nextDay.toISOString().split('T')[0];
+
+      StorageService.setStockForDate(nextDayDate, nextDayStock);
+      StorageService.setMulliriForDate(nextDayDate, turn2.mulliriPerfund);
+    }, 1000); // Run after T1->T2 sync
+
+    return () => clearTimeout(timeoutId);
+  }, [turn2, selectedDate]);
+
   // Update product in turn
   const updateTurn1Product = useCallback((product: string, field: keyof ProductData, value: number) => {
     setTurn1(prev => ({
