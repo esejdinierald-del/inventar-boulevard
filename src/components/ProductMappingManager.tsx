@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 
 interface ProductMappingManagerProps {
   products: string[];
+  coffeeTypes: string[];
 }
 
 interface ReceiptProduct {
@@ -17,12 +18,12 @@ interface ReceiptProduct {
   originalName: string;
 }
 
-export const ProductMappingManager = ({ products }: ProductMappingManagerProps) => {
+export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingManagerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [detectedProducts, setDetectedProducts] = useState<ReceiptProduct[]>([]);
-  const [productMapping, setProductMapping] = useState<{ [key: string]: string }>({});
+  const [productMapping, setProductMapping] = useState<{ [key: string]: { type: 'product' | 'coffee'; name: string } }>({});
   const [step, setStep] = useState<'upload' | 'mapping'>('upload');
 
   // Load saved mapping from localStorage
@@ -112,10 +113,10 @@ export const ProductMappingManager = ({ products }: ProductMappingManagerProps) 
     }
   };
 
-  const handleMappingChange = (receiptProduct: string, systemProduct: string) => {
+  const handleMappingChange = (receiptProduct: string, type: 'product' | 'coffee', name: string) => {
     setProductMapping(prev => ({
       ...prev,
-      [receiptProduct]: systemProduct
+      [receiptProduct]: { type, name }
     }));
   };
 
@@ -255,36 +256,60 @@ export const ProductMappingManager = ({ products }: ProductMappingManagerProps) 
 
           {step === 'mapping' && (
             <div className="flex-1 space-y-4 overflow-hidden flex flex-col">
-              <div>
-                <Label>Mapo produktet e shiritit me produktet e sistemit</Label>
+               <div>
+                <Label>Mapo produktet dhe kafen nga shiriti me artikujt e sistemit</Label>
                 <p className="text-xs text-muted-foreground">
-                  U gjetën {detectedProducts.length} produkte unike nga shiritat. Zgjidh se cili produkt i shiritit korrespondon me cilën në sistem.
+                  U gjetën {detectedProducts.length} artikuj unikë nga shiritat. Zgjidh se cili artikull i shiritit korrespondon me produktet ose kafet në sistem.
                 </p>
               </div>
 
               <ScrollArea className="flex-1 pr-4">
                 <div className="space-y-2">
-                  {detectedProducts.map((product, index) => (
-                    <div key={index} className="flex items-center gap-3 p-3 border rounded">
-                      <div className="flex-1">
-                        <p className="text-sm font-mono font-medium">{product.name}</p>
-                        <p className="text-xs text-muted-foreground">Nga shiriti</p>
+                  {detectedProducts.map((product, index) => {
+                    const mapping = productMapping[product.name];
+                    const currentValue = mapping ? `${mapping.type}:${mapping.name}` : "";
+                    
+                    return (
+                      <div key={index} className="flex items-center gap-3 p-3 border rounded">
+                        <div className="flex-1">
+                          <p className="text-sm font-mono font-medium">{product.name}</p>
+                          <p className="text-xs text-muted-foreground">Nga shiriti</p>
+                        </div>
+                        <div className="text-muted-foreground">→</div>
+                        <select
+                          value={currentValue}
+                          onChange={(e) => {
+                            const [type, name] = e.target.value.split(':');
+                            if (type && name) {
+                              handleMappingChange(product.name, type as 'product' | 'coffee', name);
+                            }
+                          }}
+                          className="text-sm border rounded p-2 min-w-[200px]"
+                        >
+                          <option value="">-- Zgjidh --</option>
+                          <optgroup label="📦 Produkte">
+                            {products.map(p => (
+                              <option key={p} value={`product:${p}`}>
+                                {p}
+                              </option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="☕ Kafe">
+                            {coffeeTypes.map(c => (
+                              <option key={c} value={`coffee:${c}`}>
+                                {c}
+                              </option>
+                            ))}
+                          </optgroup>
+                        </select>
+                        {mapping && (
+                          <span className="text-xs text-green-600">
+                            ✓ {mapping.type === 'product' ? '📦' : '☕'}
+                          </span>
+                        )}
                       </div>
-                      <div className="text-muted-foreground">→</div>
-                      <select
-                        value={productMapping[product.name] || ""}
-                        onChange={(e) => handleMappingChange(product.name, e.target.value)}
-                        className="text-sm border rounded p-2 min-w-[180px]"
-                      >
-                        <option value="">-- Zgjidh produktin --</option>
-                        {products.map(p => (
-                          <option key={p} value={p}>
-                            {p}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </ScrollArea>
 

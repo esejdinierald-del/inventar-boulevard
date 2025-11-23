@@ -323,15 +323,26 @@ const DailyEntry = () => {
     // Përditëso mapimet e ruajtura të shiritave
     const savedMapping = localStorage.getItem('receipt_product_mapping');
     if (savedMapping) {
-      const mapping: { [key: string]: string } = JSON.parse(savedMapping);
-      const updatedMapping: { [key: string]: string } = {};
+      const mapping: { [key: string]: any } = JSON.parse(savedMapping);
+      const updatedMapping: { [key: string]: any } = {};
       
       // Përditëso çdo mapping që përdor emrin e vjetër të produktit
-      Object.entries(mapping).forEach(([receiptName, productName]) => {
-        if (productName === oldName) {
-          updatedMapping[receiptName] = editedProductName.trim();
-        } else {
-          updatedMapping[receiptName] = productName;
+      Object.entries(mapping).forEach(([receiptName, value]) => {
+        // Handle both old format (string) and new format (object)
+        if (typeof value === 'string') {
+          // Old format
+          if (value === oldName) {
+            updatedMapping[receiptName] = editedProductName.trim();
+          } else {
+            updatedMapping[receiptName] = value;
+          }
+        } else if (value && typeof value === 'object') {
+          // New format with type and name
+          if (value.type === 'product' && value.name === oldName) {
+            updatedMapping[receiptName] = { type: 'product', name: editedProductName.trim() };
+          } else {
+            updatedMapping[receiptName] = value;
+          }
         }
       });
       
@@ -358,54 +369,38 @@ const DailyEntry = () => {
     cancelEditingProduct();
   };
 
-  // Handle data extracted from receipt scanner with saved mapping
-  const handleReceiptDataT1 = (data: { [key: string]: number }) => {
-    const savedMapping = localStorage.getItem('receipt_product_mapping');
-    let finalData = data;
-    
-    if (savedMapping) {
-      const mapping = JSON.parse(savedMapping);
-      // Transform receipt product names to system product names
-      finalData = {};
-      Object.entries(data).forEach(([receiptName, quantity]) => {
-        const systemName = mapping[receiptName] || receiptName;
-        finalData[systemName] = quantity;
-      });
-    }
-    
+  // Handle data extracted from receipt scanner
+  const handleReceiptDataT1 = (productData: { [key: string]: number }, coffeeData: { [key: string]: number }) => {
+    // Update products
     setTurn1(prev => ({
       ...prev,
       products: Object.fromEntries(
         Object.entries(prev.products).map(([key, value]) => [
           key,
-          finalData[key] !== undefined ? { ...value, shiriti: finalData[key] } : value
+          productData[key] !== undefined ? { ...value, shiriti: productData[key] } : value
         ])
-      )
+      ),
+      coffee: {
+        ...prev.coffee,
+        ...coffeeData
+      }
     }));
   };
 
-  const handleReceiptDataT2 = (data: { [key: string]: number }) => {
-    const savedMapping = localStorage.getItem('receipt_product_mapping');
-    let finalData = data;
-    
-    if (savedMapping) {
-      const mapping = JSON.parse(savedMapping);
-      // Transform receipt product names to system product names
-      finalData = {};
-      Object.entries(data).forEach(([receiptName, quantity]) => {
-        const systemName = mapping[receiptName] || receiptName;
-        finalData[systemName] = quantity;
-      });
-    }
-    
+  const handleReceiptDataT2 = (productData: { [key: string]: number }, coffeeData: { [key: string]: number }) => {
+    // Update products
     setTurn2(prev => ({
       ...prev,
       products: Object.fromEntries(
         Object.entries(prev.products).map(([key, value]) => [
           key,
-          finalData[key] !== undefined ? { ...value, shiriti: finalData[key] } : value
+          productData[key] !== undefined ? { ...value, shiriti: productData[key] } : value
         ])
-      )
+      ),
+      coffee: {
+        ...prev.coffee,
+        ...coffeeData
+      }
     }));
   };
 
@@ -434,7 +429,7 @@ const DailyEntry = () => {
             <p className="text-muted-foreground">Regjistro shitjet dhe inventarin për secilin turn</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <ProductMappingManager products={products} />
+            <ProductMappingManager products={products} coffeeTypes={coffeeTypes} />
             <Button 
               variant={isAdminUnlocked ? "default" : "outline"} 
               size="sm" 
@@ -467,6 +462,7 @@ const DailyEntry = () => {
                 <div className="flex gap-2">
                   <ReceiptScanner
                     products={products}
+                    coffeeTypes={coffeeTypes}
                     onDataExtracted={handleReceiptDataT1}
                     turnName="T1"
                     turnData={turn1}
@@ -683,6 +679,7 @@ const DailyEntry = () => {
                 <CardTitle>Produktet - Turni 2</CardTitle>
                 <ReceiptScanner
                   products={products}
+                  coffeeTypes={coffeeTypes}
                   onDataExtracted={handleReceiptDataT2}
                   turnName="T2"
                   turnData={turn2}
