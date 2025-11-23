@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { ProductMappingManager } from "@/components/ProductMappingManager";
 import { AdminPasswordDialog } from "@/components/DailyEntry/AdminPasswordDialog";
 import { TurnSection } from "@/components/DailyEntry/TurnSection";
+import { StorageDebugger } from "@/components/StorageDebugger";
 import { useAuth } from "@/hooks/useAuth";
 import { useProductList } from "@/hooks/useProductList";
 import { useTurnData } from "@/hooks/useTurnData";
@@ -268,6 +269,9 @@ const DailyEntry = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Storage Debugger - for development */}
+        {isAdminUnlocked && <StorageDebugger />}
 
         {/* Admin Password Dialog */}
         <AdminPasswordDialog
