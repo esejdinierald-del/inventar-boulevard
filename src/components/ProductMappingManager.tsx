@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Loader2, Upload, Save, Trash2, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { useAuth } from "@/hooks/useAuth";
+import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 
 interface ProductMappingManagerProps {
   products: string[];
@@ -21,7 +21,7 @@ interface ReceiptProduct {
 }
 
 export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingManagerProps) => {
-  const { isAdmin } = useAuth();
+  const { isAdmin } = useSimpleAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
