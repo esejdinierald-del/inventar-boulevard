@@ -4,15 +4,15 @@ import { Input } from "@/components/ui/input";
 import { TableCell, TableRow } from "@/components/ui/table";
 
 interface AddProductRowProps {
-  onAdd: (productName: string) => void;
+  onAdd: (productName: string) => boolean | Promise<boolean>;
   colSpan: number;
 }
 
 export const AddProductRow = ({ onAdd, colSpan }: AddProductRowProps) => {
   const [newProductName, setNewProductName] = useState("");
 
-  const handleAdd = () => {
-    onAdd(newProductName);
+  const handleAdd = async () => {
+    await onAdd(newProductName);
     setNewProductName("");
   };
 

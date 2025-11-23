@@ -23,8 +23,8 @@ interface TurnSectionProps {
   onMulliriPerfundUpdate?: (value: number) => void;
   onCopyToNextTurn?: () => void;
   onReceiptData: (productData: { [key: string]: number }, coffeeData: { [key: string]: number }) => void;
-  onProductDelete?: (product: string) => void;
-  onProductAdd?: (productName: string) => boolean;
+  onProductDelete?: (product: string) => void | Promise<void>;
+  onProductAdd?: (productName: string) => boolean | Promise<boolean>;
   onProductEdit?: (product: string) => void;
   editingProduct: string | null;
   editedProductName: string;

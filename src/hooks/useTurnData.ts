@@ -75,32 +75,44 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
 
   // Load data for current date on mount and when date changes
   useEffect(() => {
-    console.log('📅 Loading data for date:', selectedDate);
-    isInitialLoad.current = true;
-    const savedData = StorageService.getDailyEntryData(selectedDate);
-    if (savedData) {
-      console.log('📂 Found saved data - migrating if needed');
-      // Migro emrat e produkteve
-      const migratedT1 = migrateProductNames(savedData.turn1, products);
-      const migratedT2 = migrateProductNames(savedData.turn2, products);
-      setTurn1(migratedT1);
-      setTurn2(migratedT2);
-      // Ruaj të dhënat e migруara
-      StorageService.setDailyEntryData(selectedDate, {
-        turn1: migratedT1,
-        turn2: migratedT2,
-        date: selectedDate
-      });
-    } else {
-      console.log('📝 No saved data - creating empty');
-      setTurn1(createEmptyTurnData());
-      setTurn2(createEmptyTurnData());
-    }
-    // Mark initial load as complete after a short delay
-    setTimeout(() => {
-      console.log('✅ Initial load complete - auto-save enabled');
-      isInitialLoad.current = false;
-    }, 100);
+    const loadData = async () => {
+      console.log('📅 Loading data for date:', selectedDate);
+      isInitialLoad.current = true;
+      
+      try {
+        const savedData = await StorageService.getDailyEntryData(selectedDate);
+        if (savedData) {
+          console.log('📂 Found saved data - migrating if needed');
+          // Migro emrat e produkteve
+          const migratedT1 = migrateProductNames(savedData.turn1, products);
+          const migratedT2 = migrateProductNames(savedData.turn2, products);
+          setTurn1(migratedT1);
+          setTurn2(migratedT2);
+          // Ruaj të dhënat e migruara
+          await StorageService.setDailyEntryData(selectedDate, {
+            turn1: migratedT1,
+            turn2: migratedT2,
+            date: selectedDate
+          });
+        } else {
+          console.log('📝 No saved data - creating empty');
+          setTurn1(createEmptyTurnData());
+          setTurn2(createEmptyTurnData());
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        setTurn1(createEmptyTurnData());
+        setTurn2(createEmptyTurnData());
+      }
+      
+      // Mark initial load as complete after a short delay
+      setTimeout(() => {
+        console.log('✅ Initial load complete - auto-save enabled');
+        isInitialLoad.current = false;
+      }, 100);
+    };
+    
+    loadData();
   }, [selectedDate, createEmptyTurnData, products]);
 
   // Auto-save current day data when turn1 or turn2 changes
@@ -109,18 +121,18 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       return;
     }
     
-    setSaveStatus('saving');
-    const timeoutId = setTimeout(() => {
+    const saveData = async () => {
+      setSaveStatus('saving');
       try {
         const dataToSave = {
           turn1,
           turn2,
           date: selectedDate
         };
-        StorageService.setDailyEntryData(selectedDate, dataToSave);
+        await StorageService.setDailyEntryData(selectedDate, dataToSave);
         
         // Verify save
-        const verified = StorageService.getDailyEntryData(selectedDate);
+        const verified = await StorageService.getDailyEntryData(selectedDate);
         if (verified) {
           setSaveStatus('saved');
           setTimeout(() => setSaveStatus('idle'), 2000);
@@ -132,11 +144,10 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
         setSaveStatus('idle');
         toast.error(`❌ Gabim në ruajtje: ${error}`);
       }
-    }, 500);
-
-    return () => {
-      clearTimeout(timeoutId);
     };
+    
+    const timeoutId = setTimeout(saveData, 500);
+    return () => clearTimeout(timeoutId);
   }, [turn1, turn2, selectedDate]);
 
   // Auto-sync T1 stock to T2 when T1 changes
@@ -167,22 +178,27 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
   useEffect(() => {
     if (isInitialLoad.current) return;
     
-    const timeoutId = setTimeout(() => {
-      const nextDayStock = Object.fromEntries(
-        Object.entries(turn2.products).map(([key, data]) => {
-          const calculatedStock = CalculationService.calculateNewStock(data);
-          return [key, calculatedStock];
-        })
-      );
+    const saveNextDay = async () => {
+      try {
+        const nextDayStock = Object.fromEntries(
+          Object.entries(turn2.products).map(([key, data]) => {
+            const calculatedStock = CalculationService.calculateNewStock(data);
+            return [key, calculatedStock];
+          })
+        );
 
-      const nextDay = new Date(selectedDate);
-      nextDay.setDate(nextDay.getDate() + 1);
-      const nextDayDate = nextDay.toISOString().split('T')[0];
+        const nextDay = new Date(selectedDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+        const nextDayDate = nextDay.toISOString().split('T')[0];
 
-      StorageService.setStockForDate(nextDayDate, nextDayStock);
-      StorageService.setMulliriForDate(nextDayDate, turn2.mulliriPerfund);
-    }, 1000); // Run after T1->T2 sync
-
+        await StorageService.setStockForDate(nextDayDate, nextDayStock);
+        await StorageService.setMulliriForDate(nextDayDate, turn2.mulliriPerfund);
+      } catch (error) {
+        console.error('Error saving next day stock:', error);
+      }
+    };
+    
+    const timeoutId = setTimeout(saveNextDay, 1000); // Run after T1->T2 sync
     return () => clearTimeout(timeoutId);
   }, [turn2, selectedDate]);
 
@@ -242,19 +258,19 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
   }, [turn1]);
 
   // Save current day data
-  const saveCurrentDay = useCallback(() => {
+  const saveCurrentDay = useCallback(async () => {
     const dataToSave = {
       turn1,
       turn2,
       date: selectedDate
     };
-    StorageService.setDailyEntryData(selectedDate, dataToSave);
+    await StorageService.setDailyEntryData(selectedDate, dataToSave);
   }, [turn1, turn2, selectedDate]);
 
   // Save data for next day
-  const saveForNextDay = useCallback(() => {
+  const saveForNextDay = useCallback(async () => {
     // First save current day
-    saveCurrentDay();
+    await saveCurrentDay();
 
     // Then prepare for next day
     const nextDayStock = Object.fromEntries(
@@ -268,45 +284,50 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     nextDay.setDate(nextDay.getDate() + 1);
     const nextDayDate = nextDay.toISOString().split('T')[0];
 
-    StorageService.setStockForDate(nextDayDate, nextDayStock);
-    StorageService.setMulliriForDate(nextDayDate, turn2.mulliriPerfund);
+    await StorageService.setStockForDate(nextDayDate, nextDayStock);
+    await StorageService.setMulliriForDate(nextDayDate, turn2.mulliriPerfund);
   }, [turn1, turn2, selectedDate, saveCurrentDay]);
 
   // Load data from previous day
-  const loadFromPreviousDay = useCallback(() => {
-    const savedStock = StorageService.getStockForDate(selectedDate);
-    const savedMulliri = StorageService.getMulliriForDate(selectedDate);
+  const loadFromPreviousDay = useCallback(async () => {
+    try {
+      const savedStock = await StorageService.getStockForDate(selectedDate);
+      const savedMulliri = await StorageService.getMulliriForDate(selectedDate);
 
-    if (savedStock || savedMulliri) {
-      if (savedStock) {
-        // Migro emrat e produkteve
-        const migratedStock: { [key: string]: number } = {};
-        Object.entries(savedStock).forEach(([oldName, value]) => {
-          const newName = PRODUCT_NAME_MIGRATION[oldName] || oldName;
-          migratedStock[newName] = value;
-        });
-        
-        setTurn1(prev => ({
-          ...prev,
-          products: Object.fromEntries(
-            Object.entries(prev.products).map(([key, data]) => [
-              key,
-              { ...data, stokFillim: migratedStock[key] || 0 }
-            ])
-          )
-        }));
+      if (savedStock || savedMulliri) {
+        if (savedStock) {
+          // Migro emrat e produkteve
+          const migratedStock: { [key: string]: number } = {};
+          Object.entries(savedStock).forEach(([oldName, value]) => {
+            const newName = PRODUCT_NAME_MIGRATION[oldName] || oldName;
+            migratedStock[newName] = value;
+          });
+          
+          setTurn1(prev => ({
+            ...prev,
+            products: Object.fromEntries(
+              Object.entries(prev.products).map(([key, data]) => [
+                key,
+                { ...data, stokFillim: migratedStock[key] || 0 }
+              ])
+            )
+          }));
+        }
+
+        if (savedMulliri !== null) {
+          setTurn1(prev => ({
+            ...prev,
+            mulliriFillim: savedMulliri
+          }));
+        }
+
+        toast.success("Të dhënat u ngarkuan dhe u përditësuan!");
+      } else {
+        toast.error("Nuk ka të dhëna për këtë datë");
       }
-
-      if (savedMulliri !== null) {
-        setTurn1(prev => ({
-          ...prev,
-          mulliriFillim: savedMulliri
-        }));
-      }
-
-      toast.success("Të dhënat u ngarkuan dhe u përditësuan!");
-    } else {
-      toast.error("Nuk ka të dhëna për këtë datë");
+    } catch (error) {
+      console.error('Error loading from previous day:', error);
+      toast.error("Gabim në ngarkimin e të dhënave");
     }
   }, [selectedDate]);
 

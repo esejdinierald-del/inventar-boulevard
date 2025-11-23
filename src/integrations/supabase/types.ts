@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_entries: {
+        Row: {
+          created_at: string | null
+          entry_date: string
+          id: string
+          turn1_data: Json
+          turn2_data: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          entry_date: string
+          id?: string
+          turn1_data?: Json
+          turn2_data?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          entry_date?: string
+          id?: string
+          turn1_data?: Json
+          turn2_data?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       daily_entry_history: {
         Row: {
           action_type: string | null
@@ -38,6 +65,84 @@ export type Database = {
           entry_date?: string
           id?: string
           turn_number?: number
+        }
+        Relationships: []
+      }
+      next_day_stock: {
+        Row: {
+          created_at: string | null
+          id: string
+          mulliri_fillim: number | null
+          stock_data: Json
+          stock_date: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          mulliri_fillim?: number | null
+          stock_data?: Json
+          stock_date: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          mulliri_fillim?: number | null
+          stock_data?: Json
+          stock_date?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      product_mappings: {
+        Row: {
+          created_at: string | null
+          id: string
+          product_name: string
+          product_type: string
+          quantity: number | null
+          receipt_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          product_name: string
+          product_type: string
+          quantity?: number | null
+          receipt_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          product_name?: string
+          product_type?: string
+          quantity?: number | null
+          receipt_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          sort_order?: number | null
         }
         Relationships: []
       }

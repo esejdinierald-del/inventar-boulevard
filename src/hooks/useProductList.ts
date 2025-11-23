@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { StorageService } from '@/services/storage.service';
 import { toast } from 'sonner';
 
@@ -33,23 +33,33 @@ const normalizeProductName = (name: string): string => {
 };
 
 export const useProductList = () => {
-  const [products, setProducts] = useState<string[]>(() => {
-    const saved = StorageService.getProducts();
-    if (saved) {
-      // Migro emrat e vjetër në të rinj
-      const normalized = saved.map(p => normalizeProductName(p));
-      // Ruaj emrat e normalizuar
-      StorageService.setProducts(normalized);
-      return normalized;
-    }
-    return DEFAULT_PRODUCTS;
-  });
+  const [products, setProducts] = useState<string[]>(DEFAULT_PRODUCTS);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [coffeeTypes] = useState<string[]>(() => {
-    return StorageService.getCoffeeTypes() || DEFAULT_COFFEE_TYPES;
-  });
+  // Load products nga Supabase
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const saved = await StorageService.getProducts();
+        if (saved && saved.length > 0) {
+          // Migro emrat e vjetër në të rinj
+          const normalized = saved.map(p => normalizeProductName(p));
+          setProducts(normalized);
+          // Ruaj emrat e normalizuar
+          await StorageService.setProducts(normalized);
+        }
+      } catch (error) {
+        console.error('Error loading products:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadProducts();
+  }, []);
 
-  const addProduct = useCallback((productName: string) => {
+  const [coffeeTypes] = useState<string[]>(DEFAULT_COFFEE_TYPES);
+
+  const addProduct = useCallback(async (productName: string) => {
     const trimmed = productName.trim();
     
     if (!trimmed) {
@@ -64,19 +74,19 @@ export const useProductList = () => {
 
     const updatedProducts = [...products, trimmed];
     setProducts(updatedProducts);
-    StorageService.setProducts(updatedProducts);
+    await StorageService.setProducts(updatedProducts);
     toast.success("Produkti u shtua!");
     return true;
   }, [products]);
 
-  const deleteProduct = useCallback((productName: string) => {
+  const deleteProduct = useCallback(async (productName: string) => {
     const updatedProducts = products.filter(p => p !== productName);
     setProducts(updatedProducts);
-    StorageService.setProducts(updatedProducts);
+    await StorageService.setProducts(updatedProducts);
     toast.success("Produkti u fshi!");
   }, [products]);
 
-  const updateProduct = useCallback((oldName: string, newName: string) => {
+  const updateProduct = useCallback(async (oldName: string, newName: string) => {
     const trimmed = newName.trim();
 
     if (!trimmed) {
@@ -95,10 +105,10 @@ export const useProductList = () => {
 
     const updatedProducts = products.map(p => p === oldName ? trimmed : p);
     setProducts(updatedProducts);
-    StorageService.setProducts(updatedProducts);
+    await StorageService.setProducts(updatedProducts);
 
     // Update product mapping as well
-    const mapping = StorageService.getProductMapping();
+    const mapping = await StorageService.getProductMapping();
     if (mapping) {
       const updatedMapping = { ...mapping };
       Object.entries(mapping).forEach(([key, value]) => {
@@ -106,7 +116,7 @@ export const useProductList = () => {
           updatedMapping[key] = { type: 'product', name: trimmed, quantity: value.quantity || 1 };
         }
       });
-      StorageService.setProductMapping(updatedMapping);
+      await StorageService.setProductMapping(updatedMapping);
     }
 
     toast.success("Emri i produktit dhe mapimet u përditësuan!");
@@ -119,5 +129,6 @@ export const useProductList = () => {
     addProduct,
     deleteProduct,
     updateProduct,
+    isLoading,
   };
 };
