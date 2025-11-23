@@ -11,6 +11,7 @@ import { Calendar, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import { ReceiptScanner } from "@/components/ReceiptScanner";
 import { ProductMappingManager } from "@/components/ProductMappingManager";
+import { GrinderPhotoScanner } from "@/components/GrinderPhotoScanner";
 interface ProductData {
   stokFillim: number;
   gjendje: number;
@@ -652,7 +653,19 @@ const DailyEntry = () => {
                   }))} disabled={!isAdminUnlocked} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Mulliri Perfund (kg)</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Mulliri Perfund (kg)</Label>
+                      <GrinderPhotoScanner 
+                        turnName="T1"
+                        onValueExtracted={(value) => {
+                          setTurn1(prev => ({
+                            ...prev,
+                            mulliriPerfund: value
+                          }));
+                          syncMulliriT1ToT2(value);
+                        }}
+                      />
+                    </div>
                     <Input type="number" value={turn1.mulliriPerfund || ""} onChange={e => {
                     const perfundValue = Number(e.target.value);
                     setTurn1(prev => ({
@@ -862,7 +875,18 @@ const DailyEntry = () => {
                   }))} disabled={true} className="bg-muted/50" title="Automatkisht nga Mulliri Perfund T1" />
                   </div>
                   <div className="space-y-2">
-                    <Label>Mulliri Perfund (kg)</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Mulliri Perfund (kg)</Label>
+                      <GrinderPhotoScanner 
+                        turnName="T2"
+                        onValueExtracted={(value) => {
+                          setTurn2(prev => ({
+                            ...prev,
+                            mulliriPerfund: value
+                          }));
+                        }}
+                      />
+                    </div>
                     <Input type="number" value={turn2.mulliriPerfund || ""} onChange={e => setTurn2(prev => ({
                     ...prev,
                     mulliriPerfund: Number(e.target.value)
