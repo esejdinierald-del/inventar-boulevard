@@ -10,7 +10,7 @@ import { AdminPasswordDialog } from "@/components/DailyEntry/AdminPasswordDialog
 import { ProductMappingManager } from "@/components/ProductMappingManager";
 import { useAuth } from "@/hooks/useAuth";
 import { useProductList } from "@/hooks/useProductList";
-import { useTurnData } from "@/hooks/useTurnData";
+import { useSingleTurnData } from "@/hooks/useSingleTurnData";
 import { TurnData } from "@/types/turn.types";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -24,12 +24,11 @@ const DailyEntryTurn1 = () => {
   const { products, coffeeTypes, addProduct, deleteProduct, updateProduct, resetToDefaults } = useProductList();
 
   const {
-    turn1,
-    setTurn1,
-    updateTurn1Product,
-    saveForNextDay,
-    handleReceiptDataT1,
-  } = useTurnData({ products, coffeeTypes, selectedDate });
+    turnData: turn1,
+    setTurnData: setTurn1,
+    updateProduct: updateTurn1Product,
+    manualSave,
+  } = useSingleTurnData({ products, coffeeTypes, selectedDate, turnNumber: 1 });
 
   const isPastDate = useCallback(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -74,10 +73,28 @@ const DailyEntryTurn1 = () => {
     }));
   }, [setTurn1]);
 
+  const handleReceiptDataT1 = useCallback((
+    productData: { [key: string]: number },
+    coffeeData: { [key: string]: number },
+    total?: number
+  ) => {
+    setTurn1(prev => ({
+      ...prev,
+      products: Object.fromEntries(
+        Object.entries(prev.products).map(([key, value]) => [
+          key,
+          productData[key] !== undefined ? { ...value, shiriti: productData[key] } : value
+        ])
+      ),
+      coffee: { ...prev.coffee, ...coffeeData },
+      xhiro: total !== undefined ? total : prev.xhiro
+    }));
+  }, [setTurn1]);
+
   const handleSave = useCallback(() => {
-    saveForNextDay();
+    manualSave();
     toast.success(`Të dhënat u ruajtën! Xhiro: ${turn1.xhiro.toLocaleString()} ALL`);
-  }, [saveForNextDay, turn1.xhiro]);
+  }, [manualSave, turn1.xhiro]);
 
   return (
     <Layout>
