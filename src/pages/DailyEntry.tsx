@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Calendar, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import { ReceiptScanner } from "@/components/ReceiptScanner";
+import { ProductMappingManager } from "@/components/ProductMappingManager";
 interface ProductData {
   stokFillim: number;
   gjendje: number;
@@ -288,26 +289,52 @@ const DailyEntry = () => {
     toast.success("Produkti u fshi!");
   };
 
-  // Handle data extracted from receipt scanner
+  // Handle data extracted from receipt scanner with saved mapping
   const handleReceiptDataT1 = (data: { [key: string]: number }) => {
+    const savedMapping = localStorage.getItem('receipt_product_mapping');
+    let finalData = data;
+    
+    if (savedMapping) {
+      const mapping = JSON.parse(savedMapping);
+      // Transform receipt product names to system product names
+      finalData = {};
+      Object.entries(data).forEach(([receiptName, quantity]) => {
+        const systemName = mapping[receiptName] || receiptName;
+        finalData[systemName] = quantity;
+      });
+    }
+    
     setTurn1(prev => ({
       ...prev,
       products: Object.fromEntries(
         Object.entries(prev.products).map(([key, value]) => [
           key,
-          data[key] !== undefined ? { ...value, shiriti: data[key] } : value
+          finalData[key] !== undefined ? { ...value, shiriti: finalData[key] } : value
         ])
       )
     }));
   };
 
   const handleReceiptDataT2 = (data: { [key: string]: number }) => {
+    const savedMapping = localStorage.getItem('receipt_product_mapping');
+    let finalData = data;
+    
+    if (savedMapping) {
+      const mapping = JSON.parse(savedMapping);
+      // Transform receipt product names to system product names
+      finalData = {};
+      Object.entries(data).forEach(([receiptName, quantity]) => {
+        const systemName = mapping[receiptName] || receiptName;
+        finalData[systemName] = quantity;
+      });
+    }
+    
     setTurn2(prev => ({
       ...prev,
       products: Object.fromEntries(
         Object.entries(prev.products).map(([key, value]) => [
           key,
-          data[key] !== undefined ? { ...value, shiriti: data[key] } : value
+          finalData[key] !== undefined ? { ...value, shiriti: finalData[key] } : value
         ])
       )
     }));
@@ -338,6 +365,7 @@ const DailyEntry = () => {
             <p className="text-muted-foreground">Regjistro shitjet dhe inventarin për secilin turn</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <ProductMappingManager products={products} />
             <Button 
               variant={isAdminUnlocked ? "default" : "outline"} 
               size="sm" 

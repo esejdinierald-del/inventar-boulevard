@@ -73,7 +73,7 @@ export const ReceiptScanner = ({ products, onDataExtracted, turnName, turnData, 
           throw new Error("Invalid response from AI");
         }
 
-        console.log("Receipt data:", data);
+      console.log("Receipt data:", data);
 
         // Build extracted text from AI response
         let text = "SHIRITI I SHITJEVE\n";
@@ -81,18 +81,31 @@ export const ReceiptScanner = ({ products, onDataExtracted, turnName, turnData, 
         text += "Emer          Sasia\n";
         text += "------------------------\n";
         
+        // Load saved mapping
+        const savedMapping = localStorage.getItem('receipt_product_mapping');
+        const mapping = savedMapping ? JSON.parse(savedMapping) : {};
+        
         data.items.forEach((item: { name: string; quantity: number }, index: number) => {
           text += `${item.name.padEnd(15)} ${item.quantity}\n`;
-          // Pre-populate mappedData with smart matching
-          const matchedProduct = products.find(p => 
-            p.toLowerCase().includes(item.name.toLowerCase()) ||
-            item.name.toLowerCase().includes(p.toLowerCase())
-          );
-          if (matchedProduct) {
+          
+          // Use saved mapping if available, otherwise try smart matching
+          if (mapping[item.name]) {
             setMappedData(prev => ({
               ...prev,
-              [index.toString()]: matchedProduct
+              [index.toString()]: mapping[item.name]
             }));
+          } else {
+            // Fallback to smart matching
+            const matchedProduct = products.find(p => 
+              p.toLowerCase().includes(item.name.toLowerCase()) ||
+              item.name.toLowerCase().includes(p.toLowerCase())
+            );
+            if (matchedProduct) {
+              setMappedData(prev => ({
+                ...prev,
+                [index.toString()]: matchedProduct
+              }));
+            }
           }
         });
         
