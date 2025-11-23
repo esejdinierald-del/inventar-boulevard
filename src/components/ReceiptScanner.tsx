@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Loader2, Upload, Camera } from "lucide-react";
+import { Loader2, Upload, Camera, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ReceiptScannerProps {
@@ -33,13 +34,19 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
   const [extractedText, setExtractedText] = useState<string>("");
   const [mappedData, setMappedData] = useState<{ [key: string]: { type: 'product' | 'coffee'; name: string; quantity: number } }>({});
   const [receiptItems, setReceiptItems] = useState<Array<{ name: string; quantity: number }>>([]);
+  const [showDifferenceWarning, setShowDifferenceWarning] = useState(false);
+  const [differencesList, setDifferencesList] = useState<Array<{ product: string; dif: number }>>([]);
 
   // Check if there are any differences in current turn
-  const hasAnyDifferences = () => {
-    return Object.entries(turnData.products).some(([_, data]) => {
+  const getDifferences = () => {
+    const diffs: Array<{ product: string; dif: number }> = [];
+    Object.entries(turnData.products).forEach(([product, data]) => {
       const dif = calculateDif(data.stokFillim, data.furnizime, data.gjendje, data.shiriti);
-      return dif !== 0;
+      if (dif !== 0) {
+        diffs.push({ product, dif });
+      }
     });
+    return diffs;
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,18 +165,7 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
     }));
   };
 
-  const handleApplyData = () => {
-    console.log("🔍 handleApplyData called");
-    console.log("receiptItems:", receiptItems);
-    console.log("mappedData:", mappedData);
-    console.log("hasAnyDifferences:", hasAnyDifferences());
-    
-    // Check for differences before applying
-    if (hasAnyDifferences()) {
-      toast.error("⚠️ Ka diferenca në shiriti aktual! Të gjitha diferencat duhet të jenë 0 para se të ngarkosh shiriti të ri.");
-      return;
-    }
-
+  const proceedWithApply = () => {
     try {
       // Use the stored receipt items instead of making another API call
       if (!receiptItems || receiptItems.length === 0) {
@@ -222,6 +218,23 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
     }
   };
 
+  const handleApplyData = () => {
+    console.log("🔍 handleApplyData called");
+    console.log("receiptItems:", receiptItems);
+    console.log("mappedData:", mappedData);
+    
+    // Check for differences before applying
+    const diffs = getDifferences();
+    if (diffs.length > 0) {
+      setDifferencesList(diffs);
+      setShowDifferenceWarning(true);
+      return;
+    }
+
+    // No differences, proceed directly
+    proceedWithApply();
+  };
+
   const resetState = () => {
     setSelectedImage(null);
     setExtractedText("");
@@ -245,6 +258,50 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
         <Camera className="h-3 w-3 mr-1" />
         📸 Ngarko Shiriti {turnName}
       </Button>
+
+      <AlertDialog open={showDifferenceWarning} onOpenChange={setShowDifferenceWarning}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              Paralajmërim - Ka Diferenca!
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <div className="space-y-3">
+                <p>Ka diferenca në shiriti aktual që duhet të kontrollohen:</p>
+                <div className="bg-orange-50 border border-orange-200 rounded p-3 max-h-48 overflow-y-auto">
+                  {differencesList.map(({ product, dif }) => (
+                    <div key={product} className="flex justify-between py-1 text-sm">
+                      <span className="font-medium">{product}:</span>
+                      <span className={`font-bold ${dif > 0 ? 'text-red-600' : 'text-blue-600'}`}>
+                        {dif > 0 ? '+' : ''}{dif}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm font-medium">
+                  ⚠️ Rekomandohet të kontrollosh diferencat para se të ngarkosh shiriti të ri.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Nëse vazhdon, shiriti i ri do të ngarkohet edhe pse ka diferenca.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anulo - Kontrollo Diferencat</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                setShowDifferenceWarning(false);
+                proceedWithApply();
+              }}
+              className="bg-orange-500 hover:bg-orange-600"
+            >
+              Vazhdo Sidoqoftë
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
