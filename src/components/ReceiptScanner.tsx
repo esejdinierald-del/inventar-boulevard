@@ -10,7 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface ReceiptScannerProps {
   products: string[];
-  onDataExtracted: (data: { [key: string]: number }) => void;
+  coffeeTypes: string[];
+  onDataExtracted: (productData: { [key: string]: number }, coffeeData: { [key: string]: number }) => void;
   turnName: string;
   turnData: {
     products: {
@@ -25,12 +26,12 @@ interface ReceiptScannerProps {
   calculateDif: (stokFillim: number, furnizime: number, gjendje: number, shiriti: number) => number;
 }
 
-export const ReceiptScanner = ({ products, onDataExtracted, turnName, turnData, calculateDif }: ReceiptScannerProps) => {
+export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnName, turnData, calculateDif }: ReceiptScannerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedText, setExtractedText] = useState<string>("");
-  const [mappedData, setMappedData] = useState<{ [key: string]: string }>({});
+  const [mappedData, setMappedData] = useState<{ [key: string]: { type: 'product' | 'coffee'; name: string } }>({});
   const [receiptItems, setReceiptItems] = useState<Array<{ name: string; quantity: number }>>([]);
 
   // Check if there are any differences in current turn
@@ -92,14 +93,25 @@ export const ReceiptScanner = ({ products, onDataExtracted, turnName, turnData, 
         data.items.forEach((item: { name: string; quantity: number }, index: number) => {
           text += `${item.name.padEnd(15)} ${item.quantity}\n`;
           
-          // Use saved mapping if available, otherwise try smart matching
+          // Use saved mapping if available
           if (mapping[item.name]) {
-            setMappedData(prev => ({
-              ...prev,
-              [index.toString()]: mapping[item.name]
-            }));
+            // Handle both old format (string) and new format (object)
+            const mappingValue = mapping[item.name];
+            if (typeof mappingValue === 'string') {
+              // Old format - assume it's a product
+              setMappedData(prev => ({
+                ...prev,
+                [index.toString()]: { type: 'product', name: mappingValue }
+              }));
+            } else {
+              // New format
+              setMappedData(prev => ({
+                ...prev,
+                [index.toString()]: mappingValue
+              }));
+            }
           } else {
-            // Fallback to smart matching
+            // Try smart matching for products
             const matchedProduct = products.find(p => 
               p.toLowerCase().includes(item.name.toLowerCase()) ||
               item.name.toLowerCase().includes(p.toLowerCase())
@@ -107,8 +119,20 @@ export const ReceiptScanner = ({ products, onDataExtracted, turnName, turnData, 
             if (matchedProduct) {
               setMappedData(prev => ({
                 ...prev,
-                [index.toString()]: matchedProduct
+                [index.toString()]: { type: 'product', name: matchedProduct }
               }));
+            } else {
+              // Try smart matching for coffee types
+              const matchedCoffee = coffeeTypes.find(c => 
+                c.toLowerCase().includes(item.name.toLowerCase()) ||
+                item.name.toLowerCase().includes(c.toLowerCase())
+              );
+              if (matchedCoffee) {
+                setMappedData(prev => ({
+                  ...prev,
+                  [index.toString()]: { type: 'coffee', name: matchedCoffee }
+                }));
+              }
             }
           }
         });
@@ -127,10 +151,10 @@ export const ReceiptScanner = ({ products, onDataExtracted, turnName, turnData, 
     reader.readAsDataURL(file);
   };
 
-  const handleMapProduct = (lineNumber: string, productName: string) => {
+  const handleMapProduct = (lineNumber: string, type: 'product' | 'coffee', name: string) => {
     setMappedData(prev => ({
       ...prev,
-      [lineNumber]: productName
+      [lineNumber]: { type, name }
     }));
   };
 
@@ -154,33 +178,41 @@ export const ReceiptScanner = ({ products, onDataExtracted, turnName, turnData, 
         return;
       }
 
-      const data: { [key: string]: number } = {};
+      const productData: { [key: string]: number } = {};
+      const coffeeData: { [key: string]: number } = {};
       let hasUnmapped = false;
       let unmappedItems: string[] = [];
       
       receiptItems.forEach((item: { name: string; quantity: number }, index: number) => {
-        const productName = mappedData[index.toString()];
-        console.log(`Item ${index}: ${item.name} -> ${productName || 'UNMAPPED'}`);
-        if (productName) {
-          data[productName] = item.quantity;
+        const mapping = mappedData[index.toString()];
+        console.log(`Item ${index}: ${item.name} -> ${mapping ? `${mapping.type}:${mapping.name}` : 'UNMAPPED'}`);
+        
+        if (mapping) {
+          if (mapping.type === 'product') {
+            productData[mapping.name] = (productData[mapping.name] || 0) + item.quantity;
+          } else if (mapping.type === 'coffee') {
+            coffeeData[mapping.name] = (coffeeData[mapping.name] || 0) + item.quantity;
+          }
         } else {
           hasUnmapped = true;
           unmappedItems.push(item.name);
         }
       });
 
-      console.log("Final data to apply:", data);
+      console.log("Final product data:", productData);
+      console.log("Final coffee data:", coffeeData);
       console.log("Unmapped items:", unmappedItems);
 
       if (hasUnmapped) {
-        toast.error(`Duhet të maposh të gjitha produktet! Të pamapuara: ${unmappedItems.join(', ')}`);
+        toast.error(`Duhet të maposh të gjitha artikujt! Të pamapuara: ${unmappedItems.join(', ')}`);
         return;
       }
 
-      if (Object.keys(data).length > 0) {
-        console.log("✅ Calling onDataExtracted with:", data);
-        onDataExtracted(data);
-        toast.success(`${Object.keys(data).length} produkte u ngarkuan!`);
+      if (Object.keys(productData).length > 0 || Object.keys(coffeeData).length > 0) {
+        console.log("✅ Calling onDataExtracted with product and coffee data");
+        onDataExtracted(productData, coffeeData);
+        const total = Object.keys(productData).length + Object.keys(coffeeData).length;
+        toast.success(`${total} artikuj u ngarkuan (${Object.keys(productData).length} produkte, ${Object.keys(coffeeData).length} kafe)!`);
         setIsOpen(false);
         resetState();
       } else {
@@ -302,26 +334,48 @@ export const ReceiptScanner = ({ products, onDataExtracted, turnName, turnData, 
                       }
                       
                       return productLines.map((line, index) => {
-                        const isMapped = !!mappedData[index.toString()];
+                        const mapping = mappedData[index.toString()];
+                        const isMapped = !!mapping;
+                        const currentValue = mapping ? `${mapping.type}:${mapping.name}` : "";
+                        
                         return (
                           <div key={index} className="space-y-2 p-3 border rounded bg-card">
                             <div className="text-xs font-mono bg-muted p-2 rounded">
                               {line}
                             </div>
                             <select
-                              value={mappedData[index.toString()] || ""}
-                              onChange={(e) => handleMapProduct(index.toString(), e.target.value)}
+                              value={currentValue}
+                              onChange={(e) => {
+                                const [type, name] = e.target.value.split(':');
+                                if (type && name) {
+                                  handleMapProduct(index.toString(), type as 'product' | 'coffee', name);
+                                }
+                              }}
                               className={`w-full text-sm border rounded p-2 ${
                                 isMapped ? 'border-green-500 bg-green-50' : 'border-orange-500'
                               }`}
                             >
-                              <option value="">🔴 Zgjidh produktin...</option>
-                              {products.map(product => (
-                                <option key={product} value={product}>
-                                  {product}
-                                </option>
-                              ))}
+                              <option value="">🔴 Zgjidh kategorinë...</option>
+                              <optgroup label="📦 Produkte">
+                                {products.map(product => (
+                                  <option key={product} value={`product:${product}`}>
+                                    {product}
+                                  </option>
+                                ))}
+                              </optgroup>
+                              <optgroup label="☕ Kafe">
+                                {coffeeTypes.map(coffee => (
+                                  <option key={coffee} value={`coffee:${coffee}`}>
+                                    {coffee}
+                                  </option>
+                                ))}
+                              </optgroup>
                             </select>
+                            {isMapped && (
+                              <div className="text-xs text-green-600">
+                                ✓ {mapping.type === 'product' ? '📦 Produkt' : '☕ Kafe'}: {mapping.name}
+                              </div>
+                            )}
                           </div>
                         );
                       });
