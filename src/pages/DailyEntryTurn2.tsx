@@ -8,6 +8,7 @@ import Layout from "@/components/Layout";
 import { TurnSection } from "@/components/DailyEntry/TurnSection";
 import { AdminPasswordDialog } from "@/components/DailyEntry/AdminPasswordDialog";
 import { ProductMappingManager } from "@/components/ProductMappingManager";
+import { LocalStorageViewer } from "@/components/LocalStorageViewer";
 import { useAuth } from "@/hooks/useAuth";
 import { useProductList } from "@/hooks/useProductList";
 import { useSingleTurnData } from "@/hooks/useSingleTurnData";
@@ -171,6 +172,8 @@ const DailyEntryTurn2 = () => {
             💾 Ruaj të Dhënat
           </Button>
         </div>
+
+        <LocalStorageViewer />
 
         <ProductMappingManager products={products} coffeeTypes={coffeeTypes} onResetProducts={resetToDefaults} />
 
