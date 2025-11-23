@@ -4,11 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Lock, Unlock } from "lucide-react";
+import { Calendar, Lock, Unlock, History } from "lucide-react";
 import { toast } from "sonner";
 import { ProductMappingManager } from "@/components/ProductMappingManager";
 import { AdminPasswordDialog } from "@/components/DailyEntry/AdminPasswordDialog";
 import { TurnSection } from "@/components/DailyEntry/TurnSection";
+import { HistoryDialog } from "@/components/DailyEntry/HistoryDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useProductList } from "@/hooks/useProductList";
 import { useTurnData } from "@/hooks/useTurnData";
@@ -18,6 +19,9 @@ const DailyEntry = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [editingProduct, setEditingProduct] = useState<string | null>(null);
   const [editedProductName, setEditedProductName] = useState("");
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
+  const [historyTurn, setHistoryTurn] = useState<1 | 2>(1);
+  const [currentTab, setCurrentTab] = useState<"turn1" | "turn2">("turn1");
 
   // Custom hooks
   const { isAdminUnlocked, showPasswordDialog, validatePassword, toggleAdminMode, closePasswordDialog } = useAuth();
@@ -108,6 +112,19 @@ const DailyEntry = () => {
     syncMulliriT1ToT2(value);
   }, [updateTurn1Field, syncMulliriT1ToT2]);
 
+  const handleShowHistory = useCallback((turnNumber: 1 | 2) => {
+    setHistoryTurn(turnNumber);
+    setShowHistoryDialog(true);
+  }, []);
+
+  const handleRestoreHistory = useCallback((data: TurnData) => {
+    if (historyTurn === 1) {
+      setTurn1(data);
+    } else {
+      setTurn2(data);
+    }
+  }, [historyTurn, setTurn1, setTurn2]);
+
   // Save handler
   const handleSave = useCallback(() => {
     saveForNextDay();
@@ -128,42 +145,61 @@ const DailyEntry = () => {
 
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground">Regjistrimi Ditor</h2>
-            <p className="text-muted-foreground">Regjistro shitjet dhe inventarin për secilin turn</p>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Regjistrimi Ditor</h2>
+              <p className="text-sm text-muted-foreground">Regjistro shitjet dhe inventarin për secilin turn</p>
+            </div>
           </div>
+
           <div className="flex items-center gap-2 flex-wrap">
             <ProductMappingManager products={products} coffeeTypes={coffeeTypes} />
             <Button
               variant={isAdminUnlocked ? "default" : "outline"}
               size="sm"
               onClick={toggleAdminMode}
-              className="text-xs"
+              className="text-xs touch-manipulation min-h-[44px] sm:min-h-0"
             >
               {isAdminUnlocked ? <Unlock className="h-3 w-3 mr-1" /> : <Lock className="h-3 w-3 mr-1" />}
               {isAdminUnlocked ? "Admin (Mbyll)" : "Admin"}
             </Button>
-            <Button variant="outline" size="sm" onClick={loadFromPreviousDay} className="text-xs">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={loadFromPreviousDay} 
+              className="text-xs touch-manipulation min-h-[44px] sm:min-h-0"
+            >
               📥 Ngarko nga dje
             </Button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <Input
                 type="date"
                 value={selectedDate}
                 onChange={e => setSelectedDate(e.target.value)}
-                className="w-auto"
+                className="w-full sm:w-auto touch-manipulation min-h-[44px] sm:min-h-0"
               />
             </div>
           </div>
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="turn1" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="turn1">Turni 1</TabsTrigger>
-            <TabsTrigger value="turn2">Turni 2</TabsTrigger>
-          </TabsList>
+        <Tabs value={currentTab} onValueChange={(v) => setCurrentTab(v as "turn1" | "turn2")} className="w-full">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+            <TabsList className="grid w-full sm:w-auto grid-cols-2">
+              <TabsTrigger value="turn1">Turni 1</TabsTrigger>
+              <TabsTrigger value="turn2">Turni 2</TabsTrigger>
+            </TabsList>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleShowHistory(currentTab === "turn1" ? 1 : 2)}
+              className="w-full sm:w-auto"
+            >
+              <History className="h-4 w-4 mr-2" />
+              Shiko Historikun
+            </Button>
+          </div>
 
           <TabsContent value="turn1" className="space-y-4">
             <TurnSection
@@ -237,8 +273,11 @@ const DailyEntry = () => {
                 <p className="text-xl font-semibold">{turn2.xhiro.toLocaleString()} ALL</p>
               </div>
             </div>
-            <div className="mt-4">
-              <Button onClick={handleSave} className="w-full md:w-auto">
+            <div className="mt-4 flex flex-col sm:flex-row gap-2">
+              <Button 
+                onClick={handleSave} 
+                className="w-full sm:w-auto touch-manipulation min-h-[44px] sm:min-h-0"
+              >
                 💾 Ruaj të Dhënat
               </Button>
             </div>
@@ -250,6 +289,15 @@ const DailyEntry = () => {
           isOpen={showPasswordDialog}
           onClose={closePasswordDialog}
           onSubmit={validatePassword}
+        />
+
+        {/* History Dialog */}
+        <HistoryDialog
+          isOpen={showHistoryDialog}
+          onClose={() => setShowHistoryDialog(false)}
+          selectedDate={selectedDate}
+          turnNumber={historyTurn}
+          onRestore={handleRestoreHistory}
         />
       </div>
     </Layout>

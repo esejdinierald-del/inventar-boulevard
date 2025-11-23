@@ -14,7 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      daily_entry_history: {
+        Row: {
+          action_type: string | null
+          created_at: string
+          data: Json
+          entry_date: string
+          id: string
+          turn_number: number
+        }
+        Insert: {
+          action_type?: string | null
+          created_at?: string
+          data: Json
+          entry_date: string
+          id?: string
+          turn_number: number
+        }
+        Update: {
+          action_type?: string | null
+          created_at?: string
+          data?: Json
+          entry_date?: string
+          id?: string
+          turn_number?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
