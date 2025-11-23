@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Calendar, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
 interface ProductData {
   stokFillim: number;
@@ -30,6 +31,9 @@ interface TurnData {
 }
 const DailyEntry = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
 
   // Lista e produkteve nga Excel
   const products = ["Kanace", "u.vit", "heineken 330", "korona", "paulaner", "rose", "r.bull", "b.52", "crodino", "biter", "Bustina", "uje", "caj", "caj bio"];
@@ -162,6 +166,27 @@ const DailyEntry = () => {
       toast.error("Nuk ka të dhëna për ditën e kaluar");
     }
   };
+
+  const handlePasswordSubmit = () => {
+    if (passwordInput === "1983") {
+      setIsAdminUnlocked(true);
+      setShowPasswordDialog(false);
+      setPasswordInput("");
+      toast.success("Admin u hap me sukses!");
+    } else {
+      toast.error("Fjalëkalimi është gabim!");
+      setPasswordInput("");
+    }
+  };
+
+  const toggleAdminMode = () => {
+    if (isAdminUnlocked) {
+      setIsAdminUnlocked(false);
+      toast.info("Admin u mbyll");
+    } else {
+      setShowPasswordDialog(true);
+    }
+  };
   const handleSave = () => {
     const totalXhiro = calculateTotalXhiro();
     const mulliri1Dif = calculateMulliriDif(turn1.mulliriFillim, turn1.mulliriPerfund);
@@ -179,6 +204,15 @@ const DailyEntry = () => {
             <p className="text-muted-foreground">Regjistro shitjet dhe inventarin për secilin turn</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <Button 
+              variant={isAdminUnlocked ? "default" : "outline"} 
+              size="sm" 
+              onClick={toggleAdminMode}
+              className="text-xs"
+            >
+              {isAdminUnlocked ? <Unlock className="h-3 w-3 mr-1" /> : <Lock className="h-3 w-3 mr-1" />}
+              {isAdminUnlocked ? "Admin (Mbyll)" : "Admin"}
+            </Button>
             <Button variant="outline" size="sm" onClick={loadFromPreviousDay} className="text-xs">
               📥 Ngarko nga dje
             </Button>
@@ -223,16 +257,16 @@ const DailyEntry = () => {
                       return <TableRow key={product}>
                             <TableCell className="font-medium">{product}</TableCell>
                             <TableCell>
-                              <Input type="number" value={data.stokFillim || ""} onChange={e => updateTurn1Product(product, 'stokFillim', Number(e.target.value))} className="w-20" />
+                              <Input type="number" value={data.stokFillim || ""} onChange={e => updateTurn1Product(product, 'stokFillim', Number(e.target.value))} className="w-20" disabled={!isAdminUnlocked} />
                             </TableCell>
                             <TableCell>
-                              <Input type="number" value={data.gjendje || ""} onChange={e => updateTurn1Product(product, 'gjendje', Number(e.target.value))} className="w-20" />
+                              <Input type="number" value={data.gjendje || ""} onChange={e => updateTurn1Product(product, 'gjendje', Number(e.target.value))} className="w-20" disabled={!isAdminUnlocked} />
                             </TableCell>
                             <TableCell>
-                              <Input type="number" value={data.shiriti || ""} onChange={e => updateTurn1Product(product, 'shiriti', Number(e.target.value))} className="w-20" />
+                              <Input type="number" value={data.shiriti || ""} onChange={e => updateTurn1Product(product, 'shiriti', Number(e.target.value))} className="w-20" disabled={!isAdminUnlocked} />
                             </TableCell>
                             <TableCell>
-                              <Input type="number" value={data.furnizime || ""} onChange={e => updateTurn1Product(product, 'furnizime', Number(e.target.value))} className="w-20 bg-success/10" />
+                              <Input type="number" value={data.furnizime || ""} onChange={e => updateTurn1Product(product, 'furnizime', Number(e.target.value))} className="w-20 bg-success/10" disabled={!isAdminUnlocked} />
                             </TableCell>
                             <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
                               {dif}
@@ -348,16 +382,16 @@ const DailyEntry = () => {
                       return <TableRow key={product}>
                             <TableCell className="font-medium">{product}</TableCell>
                             <TableCell>
-                              <Input type="number" value={data.stokFillim || ""} onChange={e => updateTurn2Product(product, 'stokFillim', Number(e.target.value))} className="w-20" />
+                              <Input type="number" value={data.stokFillim || ""} onChange={e => updateTurn2Product(product, 'stokFillim', Number(e.target.value))} className="w-20" disabled={!isAdminUnlocked} />
                             </TableCell>
                             <TableCell>
-                              <Input type="number" value={data.gjendje || ""} onChange={e => updateTurn2Product(product, 'gjendje', Number(e.target.value))} className="w-20" />
+                              <Input type="number" value={data.gjendje || ""} onChange={e => updateTurn2Product(product, 'gjendje', Number(e.target.value))} className="w-20" disabled={!isAdminUnlocked} />
                             </TableCell>
                             <TableCell>
-                              <Input type="number" value={data.shiriti || ""} onChange={e => updateTurn2Product(product, 'shiriti', Number(e.target.value))} className="w-20" />
+                              <Input type="number" value={data.shiriti || ""} onChange={e => updateTurn2Product(product, 'shiriti', Number(e.target.value))} className="w-20" disabled={!isAdminUnlocked} />
                             </TableCell>
                             <TableCell>
-                              <Input type="number" value={data.furnizime || ""} onChange={e => updateTurn2Product(product, 'furnizime', Number(e.target.value))} className="w-20 bg-success/10" />
+                              <Input type="number" value={data.furnizime || ""} onChange={e => updateTurn2Product(product, 'furnizime', Number(e.target.value))} className="w-20 bg-success/10" disabled={!isAdminUnlocked} />
                             </TableCell>
                             <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
                               {dif}
@@ -520,6 +554,34 @@ const DailyEntry = () => {
             </div>
           </CardContent>
         </Card>
+
+        <AlertDialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Hyrje si Admin</AlertDialogTitle>
+              <AlertDialogDescription>
+                Fut fjalëkalimin për të modifikuar të dhënat e stokut.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-4">
+              <Input
+                type="password"
+                placeholder="Fjalëkalimi"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handlePasswordSubmit();
+                  }
+                }}
+              />
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setPasswordInput("")}>Anulo</AlertDialogCancel>
+              <AlertDialogAction onClick={handlePasswordSubmit}>Hyr</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>;
 };
