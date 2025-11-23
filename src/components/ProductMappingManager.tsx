@@ -278,15 +278,15 @@ export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingM
           )}
 
           {step === 'mapping' && (
-            <div className="flex-1 space-y-4 overflow-hidden flex flex-col">
-               <div>
+            <div className="flex-1 space-y-4 overflow-hidden flex flex-col min-h-0">
+               <div className="flex-shrink-0">
                 <Label>Mapo produktet dhe kafen nga shiriti me artikujt e sistemit</Label>
                 <p className="text-xs text-muted-foreground">
                   U gjetën {detectedProducts.length} artikuj unikë nga shiritat. Zgjidh se cili artikull i shiritit korrespondon me produktet ose kafet në sistem.
                 </p>
               </div>
 
-              <ScrollArea className="flex-1 pr-4">
+              <ScrollArea className="flex-1 min-h-0 pr-4">
                 <div className="space-y-2">
                   {detectedProducts.map((product, index) => {
                     const mapping = productMapping[product.name];
