@@ -61,41 +61,29 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     return () => clearTimeout(timeoutId);
   }, [turn1, turn2, selectedDate]);
 
-  // Auto-sync T1 stock to T2 when T1 changes (only specific fields to avoid cascading updates)
+  // Auto-sync T1 stock to T2 when T1 changes
   useEffect(() => {
     if (isInitialLoad.current) return;
     
     const timeoutId = setTimeout(() => {
-      setTurn2(prev => {
-        const newProducts = Object.fromEntries(
+      setTurn2(prev => ({
+        ...prev,
+        products: Object.fromEntries(
           Object.entries(prev.products).map(([key, data]) => {
             const t1Data = turn1.products[key];
             if (t1Data) {
               const calculatedStock = CalculationService.calculateNewStock(t1Data);
-              // Only update if the value actually changed
-              if (data.stokFillim !== calculatedStock) {
-                return [key, { ...data, stokFillim: calculatedStock }];
-              }
+              return [key, { ...data, stokFillim: calculatedStock }];
             }
             return [key, data];
           })
-        );
-        
-        // Only trigger update if mulliri or products actually changed
-        if (prev.mulliriFillim !== turn1.mulliriPerfund || 
-            JSON.stringify(prev.products) !== JSON.stringify(newProducts)) {
-          return {
-            ...prev,
-            products: newProducts,
-            mulliriFillim: turn1.mulliriPerfund
-          };
-        }
-        return prev;
-      });
-    }, 800); // Run after main save
+        ),
+        mulliriFillim: turn1.mulliriPerfund
+      }));
+    }, 800);
 
     return () => clearTimeout(timeoutId);
-  }, [turn1.mulliriPerfund, turn1.products]);
+  }, [turn1]);
 
   // Auto-save T2 stock to next day when T2 changes
   useEffect(() => {
@@ -269,32 +257,15 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     }));
   }, []);
 
-  // Memoized calculations with proper dependencies
+  // Memoized calculations
   const totalXhiro = useMemo(
     () => CalculationService.calculateTotalXhiro(turn1, turn2),
     [turn1.xhiro, turn2.xhiro]
   );
-  
-  // Memoize turn data to prevent unnecessary re-renders
-  const memoizedTurn1 = useMemo(() => turn1, [
-    turn1.xhiro,
-    turn1.mulliriFillim,
-    turn1.mulliriPerfund,
-    JSON.stringify(turn1.products),
-    JSON.stringify(turn1.coffee)
-  ]);
-  
-  const memoizedTurn2 = useMemo(() => turn2, [
-    turn2.xhiro,
-    turn2.mulliriFillim,
-    turn2.mulliriPerfund,
-    JSON.stringify(turn2.products),
-    JSON.stringify(turn2.coffee)
-  ]);
 
   return {
-    turn1: memoizedTurn1,
-    turn2: memoizedTurn2,
+    turn1,
+    turn2,
     setTurn1,
     setTurn2,
     updateTurn1Product,
