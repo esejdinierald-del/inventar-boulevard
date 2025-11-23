@@ -32,10 +32,47 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
   useEffect(() => {
     isInitialLoad.current = true;
     const savedData = StorageService.getDailyEntryData(selectedDate);
+    
+    console.log('🔍 Loading data for date:', selectedDate, 'Found data:', savedData);
+    
     if (savedData) {
-      setTurn1(savedData.turn1);
-      setTurn2(savedData.turn2);
+      // Merge saved data with current product structure
+      const emptyTurn1 = createEmptyTurnData();
+      const emptyTurn2 = createEmptyTurnData();
+      
+      const mergedTurn1 = {
+        ...emptyTurn1,
+        ...savedData.turn1,
+        products: {
+          ...emptyTurn1.products,
+          ...savedData.turn1.products
+        },
+        coffee: {
+          ...emptyTurn1.coffee,
+          ...savedData.turn1.coffee
+        }
+      };
+      
+      const mergedTurn2 = {
+        ...emptyTurn2,
+        ...savedData.turn2,
+        products: {
+          ...emptyTurn2.products,
+          ...savedData.turn2.products
+        },
+        coffee: {
+          ...emptyTurn2.coffee,
+          ...savedData.turn2.coffee
+        }
+      };
+      
+      console.log('✅ Merged turn1:', mergedTurn1);
+      console.log('✅ Merged turn2:', mergedTurn2);
+      
+      setTurn1(mergedTurn1);
+      setTurn2(mergedTurn2);
     } else {
+      console.log('⚠️ No saved data, using empty');
       setTurn1(createEmptyTurnData());
       setTurn2(createEmptyTurnData());
     }
