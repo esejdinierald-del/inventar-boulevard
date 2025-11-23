@@ -8,20 +8,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar } from "lucide-react";
 import { toast } from "sonner";
-
 interface ProductData {
   stokFillim: number;
   gjendje: number;
   shiriti: number;
   furnizime: number;
 }
-
 interface CoffeeData {
   [key: string]: number;
 }
-
 interface TurnData {
-  products: { [key: string]: ProductData };
+  products: {
+    [key: string]: ProductData;
+  };
   coffee: CoffeeData;
   xhiro: number;
   xhiroEmbelsira: number;
@@ -29,41 +28,44 @@ interface TurnData {
   mulliriFillim: number;
   mulliriPerfund: number;
 }
-
 const DailyEntry = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  
+
   // Lista e produkteve nga Excel
-  const products = [
-    "Kanace", "u.vit", "heineken 330", "korona", "paulaner", "rose",
-    "r.bull", "b.52", "crodino", "biter", "Bustina", "uje", "caj", "caj bio"
-  ];
-
-  const coffeeTypes = [
-    "KAFE", "KORRETO", "LATE", "AMERIKANE", "LECE.LECE", "KAPUCIN KAFE"
-  ];
-
+  const products = ["Kanace", "u.vit", "heineken 330", "korona", "paulaner", "rose", "r.bull", "b.52", "crodino", "biter", "Bustina", "uje", "caj", "caj bio"];
+  const coffeeTypes = ["KAFE", "KORRETO", "LATE", "AMERIKANE", "LECE.LECE", "KAPUCIN KAFE"];
   const [turn1, setTurn1] = useState<TurnData>({
-    products: Object.fromEntries(products.map(p => [p, { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 }])),
+    products: Object.fromEntries(products.map(p => [p, {
+      stokFillim: 0,
+      gjendje: 0,
+      shiriti: 0,
+      furnizime: 0
+    }])),
     coffee: Object.fromEntries(coffeeTypes.map(c => [c, 0])),
     xhiro: 0,
     xhiroEmbelsira: 0,
     akullore: 0,
     mulliriFillim: 0,
-    mulliriPerfund: 0,
+    mulliriPerfund: 0
   });
-
   const [turn2, setTurn2] = useState<TurnData>({
-    products: Object.fromEntries(products.map(p => [p, { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 }])),
+    products: Object.fromEntries(products.map(p => [p, {
+      stokFillim: 0,
+      gjendje: 0,
+      shiriti: 0,
+      furnizime: 0
+    }])),
     coffee: Object.fromEntries(coffeeTypes.map(c => [c, 0])),
     xhiro: 0,
     xhiroEmbelsira: 0,
     akullore: 0,
     mulliriFillim: 0,
-    mulliriPerfund: 0,
+    mulliriPerfund: 0
   });
-
-  const [furnizime, setFurnizime] = useState({ emertimi: "", vlera: 0 });
+  const [furnizime, setFurnizime] = useState({
+    emertimi: "",
+    vlera: 0
+  });
 
   // Formula: Diferenca = Stok Fillim + Furnizime - Gjendje - Shiriti
   const calculateDif = (stokFillim: number, furnizime: number, gjendje: number, shiriti: number) => {
@@ -107,11 +109,9 @@ const DailyEntry = () => {
   const calculateTotalXhiro = () => {
     return turn1.xhiro + turn2.xhiro;
   };
-
   const calculateTotalProducts = (turn: TurnData) => {
     return Object.values(turn.products).reduce((sum, p) => sum + p.shiriti, 0);
   };
-
   const calculateTotalCoffee = (turn: TurnData) => {
     return Object.values(turn.coffee).reduce((sum, qty) => sum + qty, 0);
   };
@@ -120,25 +120,24 @@ const DailyEntry = () => {
   const copyT1ToT2 = () => {
     setTurn2(prev => ({
       ...prev,
-      products: Object.fromEntries(
-        Object.entries(prev.products).map(([key, data]) => {
-          const t1Data = turn1.products[key];
-          const calculatedStock = t1Data.stokFillim + t1Data.furnizime - t1Data.shiriti;
-          return [key, { ...data, stokFillim: calculatedStock }];
-        })
-      )
+      products: Object.fromEntries(Object.entries(prev.products).map(([key, data]) => {
+        const t1Data = turn1.products[key];
+        const calculatedStock = t1Data.stokFillim + t1Data.furnizime - t1Data.shiriti;
+        return [key, {
+          ...data,
+          stokFillim: calculatedStock
+        }];
+      }))
     }));
     toast.success("Stoku i T1 u kalkulua dhe u kopjua në T2");
   };
 
   // Ruaj (Stok Fillim + Furnizime - Shiriti) T2 për ditën e nesërme
   const saveForNextDay = () => {
-    const nextDayStock = Object.fromEntries(
-      Object.entries(turn2.products).map(([key, data]) => {
-        const calculatedStock = data.stokFillim + data.furnizime - data.shiriti;
-        return [key, calculatedStock];
-      })
-    );
+    const nextDayStock = Object.fromEntries(Object.entries(turn2.products).map(([key, data]) => {
+      const calculatedStock = data.stokFillim + data.furnizime - data.shiriti;
+      return [key, calculatedStock];
+    }));
     localStorage.setItem(`stock_${selectedDate}`, JSON.stringify(nextDayStock));
     toast.success("Stoku u ruajt për ditën e nesërme!");
   };
@@ -148,38 +147,31 @@ const DailyEntry = () => {
     const yesterday = new Date(selectedDate);
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayDate = yesterday.toISOString().split('T')[0];
-    
     const savedStock = localStorage.getItem(`stock_${yesterdayDate}`);
     if (savedStock) {
       const stockData = JSON.parse(savedStock);
       setTurn1(prev => ({
         ...prev,
-        products: Object.fromEntries(
-          Object.entries(prev.products).map(([key, data]) => [
-            key,
-            { ...data, stokFillim: stockData[key] || 0 }
-          ])
-        )
+        products: Object.fromEntries(Object.entries(prev.products).map(([key, data]) => [key, {
+          ...data,
+          stokFillim: stockData[key] || 0
+        }]))
       }));
       toast.success("Stoku u ngarkua nga dita e kaluar!");
     } else {
       toast.error("Nuk ka të dhëna për ditën e kaluar");
     }
   };
-
   const handleSave = () => {
     const totalXhiro = calculateTotalXhiro();
     const mulliri1Dif = calculateMulliriDif(turn1.mulliriFillim, turn1.mulliriPerfund);
     const mulliri2Dif = calculateMulliriDif(turn2.mulliriFillim, turn2.mulliriPerfund);
-    
+
     // Automatikisht ruaj për ditën e nesërme
     saveForNextDay();
-    
     toast.success(`Të dhënat u ruajtën! Xhiro totale: ${totalXhiro.toLocaleString()} ALL`);
   };
-
-  return (
-    <Layout>
+  return <Layout>
       <div className="space-y-6 pb-20 md:pb-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -187,22 +179,12 @@ const DailyEntry = () => {
             <p className="text-muted-foreground">Regjistro shitjet dhe inventarin për secilin turn</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={loadFromPreviousDay}
-              className="text-xs"
-            >
+            <Button variant="outline" size="sm" onClick={loadFromPreviousDay} className="text-xs">
               📥 Ngarko nga dje
             </Button>
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <Input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-auto"
-              />
+              <Input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="w-auto" />
             </div>
           </div>
         </div>
@@ -217,12 +199,7 @@ const DailyEntry = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Produktet - Turni 1</CardTitle>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={copyT1ToT2}
-                  className="text-xs"
-                >
+                <Button variant="outline" size="sm" onClick={copyT1ToT2} className="text-xs">
                   Kopjo në T2 →
                 </Button>
               </CardHeader>
@@ -240,50 +217,28 @@ const DailyEntry = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {products.map((product) => {
-                        const data = turn1.products[product];
-                        const dif = calculateDif(data.stokFillim, data.furnizime, data.gjendje, data.shiriti);
-                        return (
-                          <TableRow key={product}>
+                      {products.map(product => {
+                      const data = turn1.products[product];
+                      const dif = calculateDif(data.stokFillim, data.furnizime, data.gjendje, data.shiriti);
+                      return <TableRow key={product}>
                             <TableCell className="font-medium">{product}</TableCell>
                             <TableCell>
-                              <Input 
-                                type="number" 
-                                value={data.stokFillim || ""} 
-                                onChange={(e) => updateTurn1Product(product, 'stokFillim', Number(e.target.value))}
-                                className="w-20" 
-                              />
+                              <Input type="number" value={data.stokFillim || ""} onChange={e => updateTurn1Product(product, 'stokFillim', Number(e.target.value))} className="w-20" />
                             </TableCell>
                             <TableCell>
-                              <Input 
-                                type="number" 
-                                value={data.gjendje || ""} 
-                                onChange={(e) => updateTurn1Product(product, 'gjendje', Number(e.target.value))}
-                                className="w-20" 
-                              />
+                              <Input type="number" value={data.gjendje || ""} onChange={e => updateTurn1Product(product, 'gjendje', Number(e.target.value))} className="w-20" />
                             </TableCell>
                             <TableCell>
-                              <Input 
-                                type="number" 
-                                value={data.shiriti || ""} 
-                                onChange={(e) => updateTurn1Product(product, 'shiriti', Number(e.target.value))}
-                                className="w-20" 
-                              />
+                              <Input type="number" value={data.shiriti || ""} onChange={e => updateTurn1Product(product, 'shiriti', Number(e.target.value))} className="w-20" />
                             </TableCell>
                             <TableCell>
-                              <Input 
-                                type="number" 
-                                value={data.furnizime || ""} 
-                                onChange={(e) => updateTurn1Product(product, 'furnizime', Number(e.target.value))}
-                                className="w-20 bg-success/10" 
-                              />
+                              <Input type="number" value={data.furnizime || ""} onChange={e => updateTurn1Product(product, 'furnizime', Number(e.target.value))} className="w-20 bg-success/10" />
                             </TableCell>
                             <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
                               {dif}
                             </TableCell>
-                          </TableRow>
-                        );
-                      })}
+                          </TableRow>;
+                    })}
                       <TableRow className="bg-muted/50">
                         <TableCell className="font-bold">TOTALI</TableCell>
                         <TableCell className="font-bold">{Object.values(turn1.products).reduce((sum, p) => sum + p.stokFillim, 0)}</TableCell>
@@ -312,22 +267,18 @@ const DailyEntry = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {coffeeTypes.map((coffee) => (
-                        <TableRow key={coffee}>
+                      {coffeeTypes.map(coffee => <TableRow key={coffee}>
                           <TableCell className="font-medium">{coffee}</TableCell>
                           <TableCell>
-                            <Input 
-                              type="number" 
-                              value={turn1.coffee[coffee] || ""} 
-                              onChange={(e) => setTurn1(prev => ({
-                                ...prev,
-                                coffee: { ...prev.coffee, [coffee]: Number(e.target.value) }
-                              }))}
-                              className="w-24" 
-                            />
+                            <Input type="number" value={turn1.coffee[coffee] || ""} onChange={e => setTurn1(prev => ({
+                          ...prev,
+                          coffee: {
+                            ...prev.coffee,
+                            [coffee]: Number(e.target.value)
+                          }
+                        }))} className="w-24" />
                           </TableCell>
-                        </TableRow>
-                      ))}
+                        </TableRow>)}
                       <TableRow className="bg-muted/50">
                         <TableCell className="font-bold">TOTALI</TableCell>
                         <TableCell className="font-bold text-primary">{calculateTotalCoffee(turn1)}</TableCell>
@@ -344,45 +295,22 @@ const DailyEntry = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Xhiro T1 (ALL)</Label>
-                    <Input 
-                      type="number" 
-                      value={turn1.xhiro || ""} 
-                      onChange={(e) => setTurn1(prev => ({ ...prev, xhiro: Number(e.target.value) }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Xhiro Embëlsirat T1 (ALL)</Label>
-                    <Input 
-                      type="number" 
-                      value={turn1.xhiroEmbelsira || ""} 
-                      onChange={(e) => setTurn1(prev => ({ ...prev, xhiroEmbelsira: Number(e.target.value) }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Akullore T1 (ALL)</Label>
-                    <Input 
-                      type="number" 
-                      value={turn1.akullore || ""} 
-                      onChange={(e) => setTurn1(prev => ({ ...prev, akullore: Number(e.target.value) }))}
-                    />
-                  </div>
+                  
+                  
+                  
                   <div className="space-y-2">
                     <Label>Mëlliri Fillim (kg)</Label>
-                    <Input 
-                      type="number" 
-                      value={turn1.mulliriFillim || ""} 
-                      onChange={(e) => setTurn1(prev => ({ ...prev, mulliriFillim: Number(e.target.value) }))}
-                    />
+                    <Input type="number" value={turn1.mulliriFillim || ""} onChange={e => setTurn1(prev => ({
+                    ...prev,
+                    mulliriFillim: Number(e.target.value)
+                  }))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Mëlliri Perfund (kg)</Label>
-                    <Input 
-                      type="number" 
-                      value={turn1.mulliriPerfund || ""} 
-                      onChange={(e) => setTurn1(prev => ({ ...prev, mulliriPerfund: Number(e.target.value) }))}
-                    />
+                    <Input type="number" value={turn1.mulliriPerfund || ""} onChange={e => setTurn1(prev => ({
+                    ...prev,
+                    mulliriPerfund: Number(e.target.value)
+                  }))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Diferenca Mëlliri (kg)</Label>
@@ -414,50 +342,28 @@ const DailyEntry = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {products.map((product) => {
-                        const data = turn2.products[product];
-                        const dif = calculateDif(data.stokFillim, data.furnizime, data.gjendje, data.shiriti);
-                        return (
-                          <TableRow key={product}>
+                      {products.map(product => {
+                      const data = turn2.products[product];
+                      const dif = calculateDif(data.stokFillim, data.furnizime, data.gjendje, data.shiriti);
+                      return <TableRow key={product}>
                             <TableCell className="font-medium">{product}</TableCell>
                             <TableCell>
-                              <Input 
-                                type="number" 
-                                value={data.stokFillim || ""} 
-                                onChange={(e) => updateTurn2Product(product, 'stokFillim', Number(e.target.value))}
-                                className="w-20" 
-                              />
+                              <Input type="number" value={data.stokFillim || ""} onChange={e => updateTurn2Product(product, 'stokFillim', Number(e.target.value))} className="w-20" />
                             </TableCell>
                             <TableCell>
-                              <Input 
-                                type="number" 
-                                value={data.gjendje || ""} 
-                                onChange={(e) => updateTurn2Product(product, 'gjendje', Number(e.target.value))}
-                                className="w-20" 
-                              />
+                              <Input type="number" value={data.gjendje || ""} onChange={e => updateTurn2Product(product, 'gjendje', Number(e.target.value))} className="w-20" />
                             </TableCell>
                             <TableCell>
-                              <Input 
-                                type="number" 
-                                value={data.shiriti || ""} 
-                                onChange={(e) => updateTurn2Product(product, 'shiriti', Number(e.target.value))}
-                                className="w-20" 
-                              />
+                              <Input type="number" value={data.shiriti || ""} onChange={e => updateTurn2Product(product, 'shiriti', Number(e.target.value))} className="w-20" />
                             </TableCell>
                             <TableCell>
-                              <Input 
-                                type="number" 
-                                value={data.furnizime || ""} 
-                                onChange={(e) => updateTurn2Product(product, 'furnizime', Number(e.target.value))}
-                                className="w-20 bg-success/10" 
-                              />
+                              <Input type="number" value={data.furnizime || ""} onChange={e => updateTurn2Product(product, 'furnizime', Number(e.target.value))} className="w-20 bg-success/10" />
                             </TableCell>
                             <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
                               {dif}
                             </TableCell>
-                          </TableRow>
-                        );
-                      })}
+                          </TableRow>;
+                    })}
                       <TableRow className="bg-muted/50">
                         <TableCell className="font-bold">TOTALI</TableCell>
                         <TableCell className="font-bold">{Object.values(turn2.products).reduce((sum, p) => sum + p.stokFillim, 0)}</TableCell>
@@ -486,22 +392,18 @@ const DailyEntry = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {coffeeTypes.map((coffee) => (
-                        <TableRow key={coffee}>
+                      {coffeeTypes.map(coffee => <TableRow key={coffee}>
                           <TableCell className="font-medium">{coffee}</TableCell>
                           <TableCell>
-                            <Input 
-                              type="number" 
-                              value={turn2.coffee[coffee] || ""} 
-                              onChange={(e) => setTurn2(prev => ({
-                                ...prev,
-                                coffee: { ...prev.coffee, [coffee]: Number(e.target.value) }
-                              }))}
-                              className="w-24" 
-                            />
+                            <Input type="number" value={turn2.coffee[coffee] || ""} onChange={e => setTurn2(prev => ({
+                          ...prev,
+                          coffee: {
+                            ...prev.coffee,
+                            [coffee]: Number(e.target.value)
+                          }
+                        }))} className="w-24" />
                           </TableCell>
-                        </TableRow>
-                      ))}
+                        </TableRow>)}
                       <TableRow className="bg-muted/50">
                         <TableCell className="font-bold">TOTALI</TableCell>
                         <TableCell className="font-bold text-primary">{calculateTotalCoffee(turn2)}</TableCell>
@@ -520,43 +422,38 @@ const DailyEntry = () => {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Xhiro T2 (ALL)</Label>
-                    <Input 
-                      type="number" 
-                      value={turn2.xhiro || ""} 
-                      onChange={(e) => setTurn2(prev => ({ ...prev, xhiro: Number(e.target.value) }))}
-                    />
+                    <Input type="number" value={turn2.xhiro || ""} onChange={e => setTurn2(prev => ({
+                    ...prev,
+                    xhiro: Number(e.target.value)
+                  }))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Xhiro Embëlsirat T2 (ALL)</Label>
-                    <Input 
-                      type="number" 
-                      value={turn2.xhiroEmbelsira || ""} 
-                      onChange={(e) => setTurn2(prev => ({ ...prev, xhiroEmbelsira: Number(e.target.value) }))}
-                    />
+                    <Input type="number" value={turn2.xhiroEmbelsira || ""} onChange={e => setTurn2(prev => ({
+                    ...prev,
+                    xhiroEmbelsira: Number(e.target.value)
+                  }))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Akullore T2 (ALL)</Label>
-                    <Input 
-                      type="number" 
-                      value={turn2.akullore || ""} 
-                      onChange={(e) => setTurn2(prev => ({ ...prev, akullore: Number(e.target.value) }))}
-                    />
+                    <Input type="number" value={turn2.akullore || ""} onChange={e => setTurn2(prev => ({
+                    ...prev,
+                    akullore: Number(e.target.value)
+                  }))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Mëlliri Fillim (kg)</Label>
-                    <Input 
-                      type="number" 
-                      value={turn2.mulliriFillim || ""} 
-                      onChange={(e) => setTurn2(prev => ({ ...prev, mulliriFillim: Number(e.target.value) }))}
-                    />
+                    <Input type="number" value={turn2.mulliriFillim || ""} onChange={e => setTurn2(prev => ({
+                    ...prev,
+                    mulliriFillim: Number(e.target.value)
+                  }))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Mëlliri Perfund (kg)</Label>
-                    <Input 
-                      type="number" 
-                      value={turn2.mulliriPerfund || ""} 
-                      onChange={(e) => setTurn2(prev => ({ ...prev, mulliriPerfund: Number(e.target.value) }))}
-                    />
+                    <Input type="number" value={turn2.mulliriPerfund || ""} onChange={e => setTurn2(prev => ({
+                    ...prev,
+                    mulliriPerfund: Number(e.target.value)
+                  }))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Diferenca Mëlliri (kg)</Label>
@@ -600,38 +497,30 @@ const DailyEntry = () => {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Emërtimi</Label>
-                <Input 
-                  placeholder="Përshkrimi i furnizimit" 
-                  value={furnizime.emertimi}
-                  onChange={(e) => setFurnizime(prev => ({ ...prev, emertimi: e.target.value }))}
-                />
+                <Input placeholder="Përshkrimi i furnizimit" value={furnizime.emertimi} onChange={e => setFurnizime(prev => ({
+                ...prev,
+                emertimi: e.target.value
+              }))} />
               </div>
               <div className="space-y-2">
                 <Label>Vlera (ALL)</Label>
-                <Input 
-                  type="number" 
-                  value={furnizime.vlera || ""}
-                  onChange={(e) => setFurnizime(prev => ({ ...prev, vlera: Number(e.target.value) }))}
-                />
+                <Input type="number" value={furnizime.vlera || ""} onChange={e => setFurnizime(prev => ({
+                ...prev,
+                vlera: Number(e.target.value)
+              }))} />
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button onClick={handleSave} className="flex-1 md:flex-none bg-gradient-primary">
                 💾 Ruaj të Dhënat
               </Button>
-              <Button 
-                onClick={saveForNextDay} 
-                variant="outline"
-                className="flex-1 md:flex-none"
-              >
+              <Button onClick={saveForNextDay} variant="outline" className="flex-1 md:flex-none">
                 📅 Ruaj për nesër
               </Button>
             </div>
           </CardContent>
         </Card>
       </div>
-    </Layout>
-  );
+    </Layout>;
 };
-
 export default DailyEntry;
