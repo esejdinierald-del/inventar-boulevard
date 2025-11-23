@@ -24,6 +24,11 @@ const isGjendjeDisabled = (data: ProductData, isAdminUnlocked: boolean): boolean
   return data.gjendje > 0 && !isAdminUnlocked;
 };
 
+const isFurnizimeDisabled = (data: ProductData, isAdminUnlocked: boolean): boolean => {
+  // Furnizime is disabled if it has been set (value > 0) and user is not admin
+  return data.furnizime > 0 && !isAdminUnlocked;
+};
+
 export const ProductTable = ({
   products,
   turnProducts,
@@ -143,7 +148,7 @@ export const ProductTable = ({
                     value={data.furnizime || ""}
                     onChange={(e) => onProductUpdate(product, 'furnizime', Number(e.target.value))}
                     className="w-20 bg-success/10"
-                    disabled={!isAdminUnlocked}
+                    disabled={isFurnizimeDisabled(data, isAdminUnlocked)}
                   />
                 </TableCell>
                 <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
