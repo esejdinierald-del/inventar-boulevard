@@ -52,15 +52,24 @@ export class StorageService {
   static async setProducts(products: string[]): Promise<void> {
     try {
       // Fshi të gjitha dhe ri-shto me order të ri
-      await supabase.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      const { error: deleteError } = await supabase
+        .from('products')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      if (deleteError) {
+        console.error('Error deleting products:', deleteError);
+      }
       
       const productsData = products.map((name, index) => ({
         name,
         sort_order: index
       }));
       
-      const { error } = await supabase.from('products').insert(productsData);
-      if (error) throw error;
+      if (productsData.length > 0) {
+        const { error } = await supabase.from('products').insert(productsData);
+        if (error) throw error;
+      }
       
       // Backup në localStorage
       this.setItem('products_list', products);
@@ -106,12 +115,15 @@ export class StorageService {
     try {
       const { error } = await supabase
         .from('next_day_stock')
-        .upsert({
-          stock_date: date,
-          stock_data: stock
-        }, {
-          onConflict: 'stock_date'
-        });
+        .upsert(
+          {
+            stock_date: date,
+            stock_data: stock
+          },
+          {
+            onConflict: 'stock_date'
+          }
+        );
       
       if (error) throw error;
       this.setItem(`stock_${date}`, stock);
@@ -151,17 +163,20 @@ export class StorageService {
         .from('next_day_stock')
         .select('stock_data')
         .eq('stock_date', date)
-        .single();
+        .maybeSingle();
       
       const { error } = await supabase
         .from('next_day_stock')
-        .upsert({
-          stock_date: date,
-          mulliri_fillim: value,
-          stock_data: existing?.stock_data || {}
-        }, {
-          onConflict: 'stock_date'
-        });
+        .upsert(
+          {
+            stock_date: date,
+            mulliri_fillim: value,
+            stock_data: existing?.stock_data || {}
+          },
+          {
+            onConflict: 'stock_date'
+          }
+        );
       
       if (error) throw error;
       this.setItem(`mulliri_fillim_${date}`, value.toString());
@@ -218,7 +233,14 @@ export class StorageService {
   static async setProductMapping(mapping: MappingData): Promise<void> {
     try {
       // Fshi të gjitha dhe ri-shto
-      await supabase.from('product_mappings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      const { error: deleteError } = await supabase
+        .from('product_mappings')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      if (deleteError) {
+        console.error('Error deleting mappings:', deleteError);
+      }
       
       const mappingsData = Object.entries(mapping).map(([receiptName, value]) => ({
         receipt_name: receiptName,
@@ -280,11 +302,16 @@ export class StorageService {
     try {
       const { error } = await supabase
         .from('daily_entries')
-        .upsert({
-          entry_date: date,
-          turn1_data: data.turn1 as any,
-          turn2_data: data.turn2 as any
-        });
+        .upsert(
+          {
+            entry_date: date,
+            turn1_data: data.turn1 as any,
+            turn2_data: data.turn2 as any
+          },
+          {
+            onConflict: 'entry_date'
+          }
+        );
       
       if (error) throw error;
       
