@@ -47,27 +47,56 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
 
   // Auto-save current day data when turn1 or turn2 changes (with debouncing)
   const lastSavedData = useRef<string>('');
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const forceSave = useCallback(() => {
+    const dataToSave = {
+      turn1,
+      turn2,
+      date: selectedDate
+    };
+    
+    const dataString = JSON.stringify(dataToSave);
+    if (dataString !== lastSavedData.current) {
+      StorageService.setDailyEntryData(selectedDate, dataToSave);
+      lastSavedData.current = dataString;
+    }
+  }, [turn1, turn2, selectedDate]);
   
   useEffect(() => {
     if (isInitialLoad.current) return;
     
-    const timeoutId = setTimeout(() => {
-      const dataToSave = {
-        turn1,
-        turn2,
-        date: selectedDate
-      };
-      
-      // Only save if data actually changed
-      const dataString = JSON.stringify(dataToSave);
-      if (dataString !== lastSavedData.current) {
-        StorageService.setDailyEntryData(selectedDate, dataToSave);
-        lastSavedData.current = dataString;
-      }
-    }, 500); // Debounce for 500ms
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    saveTimeoutRef.current = setTimeout(() => {
+      forceSave();
+    }, 300); // Reduced debounce for faster saves
 
-    return () => clearTimeout(timeoutId);
-  }, [turn1, turn2, selectedDate]);
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [turn1, turn2, selectedDate, forceSave]);
+
+  // Save before page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      forceSave();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [forceSave]);
+
+  // Save when date changes
+  useEffect(() => {
+    return () => {
+      forceSave();
+    };
+  }, [selectedDate]);
 
   // Auto-sync T1 stock to T2 when T1 changes (only sync specific critical fields)
   useEffect(() => {
