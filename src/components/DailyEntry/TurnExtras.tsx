@@ -77,7 +77,7 @@ export const TurnExtras = ({
               onMulliriPerfundUpdate(value);
             }
           }}
-          disabled={isFieldDisabled}
+          disabled={turnData.mulliriPerfund > 0 && !isAdminUnlocked}
         />
       </div>
 
