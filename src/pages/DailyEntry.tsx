@@ -1,421 +1,123 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Calendar, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
-import { ReceiptScanner } from "@/components/ReceiptScanner";
 import { ProductMappingManager } from "@/components/ProductMappingManager";
-import { GrinderPhotoScanner } from "@/components/GrinderPhotoScanner";
-interface ProductData {
-  stokFillim: number;
-  gjendje: number;
-  shiriti: number;
-  furnizime: number;
-}
-interface CoffeeData {
-  [key: string]: number;
-}
-interface TurnData {
-  products: {
-    [key: string]: ProductData;
-  };
-  coffee: CoffeeData;
-  xhiro: number;
-  xhiroEmbelsira: number;
-  akullore: number;
-  mulliriFillim: number;
-  mulliriPerfund: number;
-}
+import { AdminPasswordDialog } from "@/components/DailyEntry/AdminPasswordDialog";
+import { TurnSection } from "@/components/DailyEntry/TurnSection";
+import { useAuth } from "@/hooks/useAuth";
+import { useProductList } from "@/hooks/useProductList";
+import { useTurnData } from "@/hooks/useTurnData";
+import { TurnData } from "@/types/turn.types";
+
 const DailyEntry = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const [passwordInput, setPasswordInput] = useState("");
-
-  // Kontrollo nëse data është në të kaluarën
-  const isPastDate = () => {
-    const today = new Date().toISOString().split('T')[0];
-    return selectedDate < today;
-  };
-
-  // Kontrollo nëse fushat duhet të jenë disabled
-  const isFieldDisabled = () => {
-    return isPastDate() && !isAdminUnlocked;
-  };
-
-  // Lista dinamike e produkteve dhe kafeve
-  const defaultProducts = ["Kanace", "u.vit", "heineken 330", "korona", "paulaner", "rose", "r.bull", "b.52", "crodino", "biter", "Bustina", "uje", "caj", "caj bio"];
-  const defaultCoffeeTypes = ["KAFE", "KORRETO", "LATE", "AMERIKANE", "LECE.LECE", "KAPUCIN KAFE"];
-  
-  const [products, setProducts] = useState<string[]>(() => {
-    const saved = localStorage.getItem('products_list');
-    return saved ? JSON.parse(saved) : defaultProducts;
-  });
-  
-  const [coffeeTypes, setCoffeeTypes] = useState<string[]>(() => {
-    const saved = localStorage.getItem('coffee_types_list');
-    return saved ? JSON.parse(saved) : defaultCoffeeTypes;
-  });
-  
-  const [newProductName, setNewProductName] = useState("");
-  const [newCoffeeName, setNewCoffeeName] = useState("");
   const [editingProduct, setEditingProduct] = useState<string | null>(null);
   const [editedProductName, setEditedProductName] = useState("");
-  const [turn1, setTurn1] = useState<TurnData>({
-    products: Object.fromEntries(products.map(p => [p, {
-      stokFillim: 0,
-      gjendje: 0,
-      shiriti: 0,
-      furnizime: 0
-    }])),
-    coffee: Object.fromEntries(coffeeTypes.map(c => [c, 0])),
-    xhiro: 0,
-    xhiroEmbelsira: 0,
-    akullore: 0,
-    mulliriFillim: 0,
-    mulliriPerfund: 0
-  });
-  const [turn2, setTurn2] = useState<TurnData>({
-    products: Object.fromEntries(products.map(p => [p, {
-      stokFillim: 0,
-      gjendje: 0,
-      shiriti: 0,
-      furnizime: 0
-    }])),
-    coffee: Object.fromEntries(coffeeTypes.map(c => [c, 0])),
-    xhiro: 0,
-    xhiroEmbelsira: 0,
-    akullore: 0,
-    mulliriFillim: 0,
-    mulliriPerfund: 0
-  });
-  const [furnizime, setFurnizime] = useState({
-    emertimi: "",
-    vlera: 0
-  });
 
-  // Formula: Diferenca = Stok Fillim + Furnizime - Gjendje - Shiriti
-  const calculateDif = (stokFillim: number, furnizime: number, gjendje: number, shiriti: number) => {
-    return stokFillim + furnizime - gjendje - shiriti;
-  };
+  // Custom hooks
+  const { isAdminUnlocked, showPasswordDialog, validatePassword, toggleAdminMode, closePasswordDialog } = useAuth();
+  const { products, coffeeTypes, addProduct, deleteProduct, updateProduct } = useProductList();
+  const {
+    turn1,
+    turn2,
+    setTurn1,
+    setTurn2,
+    updateTurn1Product,
+    updateTurn2Product,
+    syncMulliriT1ToT2,
+    copyT1ToT2,
+    saveForNextDay,
+    loadFromPreviousDay,
+    handleReceiptDataT1,
+    handleReceiptDataT2,
+    totalXhiro,
+  } = useTurnData({ products, coffeeTypes, selectedDate });
 
-  // Formula: Diferenca Mulliri = (Mulliri Perfund - Mulliri Fillim) - Total Kafe
-  const calculateMulliriDif = (fillim: number, perfund: number, totalKafe: number) => {
-    return (perfund - fillim) - totalKafe;
-  };
+  // Date validation
+  const isPastDate = useCallback(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return selectedDate < today;
+  }, [selectedDate]);
 
-  // Update product data for Turn 1
-  const updateTurn1Product = (product: string, field: keyof ProductData, value: number) => {
-    setTurn1(prev => ({
-      ...prev,
-      products: {
-        ...prev.products,
-        [product]: {
-          ...prev.products[product],
-          [field]: value
-        }
-      }
-    }));
-  };
+  const isFieldDisabled = useCallback(() => {
+    return isPastDate() && !isAdminUnlocked;
+  }, [isPastDate, isAdminUnlocked]);
 
-  // Kopjo automatikisht Mulliri Perfund T1 në Mulliri Fillim T2
-  const syncMulliriT1ToT2 = (perfundValue: number) => {
-    setTurn2(prev => ({
-      ...prev,
-      mulliriFillim: perfundValue
-    }));
-  };
-
-  // Update product data for Turn 2
-  const updateTurn2Product = (product: string, field: keyof ProductData, value: number) => {
-    setTurn2(prev => ({
-      ...prev,
-      products: {
-        ...prev.products,
-        [product]: {
-          ...prev.products[product],
-          [field]: value
-        }
-      }
-    }));
-  };
-
-  // Calculate totals
-  const calculateTotalXhiro = () => {
-    return turn1.xhiro + turn2.xhiro;
-  };
-  const calculateTotalProducts = (turn: TurnData) => {
-    return Object.values(turn.products).reduce((sum, p) => sum + p.shiriti, 0);
-  };
-  const calculateTotalCoffee = (turn: TurnData) => {
-    return Object.values(turn.coffee).reduce((sum, qty) => sum + qty, 0);
-  };
-
-  // Kopjon (Stok Fillim + Furnizime - Shiriti) T1 në Stok Fillim T2
-  const copyT1ToT2 = () => {
-    setTurn2(prev => ({
-      ...prev,
-      products: Object.fromEntries(Object.entries(prev.products).map(([key, data]) => {
-        const t1Data = turn1.products[key];
-        const calculatedStock = t1Data.stokFillim + t1Data.furnizime - t1Data.shiriti;
-        return [key, {
-          ...data,
-          stokFillim: calculatedStock
-        }];
-      }))
-    }));
-    toast.success("Stoku i T1 u kalkulua dhe u kopjua në T2");
-  };
-
-  // Ruaj (Stok Fillim + Furnizime - Shiriti) T2 dhe Mulliri Perfund T2 për ditën e nesërme
-  const saveForNextDay = () => {
-    const nextDayStock = Object.fromEntries(Object.entries(turn2.products).map(([key, data]) => {
-      const calculatedStock = data.stokFillim + data.furnizime - data.shiriti;
-      return [key, calculatedStock];
-    }));
-    const nextDay = new Date(selectedDate);
-    nextDay.setDate(nextDay.getDate() + 1);
-    const nextDayDate = nextDay.toISOString().split('T')[0];
-    
-    localStorage.setItem(`stock_${nextDayDate}`, JSON.stringify(nextDayStock));
-    localStorage.setItem(`mulliri_fillim_${nextDayDate}`, turn2.mulliriPerfund.toString());
-    toast.success("Stoku dhe mulliri u ruajtën për ditën e nesërme!");
-  };
-
-  // Ngarko stokun dhe mullirin nga dita e kaluar
-  const loadFromPreviousDay = () => {
-    const savedStock = localStorage.getItem(`stock_${selectedDate}`);
-    const savedMulliri = localStorage.getItem(`mulliri_fillim_${selectedDate}`);
-    
-    if (savedStock || savedMulliri) {
-      if (savedStock) {
-        const stockData = JSON.parse(savedStock);
-        setTurn1(prev => ({
-          ...prev,
-          products: Object.fromEntries(Object.entries(prev.products).map(([key, data]) => [key, {
-            ...data,
-            stokFillim: stockData[key] || 0
-          }]))
-        }));
-      }
-      
-      if (savedMulliri) {
-        setTurn1(prev => ({
-          ...prev,
-          mulliriFillim: Number(savedMulliri)
-        }));
-      }
-      
-      toast.success("Të dhënat u ngarkuan nga dita e kaluar!");
-    } else {
-      toast.error("Nuk ka të dhëna për këtë datë");
-    }
-  };
-
-  const handlePasswordSubmit = () => {
-    if (passwordInput === "1983") {
-      setIsAdminUnlocked(true);
-      setShowPasswordDialog(false);
-      setPasswordInput("");
-      toast.success("Admin u hap me sukses!");
-    } else {
-      toast.error("Fjalëkalimi është gabim!");
-      setPasswordInput("");
-    }
-  };
-
-  const toggleAdminMode = () => {
-    if (isAdminUnlocked) {
-      setIsAdminUnlocked(false);
-      toast.info("Admin u mbyll");
-    } else {
-      setShowPasswordDialog(true);
-    }
-  };
-  // Shto produkt të ri
-  const addProduct = () => {
-    if (!newProductName.trim()) {
-      toast.error("Shkruaj emrin e produktit!");
-      return;
-    }
-    if (products.includes(newProductName.trim())) {
-      toast.error("Produkti ekziston tashmë!");
-      return;
-    }
-    const updatedProducts = [...products, newProductName.trim()];
-    setProducts(updatedProducts);
-    localStorage.setItem('products_list', JSON.stringify(updatedProducts));
-    
-    // Shto produktin në të dy turnet
-    setTurn1(prev => ({
-      ...prev,
-      products: {
-        ...prev.products,
-        [newProductName.trim()]: { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 }
-      }
-    }));
-    setTurn2(prev => ({
-      ...prev,
-      products: {
-        ...prev.products,
-        [newProductName.trim()]: { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 }
-      }
-    }));
-    
-    setNewProductName("");
-    toast.success("Produkti u shtua!");
-  };
-
-  // Fshi produkt
-  const deleteProduct = (productName: string) => {
-    const updatedProducts = products.filter(p => p !== productName);
-    setProducts(updatedProducts);
-    localStorage.setItem('products_list', JSON.stringify(updatedProducts));
-    
-    setTurn1(prev => {
-      const newProducts = { ...prev.products };
-      delete newProducts[productName];
-      return { ...prev, products: newProducts };
-    });
-    setTurn2(prev => {
-      const newProducts = { ...prev.products };
-      delete newProducts[productName];
-      return { ...prev, products: newProducts };
-    });
-    
-    toast.success("Produkti u fshi!");
-  };
-
-  // Modifiko emrin e produktit
-  const startEditingProduct = (productName: string) => {
+  // Product editing
+  const startEditingProduct = useCallback((productName: string) => {
     setEditingProduct(productName);
     setEditedProductName(productName);
-  };
+  }, []);
 
-  const cancelEditingProduct = () => {
+  const cancelEditingProduct = useCallback(() => {
     setEditingProduct(null);
     setEditedProductName("");
-  };
+  }, []);
 
-  const saveEditedProduct = (oldName: string) => {
-    if (!editedProductName.trim()) {
-      toast.error("Emri i produktit nuk mund të jetë bosh!");
-      return;
-    }
-    if (editedProductName.trim() === oldName) {
-      cancelEditingProduct();
-      return;
-    }
-    if (products.includes(editedProductName.trim())) {
-      toast.error("Produkti me këtë emër ekziston tashmë!");
-      return;
-    }
-
-    const updatedProducts = products.map(p => p === oldName ? editedProductName.trim() : p);
-    setProducts(updatedProducts);
-    localStorage.setItem('products_list', JSON.stringify(updatedProducts));
-
-    // Përditëso mapimet e ruajtura të shiritave
-    const savedMapping = localStorage.getItem('receipt_product_mapping');
-    if (savedMapping) {
-      const mapping: { [key: string]: any } = JSON.parse(savedMapping);
-      const updatedMapping: { [key: string]: any } = {};
-      
-      // Përditëso çdo mapping që përdor emrin e vjetër të produktit
-      Object.entries(mapping).forEach(([receiptName, value]) => {
-        // Handle both old format (string) and new format (object)
-        if (typeof value === 'string') {
-          // Old format
-          if (value === oldName) {
-            updatedMapping[receiptName] = editedProductName.trim();
-          } else {
-            updatedMapping[receiptName] = value;
-          }
-        } else if (value && typeof value === 'object') {
-          // New format with type and name
-          if (value.type === 'product' && value.name === oldName) {
-            updatedMapping[receiptName] = { type: 'product', name: editedProductName.trim() };
-          } else {
-            updatedMapping[receiptName] = value;
-          }
-        }
+  const saveEditedProduct = useCallback((oldName: string) => {
+    if (updateProduct(oldName, editedProductName)) {
+      // Update turn data
+      setTurn1(prev => {
+        const newProducts = { ...prev.products };
+        const oldData = newProducts[oldName];
+        delete newProducts[oldName];
+        newProducts[editedProductName.trim()] = oldData;
+        return { ...prev, products: newProducts };
       });
-      
-      localStorage.setItem('receipt_product_mapping', JSON.stringify(updatedMapping));
+      setTurn2(prev => {
+        const newProducts = { ...prev.products };
+        const oldData = newProducts[oldName];
+        delete newProducts[oldName];
+        newProducts[editedProductName.trim()] = oldData;
+        return { ...prev, products: newProducts };
+      });
+      cancelEditingProduct();
     }
+  }, [editedProductName, updateProduct, cancelEditingProduct]);
 
-    // Përditëso të dhënat në të dy turnet
-    setTurn1(prev => {
-      const newProducts = { ...prev.products };
-      const oldData = newProducts[oldName];
-      delete newProducts[oldName];
-      newProducts[editedProductName.trim()] = oldData;
-      return { ...prev, products: newProducts };
-    });
-    setTurn2(prev => {
-      const newProducts = { ...prev.products };
-      const oldData = newProducts[oldName];
-      delete newProducts[oldName];
-      newProducts[editedProductName.trim()] = oldData;
-      return { ...prev, products: newProducts };
-    });
+  // Update turn data
+  const updateTurn1Field = useCallback((field: keyof TurnData, value: number) => {
+    setTurn1(prev => ({ ...prev, [field]: value }));
+  }, []);
 
-    toast.success("Emri i produktit dhe mapimet u përditësuan!");
-    cancelEditingProduct();
-  };
+  const updateTurn2Field = useCallback((field: keyof TurnData, value: number) => {
+    setTurn2(prev => ({ ...prev, [field]: value }));
+  }, []);
 
-  // Handle data extracted from receipt scanner
-  const handleReceiptDataT1 = (productData: { [key: string]: number }, coffeeData: { [key: string]: number }) => {
-    // Update products
+  const updateTurn1Coffee = useCallback((coffee: string, value: number) => {
     setTurn1(prev => ({
       ...prev,
-      products: Object.fromEntries(
-        Object.entries(prev.products).map(([key, value]) => [
-          key,
-          productData[key] !== undefined ? { ...value, shiriti: productData[key] } : value
-        ])
-      ),
-      coffee: {
-        ...prev.coffee,
-        ...coffeeData
-      }
+      coffee: { ...prev.coffee, [coffee]: value }
     }));
-  };
+  }, []);
 
-  const handleReceiptDataT2 = (productData: { [key: string]: number }, coffeeData: { [key: string]: number }) => {
-    // Update products
+  const updateTurn2Coffee = useCallback((coffee: string, value: number) => {
     setTurn2(prev => ({
       ...prev,
-      products: Object.fromEntries(
-        Object.entries(prev.products).map(([key, value]) => [
-          key,
-          productData[key] !== undefined ? { ...value, shiriti: productData[key] } : value
-        ])
-      ),
-      coffee: {
-        ...prev.coffee,
-        ...coffeeData
-      }
+      coffee: { ...prev.coffee, [coffee]: value }
     }));
-  };
+  }, []);
 
-  const handleSave = () => {
-    const totalXhiro = calculateTotalXhiro();
-    const mulliri1Dif = calculateMulliriDif(turn1.mulliriFillim, turn1.mulliriPerfund, calculateTotalCoffee(turn1));
-    const mulliri2Dif = calculateMulliriDif(turn2.mulliriFillim, turn2.mulliriPerfund, calculateTotalCoffee(turn2));
+  const handleMulliriT1Update = useCallback((value: number) => {
+    updateTurn1Field('mulliriPerfund', value);
+    syncMulliriT1ToT2(value);
+  }, [updateTurn1Field, syncMulliriT1ToT2]);
 
-    // Automatikisht ruaj për ditën e nesërme
+  // Save handler
+  const handleSave = useCallback(() => {
     saveForNextDay();
     toast.success(`Të dhënat u ruajtën! Xhiro totale: ${totalXhiro.toLocaleString()} ALL`);
-  };
-  return <Layout>
+  }, [saveForNextDay, totalXhiro]);
+
+  return (
+    <Layout>
       <div className="space-y-6 pb-20 md:pb-6">
+        {/* Past date warning */}
         {isPastDate() && !isAdminUnlocked && (
           <div className="rounded-lg border border-warning/50 bg-warning/10 p-4">
             <p className="text-sm font-medium text-warning">
@@ -423,7 +125,8 @@ const DailyEntry = () => {
             </p>
           </div>
         )}
-        
+
+        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-3xl font-bold tracking-tight text-foreground">Regjistrimi Ditor</h2>
@@ -431,9 +134,9 @@ const DailyEntry = () => {
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <ProductMappingManager products={products} coffeeTypes={coffeeTypes} />
-            <Button 
-              variant={isAdminUnlocked ? "default" : "outline"} 
-              size="sm" 
+            <Button
+              variant={isAdminUnlocked ? "default" : "outline"}
+              size="sm"
               onClick={toggleAdminMode}
               className="text-xs"
             >
@@ -445,11 +148,17 @@ const DailyEntry = () => {
             </Button>
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <Input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="w-auto" />
+              <Input
+                type="date"
+                value={selectedDate}
+                onChange={e => setSelectedDate(e.target.value)}
+                className="w-auto"
+              />
             </div>
           </div>
         </div>
 
+        {/* Tabs */}
         <Tabs defaultValue="turn1" className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="turn1">Turni 1</TabsTrigger>
@@ -457,535 +166,94 @@ const DailyEntry = () => {
           </TabsList>
 
           <TabsContent value="turn1" className="space-y-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Produktet - Turni 1</CardTitle>
-                <div className="flex gap-2">
-                  <ReceiptScanner
-                    products={products}
-                    coffeeTypes={coffeeTypes}
-                    onDataExtracted={handleReceiptDataT1}
-                    turnName="T1"
-                    turnData={turn1}
-                    calculateDif={calculateDif}
-                  />
-                  <Button variant="outline" size="sm" onClick={copyT1ToT2} className="text-xs">
-                    Kopjo në T2 →
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Produkti</TableHead>
-                        <TableHead>Stok Fillim</TableHead>
-                        <TableHead>Gjendje</TableHead>
-                        <TableHead>Shiriti</TableHead>
-                        <TableHead>Furnizime</TableHead>
-                        <TableHead>Dif</TableHead>
-                        {isAdminUnlocked && <TableHead className="w-[50px]"></TableHead>}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {products.map(product => {
-                      const data = turn1.products[product];
-                      const dif = calculateDif(data.stokFillim, data.furnizime, data.gjendje, data.shiriti);
-                      return <TableRow key={product}>
-                            <TableCell className="font-medium">
-                              {isAdminUnlocked && editingProduct === product ? (
-                                <div className="flex items-center gap-2">
-                                  <Input
-                                    value={editedProductName}
-                                    onChange={(e) => setEditedProductName(e.target.value)}
-                                    className="w-32"
-                                    autoFocus
-                                  />
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => saveEditedProduct(product)}
-                                    className="h-7 px-2 text-success"
-                                  >
-                                    ✓
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={cancelEditingProduct}
-                                    className="h-7 px-2 text-destructive"
-                                  >
-                                    ✕
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-2">
-                                  <span>{product}</span>
-                                  {isAdminUnlocked && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => startEditingProduct(product)}
-                                      className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                                    >
-                                      ✏️
-                                    </Button>
-                                  )}
-                                </div>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <Input type="number" value={data.stokFillim || ""} onChange={e => updateTurn1Product(product, 'stokFillim', Number(e.target.value))} className="w-20" disabled={!isAdminUnlocked} />
-                            </TableCell>
-                            <TableCell>
-                              <Input type="number" value={data.gjendje || ""} onChange={e => updateTurn1Product(product, 'gjendje', Number(e.target.value))} className="w-20" disabled={isFieldDisabled()} />
-                            </TableCell>
-                            <TableCell>
-                              <Input type="number" value={data.shiriti || ""} onChange={e => updateTurn1Product(product, 'shiriti', Number(e.target.value))} className="w-20" disabled={isFieldDisabled()} />
-                            </TableCell>
-                            <TableCell>
-                              <Input type="number" value={data.furnizime || ""} onChange={e => updateTurn1Product(product, 'furnizime', Number(e.target.value))} className="w-20 bg-success/10" disabled={isFieldDisabled()} />
-                            </TableCell>
-                            <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
-                              {dif}
-                            </TableCell>
-                            {isAdminUnlocked && (
-                              <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => deleteProduct(product)}
-                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                >
-                                  ✕
-                                </Button>
-                              </TableCell>
-                            )}
-                          </TableRow>;
-                    })}
-                      {isAdminUnlocked && (
-                        <TableRow className="bg-accent/20">
-                          <TableCell>
-                            <Input
-                              placeholder="Emri i produktit të ri..."
-                              value={newProductName}
-                              onChange={(e) => setNewProductName(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') addProduct();
-                              }}
-                              className="h-8"
-                            />
-                          </TableCell>
-                          <TableCell colSpan={5}>
-                            <Button onClick={addProduct} size="sm" variant="outline" className="h-8">
-                              + Shto Produkt
-                            </Button>
-                          </TableCell>
-                          <TableCell></TableCell>
-                        </TableRow>
-                      )}
-                      <TableRow className="bg-muted/50">
-                        <TableCell className="font-bold">TOTALI</TableCell>
-                        <TableCell className="font-bold">{Object.values(turn1.products).reduce((sum, p) => sum + p.stokFillim, 0)}</TableCell>
-                        <TableCell className="font-bold">{Object.values(turn1.products).reduce((sum, p) => sum + p.gjendje, 0)}</TableCell>
-                        <TableCell className="font-bold text-primary">{calculateTotalProducts(turn1)}</TableCell>
-                        <TableCell className="font-bold text-success">{Object.values(turn1.products).reduce((sum, p) => sum + p.furnizime, 0)}</TableCell>
-                        <TableCell className="font-bold">{Object.values(turn1.products).reduce((sum, p) => sum + calculateDif(p.stokFillim, p.furnizime, p.gjendje, p.shiriti), 0)}</TableCell>
-                        {isAdminUnlocked && <TableCell></TableCell>}
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Kafe - Turni 1</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Lloji</TableHead>
-                        <TableHead>Sasia</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {coffeeTypes.map(coffee => <TableRow key={coffee}>
-                          <TableCell className="font-medium">{coffee}</TableCell>
-                          <TableCell>
-                            <Input type="number" value={turn1.coffee[coffee] || ""} onChange={e => setTurn1(prev => ({
-                          ...prev,
-                          coffee: {
-                            ...prev.coffee,
-                            [coffee]: Number(e.target.value)
-                          }
-                        }))} className="w-24" disabled={isFieldDisabled()} />
-                          </TableCell>
-                        </TableRow>)}
-                      <TableRow className="bg-muted/50">
-                        <TableCell className="font-bold">TOTALI</TableCell>
-                        <TableCell className="font-bold text-primary">{calculateTotalCoffee(turn1)}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Xhiro dhe Të Dhëna Shtesë - Turni 1</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  
-                  
-                  
-                  <div className="space-y-2">
-                    <Label>Mulliri Fillim (kg)</Label>
-                    <Input type="number" value={turn1.mulliriFillim || ""} onChange={e => setTurn1(prev => ({
-                    ...prev,
-                    mulliriFillim: Number(e.target.value)
-                  }))} disabled={!isAdminUnlocked} />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label>Mulliri Perfund (kg)</Label>
-                      <GrinderPhotoScanner 
-                        turnName="T1"
-                        onValueExtracted={(value) => {
-                          setTurn1(prev => ({
-                            ...prev,
-                            mulliriPerfund: value
-                          }));
-                          syncMulliriT1ToT2(value);
-                        }}
-                      />
-                    </div>
-                    <Input type="number" value={turn1.mulliriPerfund || ""} onChange={e => {
-                    const perfundValue = Number(e.target.value);
-                    setTurn1(prev => ({
-                      ...prev,
-                      mulliriPerfund: perfundValue
-                    }));
-                    syncMulliriT1ToT2(perfundValue);
-                  }} disabled={isFieldDisabled()} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Diferenca Mulliri (kg)</Label>
-                    <div className="rounded-md border border-input bg-muted px-3 py-2 text-sm font-medium">
-                      {calculateMulliriDif(turn1.mulliriFillim, turn1.mulliriPerfund, calculateTotalCoffee(turn1))}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <TurnSection
+              turnName="1"
+              turnData={turn1}
+              products={products}
+              coffeeTypes={coffeeTypes}
+              isAdminUnlocked={isAdminUnlocked}
+              isFieldDisabled={isFieldDisabled()}
+              showCopyButton
+              onProductUpdate={updateTurn1Product}
+              onCoffeeUpdate={updateTurn1Coffee}
+              onTurnUpdate={updateTurn1Field}
+              onMulliriPerfundUpdate={handleMulliriT1Update}
+              onCopyToNextTurn={copyT1ToT2}
+              onReceiptData={handleReceiptDataT1}
+              onProductDelete={deleteProduct}
+              onProductAdd={addProduct}
+              onProductEdit={startEditingProduct}
+              editingProduct={editingProduct}
+              editedProductName={editedProductName}
+              onEditedNameChange={setEditedProductName}
+              onSaveEdit={saveEditedProduct}
+              onCancelEdit={cancelEditingProduct}
+            />
           </TabsContent>
 
           <TabsContent value="turn2" className="space-y-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Produktet - Turni 2</CardTitle>
-                <ReceiptScanner
-                  products={products}
-                  coffeeTypes={coffeeTypes}
-                  onDataExtracted={handleReceiptDataT2}
-                  turnName="T2"
-                  turnData={turn2}
-                  calculateDif={calculateDif}
-                />
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Produkti</TableHead>
-                        <TableHead>Stok Fillim</TableHead>
-                        <TableHead>Gjendje</TableHead>
-                        <TableHead>Shiriti</TableHead>
-                        <TableHead>Furnizime</TableHead>
-                        <TableHead>Dif</TableHead>
-                        {isAdminUnlocked && <TableHead className="w-[50px]"></TableHead>}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {products.map(product => {
-                      const data = turn2.products[product];
-                      const dif = calculateDif(data.stokFillim, data.furnizime, data.gjendje, data.shiriti);
-                      return <TableRow key={product}>
-                            <TableCell className="font-medium">
-                              {isAdminUnlocked && editingProduct === product ? (
-                                <div className="flex items-center gap-2">
-                                  <Input
-                                    value={editedProductName}
-                                    onChange={(e) => setEditedProductName(e.target.value)}
-                                    className="w-32"
-                                    autoFocus
-                                  />
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => saveEditedProduct(product)}
-                                    className="h-7 px-2 text-success"
-                                  >
-                                    ✓
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={cancelEditingProduct}
-                                    className="h-7 px-2 text-destructive"
-                                  >
-                                    ✕
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-2">
-                                  <span>{product}</span>
-                                  {isAdminUnlocked && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => startEditingProduct(product)}
-                                      className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                                    >
-                                      ✏️
-                                    </Button>
-                                  )}
-                                </div>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <Input type="number" value={data.stokFillim || ""} onChange={e => updateTurn2Product(product, 'stokFillim', Number(e.target.value))} className="w-20" disabled={!isAdminUnlocked} />
-                            </TableCell>
-                            <TableCell>
-                              <Input type="number" value={data.gjendje || ""} onChange={e => updateTurn2Product(product, 'gjendje', Number(e.target.value))} className="w-20" disabled={isFieldDisabled()} />
-                            </TableCell>
-                            <TableCell>
-                              <Input type="number" value={data.shiriti || ""} onChange={e => updateTurn2Product(product, 'shiriti', Number(e.target.value))} className="w-20" disabled={isFieldDisabled()} />
-                            </TableCell>
-                            <TableCell>
-                              <Input type="number" value={data.furnizime || ""} onChange={e => updateTurn2Product(product, 'furnizime', Number(e.target.value))} className="w-20 bg-success/10" disabled={isFieldDisabled()} />
-                            </TableCell>
-                            <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
-                              {dif}
-                            </TableCell>
-                            {isAdminUnlocked && (
-                              <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => deleteProduct(product)}
-                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                >
-                                  ✕
-                                </Button>
-                              </TableCell>
-                            )}
-                          </TableRow>;
-                    })}
-                      <TableRow className="bg-muted/50">
-                        <TableCell className="font-bold">TOTALI</TableCell>
-                        <TableCell className="font-bold">{Object.values(turn2.products).reduce((sum, p) => sum + p.stokFillim, 0)}</TableCell>
-                        <TableCell className="font-bold">{Object.values(turn2.products).reduce((sum, p) => sum + p.gjendje, 0)}</TableCell>
-                        <TableCell className="font-bold text-primary">{calculateTotalProducts(turn2)}</TableCell>
-                        <TableCell className="font-bold text-success">{Object.values(turn2.products).reduce((sum, p) => sum + p.furnizime, 0)}</TableCell>
-                        <TableCell className="font-bold">{Object.values(turn2.products).reduce((sum, p) => sum + calculateDif(p.stokFillim, p.furnizime, p.gjendje, p.shiriti), 0)}</TableCell>
-                        {isAdminUnlocked && <TableCell></TableCell>}
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Kafe - Turni 2</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Lloji</TableHead>
-                        <TableHead>Sasia</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {coffeeTypes.map(coffee => <TableRow key={coffee}>
-                          <TableCell className="font-medium">{coffee}</TableCell>
-                          <TableCell>
-                            <Input type="number" value={turn2.coffee[coffee] || ""} onChange={e => setTurn2(prev => ({
-                          ...prev,
-                          coffee: {
-                            ...prev.coffee,
-                            [coffee]: Number(e.target.value)
-                          }
-                        }))} className="w-24" disabled={isFieldDisabled()} />
-                          </TableCell>
-                        </TableRow>)}
-                      <TableRow className="bg-muted/50">
-                        <TableCell className="font-bold">TOTALI</TableCell>
-                        <TableCell className="font-bold text-primary">{calculateTotalCoffee(turn2)}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Xhiro dhe Të Dhëna Shtesë - Turni 2</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Xhiro T2 (ALL)</Label>
-                    <Input type="number" value={turn2.xhiro || ""} onChange={e => setTurn2(prev => ({
-                    ...prev,
-                    xhiro: Number(e.target.value)
-                  }))} disabled={isFieldDisabled()} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Xhiro Embëlsirat T2 (ALL)</Label>
-                    <Input type="number" value={turn2.xhiroEmbelsira || ""} onChange={e => setTurn2(prev => ({
-                    ...prev,
-                    xhiroEmbelsira: Number(e.target.value)
-                  }))} disabled={isFieldDisabled()} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Akullore T2 (ALL)</Label>
-                    <Input type="number" value={turn2.akullore || ""} onChange={e => setTurn2(prev => ({
-                    ...prev,
-                    akullore: Number(e.target.value)
-                  }))} disabled={isFieldDisabled()} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Mulliri Fillim (kg)</Label>
-                    <Input type="number" value={turn2.mulliriFillim || ""} onChange={e => setTurn2(prev => ({
-                    ...prev,
-                    mulliriFillim: Number(e.target.value)
-                  }))} disabled={true} className="bg-muted/50" title="Automatkisht nga Mulliri Perfund T1" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label>Mulliri Perfund (kg)</Label>
-                      <GrinderPhotoScanner 
-                        turnName="T2"
-                        onValueExtracted={(value) => {
-                          setTurn2(prev => ({
-                            ...prev,
-                            mulliriPerfund: value
-                          }));
-                        }}
-                      />
-                    </div>
-                    <Input type="number" value={turn2.mulliriPerfund || ""} onChange={e => setTurn2(prev => ({
-                    ...prev,
-                    mulliriPerfund: Number(e.target.value)
-                  }))} disabled={isFieldDisabled()} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Diferenca Mulliri (kg)</Label>
-                    <div className="rounded-md border border-input bg-muted px-3 py-2 text-sm font-medium">
-                      {calculateMulliriDif(turn2.mulliriFillim, turn2.mulliriPerfund, calculateTotalCoffee(turn2))}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <TurnSection
+              turnName="2"
+              turnData={turn2}
+              products={products}
+              coffeeTypes={coffeeTypes}
+              isAdminUnlocked={isAdminUnlocked}
+              isFieldDisabled={isFieldDisabled()}
+              mulliriFillimDisabled
+              onProductUpdate={updateTurn2Product}
+              onCoffeeUpdate={updateTurn2Coffee}
+              onTurnUpdate={updateTurn2Field}
+              onMulliriPerfundUpdate={(value) => updateTurn2Field('mulliriPerfund', value)}
+              onReceiptData={handleReceiptDataT2}
+              onProductDelete={deleteProduct}
+              onProductAdd={addProduct}
+              onProductEdit={startEditingProduct}
+              editingProduct={editingProduct}
+              editedProductName={editedProductName}
+              onEditedNameChange={setEditedProductName}
+              onSaveEdit={saveEditedProduct}
+              onCancelEdit={cancelEditingProduct}
+            />
           </TabsContent>
         </Tabs>
 
+        {/* Summary Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Përmbledhje Ditore</CardTitle>
+            <CardTitle>Përmbledhje</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-lg border border-border p-4">
+              <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Xhiro Totale</p>
-                <p className="text-2xl font-bold text-primary">{calculateTotalXhiro().toLocaleString()} ALL</p>
+                <p className="text-2xl font-bold">{totalXhiro.toLocaleString()} ALL</p>
               </div>
-              <div className="rounded-lg border border-border p-4">
-                <p className="text-sm text-muted-foreground">Total Produkte T1</p>
-                <p className="text-2xl font-bold">{calculateTotalProducts(turn1)}</p>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Xhiro T1</p>
+                <p className="text-xl font-semibold">{turn1.xhiro.toLocaleString()} ALL</p>
               </div>
-              <div className="rounded-lg border border-border p-4">
-                <p className="text-sm text-muted-foreground">Total Produkte T2</p>
-                <p className="text-2xl font-bold">{calculateTotalProducts(turn2)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Furnizime dhe Shpenzime</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Emërtimi</Label>
-                <Input placeholder="Përshkrimi i furnizimit" value={furnizime.emertimi} onChange={e => setFurnizime(prev => ({
-                ...prev,
-                emertimi: e.target.value
-              }))} disabled={isFieldDisabled()} />
-              </div>
-              <div className="space-y-2">
-                <Label>Vlera (ALL)</Label>
-                <Input type="number" value={furnizime.vlera || ""} onChange={e => setFurnizime(prev => ({
-                ...prev,
-                vlera: Number(e.target.value)
-              }))} disabled={isFieldDisabled()} />
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Xhiro T2</p>
+                <p className="text-xl font-semibold">{turn2.xhiro.toLocaleString()} ALL</p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={handleSave} className="flex-1 md:flex-none bg-gradient-primary" disabled={isFieldDisabled()}>
+            <div className="mt-4">
+              <Button onClick={handleSave} className="w-full md:w-auto">
                 💾 Ruaj të Dhënat
               </Button>
-              <Button onClick={saveForNextDay} variant="outline" className="flex-1 md:flex-none" disabled={isFieldDisabled()}>
-                📅 Ruaj për nesër
-              </Button>
             </div>
           </CardContent>
         </Card>
 
-        <AlertDialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Hyrje si Admin</AlertDialogTitle>
-              <AlertDialogDescription>
-                Fut fjalëkalimin për të modifikuar të dhënat e stokut.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="py-4">
-              <Input
-                type="password"
-                placeholder="Fjalëkalimi"
-                value={passwordInput}
-                onChange={(e) => setPasswordInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handlePasswordSubmit();
-                  }
-                }}
-              />
-            </div>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setPasswordInput("")}>Anulo</AlertDialogCancel>
-              <AlertDialogAction onClick={handlePasswordSubmit}>Hyr</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* Admin Password Dialog */}
+        <AdminPasswordDialog
+          isOpen={showPasswordDialog}
+          onClose={closePasswordDialog}
+          onSubmit={validatePassword}
+        />
       </div>
-    </Layout>;
+    </Layout>
+  );
 };
+
 export default DailyEntry;
