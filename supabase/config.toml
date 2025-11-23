@@ -1,0 +1,4 @@
+project_id = "avjmjgopullzxkdxihmw"
+
+[functions.analyze-receipt]
+verify_jwt = false

@@ -372,6 +372,8 @@ const DailyEntry = () => {
                     products={products}
                     onDataExtracted={handleReceiptDataT1}
                     turnName="T1"
+                    turnData={turn1}
+                    calculateDif={calculateDif}
                   />
                   <Button variant="outline" size="sm" onClick={copyT1ToT2} className="text-xs">
                     Kopjo në T2 →
@@ -545,6 +547,8 @@ const DailyEntry = () => {
                   products={products}
                   onDataExtracted={handleReceiptDataT2}
                   turnName="T2"
+                  turnData={turn2}
+                  calculateDif={calculateDif}
                 />
               </CardHeader>
               <CardContent>
