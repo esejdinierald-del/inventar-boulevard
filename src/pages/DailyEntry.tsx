@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Lock, Unlock, History } from "lucide-react";
 import { toast } from "sonner";
 import { ProductMappingManager } from "@/components/ProductMappingManager";
-import { AdminPasswordDialog } from "@/components/DailyEntry/AdminPasswordDialog";
+
 import { TurnSection } from "@/components/DailyEntry/TurnSection";
 import { HistoryDialog } from "@/components/DailyEntry/HistoryDialog";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,7 +24,7 @@ const DailyEntry = () => {
   const [currentTab, setCurrentTab] = useState<"turn1" | "turn2">("turn1");
 
   // Custom hooks
-  const { isAdminUnlocked, showPasswordDialog, validatePassword, toggleAdminMode, closePasswordDialog } = useAuth();
+  const { isAdmin, signOut } = useAuth();
   const { products, coffeeTypes, addProduct, deleteProduct, updateProduct } = useProductList();
   const {
     turn1,
@@ -49,8 +49,8 @@ const DailyEntry = () => {
   }, [selectedDate]);
 
   const isFieldDisabled = useCallback(() => {
-    return isPastDate() && !isAdminUnlocked;
-  }, [isPastDate, isAdminUnlocked]);
+    return isPastDate() && !isAdmin;
+  }, [isPastDate, isAdmin]);
 
   // Product editing
   const startEditingProduct = useCallback((productName: string) => {
@@ -135,7 +135,7 @@ const DailyEntry = () => {
     <Layout>
       <div className="space-y-6 pb-20 md:pb-6">
         {/* Past date warning */}
-        {isPastDate() && !isAdminUnlocked && (
+        {isPastDate() && !isAdmin && (
           <div className="rounded-lg border border-warning/50 bg-warning/10 p-4">
             <p className="text-sm font-medium text-warning">
               🔒 Po shikon të dhëna nga e kaluara. Vetëm shikimi është i lejuar. Për të modifikuar, hyr si Admin.
@@ -153,15 +153,15 @@ const DailyEntry = () => {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <ProductMappingManager products={products} coffeeTypes={coffeeTypes} />
+            {isAdmin && <ProductMappingManager products={products} coffeeTypes={coffeeTypes} />}
             <Button
-              variant={isAdminUnlocked ? "default" : "outline"}
+              variant="outline"
               size="sm"
-              onClick={toggleAdminMode}
+              onClick={signOut}
               className="text-xs touch-manipulation min-h-[44px] sm:min-h-0"
             >
-              {isAdminUnlocked ? <Unlock className="h-3 w-3 mr-1" /> : <Lock className="h-3 w-3 mr-1" />}
-              {isAdminUnlocked ? "Admin (Mbyll)" : "Admin"}
+              <Unlock className="h-3 w-3 mr-1" />
+              Dil
             </Button>
             <Button 
               variant="outline" 
@@ -207,7 +207,7 @@ const DailyEntry = () => {
               turnData={turn1}
               products={products}
               coffeeTypes={coffeeTypes}
-              isAdminUnlocked={isAdminUnlocked}
+              isAdminUnlocked={isAdmin}
               isFieldDisabled={isFieldDisabled()}
               showCopyButton
               onProductUpdate={updateTurn1Product}
@@ -233,7 +233,7 @@ const DailyEntry = () => {
               turnData={turn2}
               products={products}
               coffeeTypes={coffeeTypes}
-              isAdminUnlocked={isAdminUnlocked}
+              isAdminUnlocked={isAdmin}
               isFieldDisabled={isFieldDisabled()}
               mulliriFillimDisabled
               onProductUpdate={updateTurn2Product}
@@ -283,13 +283,6 @@ const DailyEntry = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Admin Password Dialog */}
-        <AdminPasswordDialog
-          isOpen={showPasswordDialog}
-          onClose={closePasswordDialog}
-          onSubmit={validatePassword}
-        />
 
         {/* History Dialog */}
         <HistoryDialog
