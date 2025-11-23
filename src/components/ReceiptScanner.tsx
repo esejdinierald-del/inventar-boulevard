@@ -12,7 +12,11 @@ import { supabase } from "@/integrations/supabase/client";
 interface ReceiptScannerProps {
   products: string[];
   coffeeTypes: string[];
-  onDataExtracted: (productData: { [key: string]: number }, coffeeData: { [key: string]: number }) => void;
+  onDataExtracted: (
+    productData: { [key: string]: number }, 
+    coffeeData: { [key: string]: number },
+    total?: number
+  ) => void;
   turnName: string;
   turnData: {
     products: {
@@ -34,6 +38,7 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
   const [extractedText, setExtractedText] = useState<string>("");
   const [mappedData, setMappedData] = useState<{ [key: string]: { type: 'product' | 'coffee'; name: string; quantity: number } }>({});
   const [receiptItems, setReceiptItems] = useState<Array<{ name: string; quantity: number }>>([]);
+  const [receiptTotal, setReceiptTotal] = useState<number | null>(null);
   const [showDifferenceWarning, setShowDifferenceWarning] = useState(false);
   const [differencesList, setDifferencesList] = useState<Array<{ product: string; dif: number }>>([]);
 
@@ -84,8 +89,9 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
 
         console.log("Receipt data:", data);
         
-        // Save the receipt items for later use
+        // Save the receipt items and total for later use
         setReceiptItems(data.items);
+        setReceiptTotal(data.total || null);
 
         // Build extracted text from AI response
         let text = "SHIRITI I SHITJEVE\n";
@@ -145,6 +151,10 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
         });
         
         text += "------------------------\n";
+        if (data.total) {
+          text += `TOTALI: ${data.total.toFixed(2)} ALL\n`;
+          text += "------------------------\n";
+        }
         
         setExtractedText(text);
         toast.success("Fotoja u analizua me sukses!");
@@ -197,14 +207,20 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
       console.log("Final product data:", productData);
       console.log("Final coffee data:", coffeeData);
       console.log("Unmapped/ignored items:", unmappedCount);
+      console.log("Receipt total:", receiptTotal);
 
       if (Object.keys(productData).length > 0 || Object.keys(coffeeData).length > 0) {
-        console.log("✅ Calling onDataExtracted with product and coffee data");
-        onDataExtracted(productData, coffeeData);
+        console.log("✅ Calling onDataExtracted with product, coffee data and total");
+        onDataExtracted(productData, coffeeData, receiptTotal || undefined);
         const total = Object.keys(productData).length + Object.keys(coffeeData).length;
-        const message = unmappedCount > 0 
+        let message = unmappedCount > 0 
           ? `${total} artikuj u ngarkuan (${unmappedCount} të pamapuar u injoruan)`
           : `${total} artikuj u ngarkuan!`;
+        
+        if (receiptTotal) {
+          message += ` - Xhiro: ${receiptTotal.toFixed(2)} ALL`;
+        }
+        
         toast.success(message);
         setIsOpen(false);
         resetState();
@@ -240,6 +256,7 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
     setExtractedText("");
     setMappedData({});
     setReceiptItems([]);
+    setReceiptTotal(null);
   };
 
   const handleClose = () => {
