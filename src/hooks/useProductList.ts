@@ -85,11 +85,18 @@ export const useProductList = () => {
     return true;
   }, [products]);
 
+  const resetToDefaults = useCallback(() => {
+    setProducts(DEFAULT_PRODUCTS);
+    StorageService.setProducts(DEFAULT_PRODUCTS);
+    toast.success("Produktet u rivendosën në vlerat default!");
+  }, []);
+
   return {
     products,
     coffeeTypes,
     addProduct,
     deleteProduct,
     updateProduct,
+    resetToDefaults,
   };
 };

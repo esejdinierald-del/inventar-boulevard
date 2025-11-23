@@ -21,7 +21,7 @@ const DailyEntryTurn2 = () => {
   const navigate = useNavigate();
 
   const { isAdminUnlocked, showPasswordDialog, validatePassword, toggleAdminMode, closePasswordDialog } = useAuth();
-  const { products, coffeeTypes, addProduct, deleteProduct, updateProduct } = useProductList();
+  const { products, coffeeTypes, addProduct, deleteProduct, updateProduct, resetToDefaults } = useProductList();
 
   const {
     turn2,
@@ -155,7 +155,7 @@ const DailyEntryTurn2 = () => {
           </Button>
         </div>
 
-        <ProductMappingManager products={products} coffeeTypes={coffeeTypes} />
+        <ProductMappingManager products={products} coffeeTypes={coffeeTypes} onResetProducts={resetToDefaults} />
 
         <AdminPasswordDialog
           isOpen={showPasswordDialog}
