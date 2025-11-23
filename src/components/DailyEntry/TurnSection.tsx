@@ -114,6 +114,7 @@ export const TurnSection = ({
             coffeeTypes={coffeeTypes}
             coffeeData={turnData.coffee}
             isFieldDisabled={isFieldDisabled}
+            isAdminUnlocked={isAdminUnlocked}
             onCoffeeUpdate={onCoffeeUpdate}
           />
         </CardContent>

@@ -7,6 +7,7 @@ interface CoffeeTableProps {
   coffeeTypes: string[];
   coffeeData: CoffeeData;
   isFieldDisabled: boolean;
+  isAdminUnlocked: boolean;
   onCoffeeUpdate: (coffee: string, value: number) => void;
 }
 
@@ -14,6 +15,7 @@ export const CoffeeTable = ({
   coffeeTypes,
   coffeeData,
   isFieldDisabled,
+  isAdminUnlocked,
   onCoffeeUpdate,
 }: CoffeeTableProps) => {
   const totalCoffee = Object.values(coffeeData).reduce((sum, qty) => sum + qty, 0);
@@ -38,7 +40,7 @@ export const CoffeeTable = ({
                   value={coffeeData[coffee] || ""}
                   onChange={(e) => onCoffeeUpdate(coffee, Number(e.target.value))}
                   className="w-24"
-                  disabled={isFieldDisabled}
+                  disabled={!isAdminUnlocked}
                 />
               </TableCell>
             </TableRow>

@@ -19,6 +19,11 @@ interface ProductTableProps {
   onCancelEdit: () => void;
 }
 
+const isGjendjeDisabled = (data: ProductData, isAdminUnlocked: boolean): boolean => {
+  // Gjendje is disabled if it has been set (value > 0) and user is not admin
+  return data.gjendje > 0 && !isAdminUnlocked;
+};
+
 export const ProductTable = ({
   products,
   turnProducts,
@@ -118,7 +123,7 @@ export const ProductTable = ({
                     value={data.gjendje || ""}
                     onChange={(e) => onProductUpdate(product, 'gjendje', Number(e.target.value))}
                     className="w-20"
-                    disabled={isFieldDisabled}
+                    disabled={isGjendjeDisabled(data, isAdminUnlocked)}
                   />
                 </TableCell>
                 <TableCell>
@@ -128,7 +133,7 @@ export const ProductTable = ({
                     value={data.shiriti || ""}
                     onChange={(e) => onProductUpdate(product, 'shiriti', Number(e.target.value))}
                     className="w-20"
-                    disabled={isFieldDisabled}
+                    disabled={!isAdminUnlocked}
                   />
                 </TableCell>
                 <TableCell>
