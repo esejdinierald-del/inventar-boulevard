@@ -261,6 +261,19 @@ const DailyEntry = () => {
                 <p className="text-xl font-semibold">{turn2.xhiro.toLocaleString()} ALL</p>
               </div>
             </div>
+            
+            {/* Storage Test Alert */}
+            <div className="mt-4 p-3 rounded-lg bg-warning/10 border border-warning/50">
+              <p className="text-sm font-medium text-warning">
+                ⚠️ Nëse të dhënat nuk po ruhen, provo këto:
+              </p>
+              <ul className="text-xs text-muted-foreground mt-2 space-y-1 ml-4">
+                <li>• Mbyll tabs të tjera të kësaj faqeje</li>
+                <li>• Rifresko faqen (tërhiq poshtë)</li>
+                <li>• Kontrollo që "Private Browsing" të jetë OFF</li>
+              </ul>
+            </div>
+
             <div className="mt-4 flex gap-2 flex-wrap">
               <Button onClick={handleSave} className="flex-1 md:flex-initial">
                 💾 Ruaj të Dhënat
