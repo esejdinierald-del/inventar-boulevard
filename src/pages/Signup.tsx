@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -16,6 +17,7 @@ export default function Signup() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
+      toast.error('Fjalëkalimet nuk përputhen!');
       return;
     }
     setIsLoading(true);
