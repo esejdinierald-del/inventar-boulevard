@@ -63,6 +63,8 @@ export const TurnExtras = ({
             <GrinderPhotoScanner
               turnName={turnName}
               onValueExtracted={onMulliriPerfundUpdate}
+              isAdminUnlocked={isAdminUnlocked}
+              currentValue={turnData.mulliriPerfund}
             />
           )}
         </div>

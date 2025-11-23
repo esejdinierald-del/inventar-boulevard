@@ -9,9 +9,11 @@ import { supabase } from "@/integrations/supabase/client";
 interface GrinderPhotoScannerProps {
   onValueExtracted: (value: number) => void;
   turnName: string;
+  isAdminUnlocked: boolean;
+  currentValue: number;
 }
 
-export const GrinderPhotoScanner = ({ onValueExtracted, turnName }: GrinderPhotoScannerProps) => {
+export const GrinderPhotoScanner = ({ onValueExtracted, turnName, isAdminUnlocked, currentValue }: GrinderPhotoScannerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -91,6 +93,7 @@ export const GrinderPhotoScanner = ({ onValueExtracted, turnName }: GrinderPhoto
         onClick={() => setIsOpen(true)}
         className="text-xs"
         type="button"
+        disabled={currentValue > 0 && !isAdminUnlocked}
       >
         <Camera className="h-3 w-3 mr-1" />
         📸 Ngarko Foto Mulliri
