@@ -23,7 +23,7 @@ const DailyEntry = () => {
 
   // Custom hooks
   const { isAdminUnlocked, showPasswordDialog, validatePassword, toggleAdminMode, closePasswordDialog } = useAuth();
-  const { products, coffeeTypes, addProduct, deleteProduct, updateProduct } = useProductList();
+  const { products, coffeeTypes, addProduct, deleteProduct, updateProduct, resetToDefaults } = useProductList();
   const {
     turn1,
     turn2,
@@ -135,7 +135,7 @@ const DailyEntry = () => {
             <p className="text-muted-foreground">Regjistro shitjet dhe inventarin për secilin turn</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <ProductMappingManager products={products} coffeeTypes={coffeeTypes} />
+            <ProductMappingManager products={products} coffeeTypes={coffeeTypes} onResetProducts={resetToDefaults} />
             <Button
               variant={isAdminUnlocked ? "default" : "outline"}
               size="sm"
