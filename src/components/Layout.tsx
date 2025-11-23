@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Coffee, Home, FileText, BarChart3, Download, BookOpen } from "lucide-react";
+import { Coffee, Home, FileText, BarChart3, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -28,7 +28,6 @@ const Layout = ({ children }: LayoutProps) => {
     { to: "/", icon: Home, label: "Dashboard" },
     { to: "/daily", icon: FileText, label: "Regjistrimi Ditor" },
     { to: "/reports", icon: BarChart3, label: "Raporte" },
-    { to: "/manual", icon: BookOpen, label: "Manual" },
   ];
 
   return (
@@ -53,23 +52,21 @@ const Layout = ({ children }: LayoutProps) => {
               </Button>
             )}
             <nav className="hidden md:flex items-center gap-6">
-              {navItems.map((item) => {
-                const isActive = location.pathname === item.to || 
-                  (item.to === '/daily' && location.pathname.startsWith('/daily'));
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    className={cn(
-                      "flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary",
-                      isActive ? "text-primary" : "text-muted-foreground"
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                  </Link>
-                );
-              })}
+              {navItems.map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={cn(
+                    "flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary",
+                    location.pathname === item.to
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              ))}
             </nav>
           </div>
         </div>
@@ -82,26 +79,22 @@ const Layout = ({ children }: LayoutProps) => {
 
       {/* Mobile Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card">
-        <div className="grid grid-cols-4 gap-1 p-2">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.to || 
-              (item.to === '/daily' && location.pathname.startsWith('/daily'));
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  "flex flex-col items-center gap-1 rounded-lg p-3 text-xs font-medium transition-colors",
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                <item.icon className="h-5 w-5" />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
+        <div className="grid grid-cols-3 gap-1 p-2">
+          {navItems.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={cn(
+                "flex flex-col items-center gap-1 rounded-lg p-3 text-xs font-medium transition-colors",
+                location.pathname === item.to
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <item.icon className="h-5 w-5" />
+              <span>{item.label}</span>
+            </Link>
+          ))}
         </div>
       </nav>
     </div>

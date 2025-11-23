@@ -3,9 +3,9 @@ import { StorageService } from '@/services/storage.service';
 import { toast } from 'sonner';
 
 const DEFAULT_PRODUCTS = [
-  "Kanace", "Uje .vit", "Heineken shishe", "Korona", "Paulaner", 
-  "Rose", "Red.bull", "B 52", "Crodino", "Biter", 
-  "Bustina", "Uje", "Caj", "Caj bio"
+  "Kanace", "u.vit", "heineken 330", "korona", "paulaner", 
+  "rose", "r.bull", "b.52", "crodino", "biter", 
+  "Bustina", "uje", "caj", "caj bio"
 ];
 
 const DEFAULT_COFFEE_TYPES = [
@@ -85,18 +85,11 @@ export const useProductList = () => {
     return true;
   }, [products]);
 
-  const resetToDefaults = useCallback(() => {
-    setProducts(DEFAULT_PRODUCTS);
-    StorageService.setProducts(DEFAULT_PRODUCTS);
-    toast.success("Produktet u rivendosën në vlerat default!");
-  }, []);
-
   return {
     products,
     coffeeTypes,
     addProduct,
     deleteProduct,
     updateProduct,
-    resetToDefaults,
   };
 };

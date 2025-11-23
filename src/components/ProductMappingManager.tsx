@@ -13,7 +13,6 @@ import { AdminPasswordDialog } from "@/components/DailyEntry/AdminPasswordDialog
 interface ProductMappingManagerProps {
   products: string[];
   coffeeTypes: string[];
-  onResetProducts?: () => void;
 }
 
 interface ReceiptProduct {
@@ -23,7 +22,7 @@ interface ReceiptProduct {
 
 const ADMIN_PASSWORD = "1983";
 
-export const ProductMappingManager = ({ products, coffeeTypes, onResetProducts }: ProductMappingManagerProps) => {
+export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingManagerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -166,12 +165,6 @@ export const ProductMappingManager = ({ products, coffeeTypes, onResetProducts }
     setShowPasswordDialog(true);
   };
 
-  const handleResetProducts = () => {
-    if (confirm("A je i sigurt që dëshiron të rivendosësh produktet në vlerat default? Kjo do të fshijë të gjitha ndryshimet e bëra.")) {
-      onResetProducts?.();
-    }
-  };
-
   return (
     <>
       <div className="flex gap-2">
@@ -184,16 +177,6 @@ export const ProductMappingManager = ({ products, coffeeTypes, onResetProducts }
           <Lock className="h-3 w-3 mr-1" />
           ⚙️ Menaxho Mapimin (Admin)
         </Button>
-        {onResetProducts && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleResetProducts}
-            className="text-xs text-orange-600"
-          >
-            🔄 Rivendos Produktet
-          </Button>
-        )}
         {Object.keys(productMapping).length > 0 && (
           <Button
             variant="ghost"

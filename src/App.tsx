@@ -5,10 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import DailyEntry from "./pages/DailyEntry";
-import DailyEntryTurn1 from "./pages/DailyEntryTurn1";
-import DailyEntryTurn2 from "./pages/DailyEntryTurn2";
 import Reports from "./pages/Reports";
-import Manual from "./pages/Manual";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 
@@ -23,10 +20,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/daily" element={<DailyEntry />} />
-          <Route path="/daily/turn1" element={<DailyEntryTurn1 />} />
-          <Route path="/daily/turn2" element={<DailyEntryTurn2 />} />
           <Route path="/reports" element={<Reports />} />
-          <Route path="/manual" element={<Manual />} />
           <Route path="/install" element={<Install />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
