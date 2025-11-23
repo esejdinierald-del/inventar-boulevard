@@ -25,3 +25,9 @@ export interface FurnizimeData {
   emertimi: string;
   vlera: number;
 }
+
+export interface DailyEntryData {
+  turn1: TurnData;
+  turn2: TurnData;
+  date: string;
+}
