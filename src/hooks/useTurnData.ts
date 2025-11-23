@@ -20,8 +20,6 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     }])),
     coffee: Object.fromEntries(coffeeTypes.map(c => [c, 0])),
     xhiro: 0,
-    xhiroEmbelsira: 0,
-    akullore: 0,
     mulliriFillim: 0,
     mulliriPerfund: 0
   }), [products, coffeeTypes]);

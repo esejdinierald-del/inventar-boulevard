@@ -15,8 +15,6 @@ export interface TurnData {
   };
   coffee: CoffeeData;
   xhiro: number;
-  xhiroEmbelsira: number;
-  akullore: number;
   mulliriFillim: number;
   mulliriPerfund: number;
 }
