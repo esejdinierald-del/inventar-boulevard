@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { TurnData, ProductData } from '@/types/turn.types';
 import { StorageService } from '@/services/storage.service';
 import { CalculationService } from '@/services/calculations';
+import { useHistory } from '@/hooks/useHistory';
 import { toast } from 'sonner';
 
 interface UseTurnDataProps {
@@ -11,6 +12,8 @@ interface UseTurnDataProps {
 }
 
 export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnDataProps) => {
+  const { saveToHistory } = useHistory();
+  
   const createEmptyTurnData = useCallback((): TurnData => ({
     products: Object.fromEntries(products.map(p => [p, {
       stokFillim: 0,
@@ -51,17 +54,23 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
   useEffect(() => {
     if (isInitialLoad.current) return;
     
-    const timeoutId = setTimeout(() => {
+    const timeoutId = setTimeout(async () => {
       const dataToSave = {
         turn1,
         turn2,
         date: selectedDate
       };
       StorageService.setDailyEntryData(selectedDate, dataToSave);
-    }, 500); // Debounce for 500ms
+      
+      // Save to history in background
+      await Promise.all([
+        saveToHistory(selectedDate, 1, turn1, 'auto_save'),
+        saveToHistory(selectedDate, 2, turn2, 'auto_save')
+      ]);
+    }, 1000); // Increased debounce for better performance
 
     return () => clearTimeout(timeoutId);
-  }, [turn1, turn2, selectedDate]);
+  }, [turn1, turn2, selectedDate, saveToHistory]);
 
   // Auto-sync T1 stock to T2 when T1 changes
   useEffect(() => {
@@ -82,7 +91,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
         ),
         mulliriFillim: turn1.mulliriPerfund
       }));
-    }, 800); // Run after main save
+    }, 1500); // Increased delay for better performance
 
     return () => clearTimeout(timeoutId);
   }, [turn1]);
@@ -105,7 +114,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
 
       StorageService.setStockForDate(nextDayDate, nextDayStock);
       StorageService.setMulliriForDate(nextDayDate, turn2.mulliriPerfund);
-    }, 1000); // Run after T1->T2 sync
+    }, 2000); // Increased delay for better performance
 
     return () => clearTimeout(timeoutId);
   }, [turn2, selectedDate]);
