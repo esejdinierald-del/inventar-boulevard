@@ -337,7 +337,7 @@ const DailyEntry = () => {
                     <Input type="number" value={turn1.mulliriFillim || ""} onChange={e => setTurn1(prev => ({
                     ...prev,
                     mulliriFillim: Number(e.target.value)
-                  }))} />
+                  }))} disabled={!isAdminUnlocked} />
                   </div>
                   <div className="space-y-2">
                     <Label>Mëlliri Perfund (kg)</Label>
@@ -480,7 +480,7 @@ const DailyEntry = () => {
                     <Input type="number" value={turn2.mulliriFillim || ""} onChange={e => setTurn2(prev => ({
                     ...prev,
                     mulliriFillim: Number(e.target.value)
-                  }))} />
+                  }))} disabled={!isAdminUnlocked} />
                   </div>
                   <div className="space-y-2">
                     <Label>Mëlliri Perfund (kg)</Label>
