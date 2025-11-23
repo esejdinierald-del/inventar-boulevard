@@ -45,7 +45,9 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     }, 100);
   }, [selectedDate, createEmptyTurnData]);
 
-  // Auto-save current day data when turn1 or turn2 changes
+  // Auto-save current day data when turn1 or turn2 changes (with debouncing)
+  const lastSavedData = useRef<string>('');
+  
   useEffect(() => {
     if (isInitialLoad.current) return;
     
@@ -55,37 +57,59 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
         turn2,
         date: selectedDate
       };
-      StorageService.setDailyEntryData(selectedDate, dataToSave);
+      
+      // Only save if data actually changed
+      const dataString = JSON.stringify(dataToSave);
+      if (dataString !== lastSavedData.current) {
+        StorageService.setDailyEntryData(selectedDate, dataToSave);
+        lastSavedData.current = dataString;
+      }
     }, 500); // Debounce for 500ms
 
     return () => clearTimeout(timeoutId);
   }, [turn1, turn2, selectedDate]);
 
-  // Auto-sync T1 stock to T2 when T1 changes
+  // Auto-sync T1 stock to T2 when T1 changes (only sync specific critical fields)
   useEffect(() => {
     if (isInitialLoad.current) return;
     
     const timeoutId = setTimeout(() => {
-      setTurn2(prev => ({
-        ...prev,
-        products: Object.fromEntries(
-          Object.entries(prev.products).map(([key, data]) => {
-            const t1Data = turn1.products[key];
-            if (t1Data) {
-              const calculatedStock = CalculationService.calculateNewStock(t1Data);
-              return [key, { ...data, stokFillim: calculatedStock }];
+      setTurn2(prev => {
+        // Check if sync is actually needed
+        let needsUpdate = false;
+        const newProducts = { ...prev.products };
+        
+        Object.keys(newProducts).forEach(key => {
+          const t1Data = turn1.products[key];
+          if (t1Data) {
+            const calculatedStock = CalculationService.calculateNewStock(t1Data);
+            if (newProducts[key].stokFillim !== calculatedStock) {
+              newProducts[key] = { ...newProducts[key], stokFillim: calculatedStock };
+              needsUpdate = true;
             }
-            return [key, data];
-          })
-        ),
-        mulliriFillim: turn1.mulliriPerfund
-      }));
+          }
+        });
+        
+        const mulliriNeedsUpdate = prev.mulliriFillim !== turn1.mulliriPerfund;
+        
+        if (!needsUpdate && !mulliriNeedsUpdate) {
+          return prev; // No update needed
+        }
+        
+        return {
+          ...prev,
+          products: newProducts,
+          mulliriFillim: turn1.mulliriPerfund
+        };
+      });
     }, 800);
 
     return () => clearTimeout(timeoutId);
   }, [turn1]);
 
-  // Auto-save T2 stock to next day when T2 changes
+  // Auto-save T2 stock to next day when T2 changes (with smart checking)
+  const lastSavedNextDay = useRef<string>('');
+  
   useEffect(() => {
     if (isInitialLoad.current) return;
     
@@ -101,8 +125,13 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       nextDay.setDate(nextDay.getDate() + 1);
       const nextDayDate = nextDay.toISOString().split('T')[0];
 
-      StorageService.setStockForDate(nextDayDate, nextDayStock);
-      StorageService.setMulliriForDate(nextDayDate, turn2.mulliriPerfund);
+      // Only save if data changed
+      const saveData = JSON.stringify({ stock: nextDayStock, mulliri: turn2.mulliriPerfund });
+      if (saveData !== lastSavedNextDay.current) {
+        StorageService.setStockForDate(nextDayDate, nextDayStock);
+        StorageService.setMulliriForDate(nextDayDate, turn2.mulliriPerfund);
+        lastSavedNextDay.current = saveData;
+      }
     }, 1000); // Run after T1->T2 sync
 
     return () => clearTimeout(timeoutId);
