@@ -141,8 +141,30 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
   }, [selectedDate]);
 
   // Auto-sync T1 stock to T2 when T1 changes (only sync specific critical fields)
+  // IMPORTANT: Only sync fields that user explicitly changes, not on initial load
+  const lastSyncedT1 = useRef<string>('');
+  
   useEffect(() => {
     if (isInitialLoad.current) return;
+    
+    // Serialize T1 relevant fields for comparison
+    const t1Signature = JSON.stringify({
+      products: Object.fromEntries(
+        Object.entries(turn1.products).map(([key, data]) => [
+          key, 
+          { gjendje: data.gjendje, shiriti: data.shiriti, furnizime: data.furnizime }
+        ])
+      ),
+      mulliriPerfund: turn1.mulliriPerfund
+    });
+    
+    // Only sync if T1 actually changed
+    if (t1Signature === lastSyncedT1.current) {
+      return;
+    }
+    
+    console.log('🔄 T1 changed, syncing to T2...');
+    lastSyncedT1.current = t1Signature;
     
     const timeoutId = setTimeout(() => {
       setTurn2(prev => {
@@ -166,6 +188,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
         if (!needsUpdate && !mulliriNeedsUpdate) {
           return prev; // No update needed
         }
+        
+        console.log('✅ Synced T1 → T2');
         
         return {
           ...prev,
