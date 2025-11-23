@@ -64,6 +64,8 @@ const DailyEntry = () => {
   
   const [newProductName, setNewProductName] = useState("");
   const [newCoffeeName, setNewCoffeeName] = useState("");
+  const [editingProduct, setEditingProduct] = useState<string | null>(null);
+  const [editedProductName, setEditedProductName] = useState("");
   const [turn1, setTurn1] = useState<TurnData>({
     products: Object.fromEntries(products.map(p => [p, {
       stokFillim: 0,
@@ -289,6 +291,55 @@ const DailyEntry = () => {
     toast.success("Produkti u fshi!");
   };
 
+  // Modifiko emrin e produktit
+  const startEditingProduct = (productName: string) => {
+    setEditingProduct(productName);
+    setEditedProductName(productName);
+  };
+
+  const cancelEditingProduct = () => {
+    setEditingProduct(null);
+    setEditedProductName("");
+  };
+
+  const saveEditedProduct = (oldName: string) => {
+    if (!editedProductName.trim()) {
+      toast.error("Emri i produktit nuk mund të jetë bosh!");
+      return;
+    }
+    if (editedProductName.trim() === oldName) {
+      cancelEditingProduct();
+      return;
+    }
+    if (products.includes(editedProductName.trim())) {
+      toast.error("Produkti me këtë emër ekziston tashmë!");
+      return;
+    }
+
+    const updatedProducts = products.map(p => p === oldName ? editedProductName.trim() : p);
+    setProducts(updatedProducts);
+    localStorage.setItem('products_list', JSON.stringify(updatedProducts));
+
+    // Përditëso të dhënat në të dy turnet
+    setTurn1(prev => {
+      const newProducts = { ...prev.products };
+      const oldData = newProducts[oldName];
+      delete newProducts[oldName];
+      newProducts[editedProductName.trim()] = oldData;
+      return { ...prev, products: newProducts };
+    });
+    setTurn2(prev => {
+      const newProducts = { ...prev.products };
+      const oldData = newProducts[oldName];
+      delete newProducts[oldName];
+      newProducts[editedProductName.trim()] = oldData;
+      return { ...prev, products: newProducts };
+    });
+
+    toast.success("Emri i produktit u ndryshua!");
+    cancelEditingProduct();
+  };
+
   // Handle data extracted from receipt scanner with saved mapping
   const handleReceiptDataT1 = (data: { [key: string]: number }) => {
     const savedMapping = localStorage.getItem('receipt_product_mapping');
@@ -427,7 +478,48 @@ const DailyEntry = () => {
                       const data = turn1.products[product];
                       const dif = calculateDif(data.stokFillim, data.furnizime, data.gjendje, data.shiriti);
                       return <TableRow key={product}>
-                            <TableCell className="font-medium">{product}</TableCell>
+                            <TableCell className="font-medium">
+                              {isAdminUnlocked && editingProduct === product ? (
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    value={editedProductName}
+                                    onChange={(e) => setEditedProductName(e.target.value)}
+                                    className="w-32"
+                                    autoFocus
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => saveEditedProduct(product)}
+                                    className="h-7 px-2 text-success"
+                                  >
+                                    ✓
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={cancelEditingProduct}
+                                    className="h-7 px-2 text-destructive"
+                                  >
+                                    ✕
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <span>{product}</span>
+                                  {isAdminUnlocked && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => startEditingProduct(product)}
+                                      className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                                    >
+                                      ✏️
+                                    </Button>
+                                  )}
+                                </div>
+                              )}
+                            </TableCell>
                             <TableCell>
                               <Input type="number" value={data.stokFillim || ""} onChange={e => updateTurn1Product(product, 'stokFillim', Number(e.target.value))} className="w-20" disabled={!isAdminUnlocked} />
                             </TableCell>
@@ -598,7 +690,48 @@ const DailyEntry = () => {
                       const data = turn2.products[product];
                       const dif = calculateDif(data.stokFillim, data.furnizime, data.gjendje, data.shiriti);
                       return <TableRow key={product}>
-                            <TableCell className="font-medium">{product}</TableCell>
+                            <TableCell className="font-medium">
+                              {isAdminUnlocked && editingProduct === product ? (
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    value={editedProductName}
+                                    onChange={(e) => setEditedProductName(e.target.value)}
+                                    className="w-32"
+                                    autoFocus
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => saveEditedProduct(product)}
+                                    className="h-7 px-2 text-success"
+                                  >
+                                    ✓
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={cancelEditingProduct}
+                                    className="h-7 px-2 text-destructive"
+                                  >
+                                    ✕
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <span>{product}</span>
+                                  {isAdminUnlocked && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => startEditingProduct(product)}
+                                      className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                                    >
+                                      ✏️
+                                    </Button>
+                                  )}
+                                </div>
+                              )}
+                            </TableCell>
                             <TableCell>
                               <Input type="number" value={data.stokFillim || ""} onChange={e => updateTurn2Product(product, 'stokFillim', Number(e.target.value))} className="w-20" disabled={!isAdminUnlocked} />
                             </TableCell>
