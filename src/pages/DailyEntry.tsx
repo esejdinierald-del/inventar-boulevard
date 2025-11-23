@@ -35,6 +35,17 @@ const DailyEntry = () => {
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
 
+  // Kontrollo nëse data është në të kaluarën
+  const isPastDate = () => {
+    const today = new Date().toISOString().split('T')[0];
+    return selectedDate < today;
+  };
+
+  // Kontrollo nëse fushat duhet të jenë disabled
+  const isFieldDisabled = () => {
+    return isPastDate() && !isAdminUnlocked;
+  };
+
   // Lista e produkteve nga Excel
   const products = ["Kanace", "u.vit", "heineken 330", "korona", "paulaner", "rose", "r.bull", "b.52", "crodino", "biter", "Bustina", "uje", "caj", "caj bio"];
   const coffeeTypes = ["KAFE", "KORRETO", "LATE", "AMERIKANE", "LECE.LECE", "KAPUCIN KAFE"];
@@ -92,6 +103,14 @@ const DailyEntry = () => {
           [field]: value
         }
       }
+    }));
+  };
+
+  // Kopjo automatikisht Mulliri Perfund T1 në Mulliri Fillim T2
+  const syncMulliriT1ToT2 = (perfundValue: number) => {
+    setTurn2(prev => ({
+      ...prev,
+      mulliriFillim: perfundValue
     }));
   };
 
@@ -198,6 +217,14 @@ const DailyEntry = () => {
   };
   return <Layout>
       <div className="space-y-6 pb-20 md:pb-6">
+        {isPastDate() && !isAdminUnlocked && (
+          <div className="rounded-lg border border-warning/50 bg-warning/10 p-4">
+            <p className="text-sm font-medium text-warning">
+              🔒 Po shikon të dhëna nga e kaluara. Vetëm shikimi është i lejuar. Për të modifikuar, hyr si Admin.
+            </p>
+          </div>
+        )}
+        
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-3xl font-bold tracking-tight text-foreground">Regjistrimi Ditor</h2>
@@ -260,13 +287,13 @@ const DailyEntry = () => {
                               <Input type="number" value={data.stokFillim || ""} onChange={e => updateTurn1Product(product, 'stokFillim', Number(e.target.value))} className="w-20" disabled={!isAdminUnlocked} />
                             </TableCell>
                             <TableCell>
-                              <Input type="number" value={data.gjendje || ""} onChange={e => updateTurn1Product(product, 'gjendje', Number(e.target.value))} className="w-20" />
+                              <Input type="number" value={data.gjendje || ""} onChange={e => updateTurn1Product(product, 'gjendje', Number(e.target.value))} className="w-20" disabled={isFieldDisabled()} />
                             </TableCell>
                             <TableCell>
-                              <Input type="number" value={data.shiriti || ""} onChange={e => updateTurn1Product(product, 'shiriti', Number(e.target.value))} className="w-20" />
+                              <Input type="number" value={data.shiriti || ""} onChange={e => updateTurn1Product(product, 'shiriti', Number(e.target.value))} className="w-20" disabled={isFieldDisabled()} />
                             </TableCell>
                             <TableCell>
-                              <Input type="number" value={data.furnizime || ""} onChange={e => updateTurn1Product(product, 'furnizime', Number(e.target.value))} className="w-20 bg-success/10" />
+                              <Input type="number" value={data.furnizime || ""} onChange={e => updateTurn1Product(product, 'furnizime', Number(e.target.value))} className="w-20 bg-success/10" disabled={isFieldDisabled()} />
                             </TableCell>
                             <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
                               {dif}
@@ -310,7 +337,7 @@ const DailyEntry = () => {
                             ...prev.coffee,
                             [coffee]: Number(e.target.value)
                           }
-                        }))} className="w-24" />
+                        }))} className="w-24" disabled={isFieldDisabled()} />
                           </TableCell>
                         </TableRow>)}
                       <TableRow className="bg-muted/50">
@@ -341,10 +368,14 @@ const DailyEntry = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Mulliri Perfund (kg)</Label>
-                    <Input type="number" value={turn1.mulliriPerfund || ""} onChange={e => setTurn1(prev => ({
-                    ...prev,
-                    mulliriPerfund: Number(e.target.value)
-                  }))} />
+                    <Input type="number" value={turn1.mulliriPerfund || ""} onChange={e => {
+                    const perfundValue = Number(e.target.value);
+                    setTurn1(prev => ({
+                      ...prev,
+                      mulliriPerfund: perfundValue
+                    }));
+                    syncMulliriT1ToT2(perfundValue);
+                  }} disabled={isFieldDisabled()} />
                   </div>
                   <div className="space-y-2">
                     <Label>Diferenca Mulliri (kg)</Label>
@@ -385,13 +416,13 @@ const DailyEntry = () => {
                               <Input type="number" value={data.stokFillim || ""} onChange={e => updateTurn2Product(product, 'stokFillim', Number(e.target.value))} className="w-20" disabled={!isAdminUnlocked} />
                             </TableCell>
                             <TableCell>
-                              <Input type="number" value={data.gjendje || ""} onChange={e => updateTurn2Product(product, 'gjendje', Number(e.target.value))} className="w-20" />
+                              <Input type="number" value={data.gjendje || ""} onChange={e => updateTurn2Product(product, 'gjendje', Number(e.target.value))} className="w-20" disabled={isFieldDisabled()} />
                             </TableCell>
                             <TableCell>
-                              <Input type="number" value={data.shiriti || ""} onChange={e => updateTurn2Product(product, 'shiriti', Number(e.target.value))} className="w-20" />
+                              <Input type="number" value={data.shiriti || ""} onChange={e => updateTurn2Product(product, 'shiriti', Number(e.target.value))} className="w-20" disabled={isFieldDisabled()} />
                             </TableCell>
                             <TableCell>
-                              <Input type="number" value={data.furnizime || ""} onChange={e => updateTurn2Product(product, 'furnizime', Number(e.target.value))} className="w-20 bg-success/10" />
+                              <Input type="number" value={data.furnizime || ""} onChange={e => updateTurn2Product(product, 'furnizime', Number(e.target.value))} className="w-20 bg-success/10" disabled={isFieldDisabled()} />
                             </TableCell>
                             <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
                               {dif}
@@ -435,7 +466,7 @@ const DailyEntry = () => {
                             ...prev.coffee,
                             [coffee]: Number(e.target.value)
                           }
-                        }))} className="w-24" />
+                        }))} className="w-24" disabled={isFieldDisabled()} />
                           </TableCell>
                         </TableRow>)}
                       <TableRow className="bg-muted/50">
@@ -459,35 +490,35 @@ const DailyEntry = () => {
                     <Input type="number" value={turn2.xhiro || ""} onChange={e => setTurn2(prev => ({
                     ...prev,
                     xhiro: Number(e.target.value)
-                  }))} />
+                  }))} disabled={isFieldDisabled()} />
                   </div>
                   <div className="space-y-2">
                     <Label>Xhiro Embëlsirat T2 (ALL)</Label>
                     <Input type="number" value={turn2.xhiroEmbelsira || ""} onChange={e => setTurn2(prev => ({
                     ...prev,
                     xhiroEmbelsira: Number(e.target.value)
-                  }))} />
+                  }))} disabled={isFieldDisabled()} />
                   </div>
                   <div className="space-y-2">
                     <Label>Akullore T2 (ALL)</Label>
                     <Input type="number" value={turn2.akullore || ""} onChange={e => setTurn2(prev => ({
                     ...prev,
                     akullore: Number(e.target.value)
-                  }))} />
+                  }))} disabled={isFieldDisabled()} />
                   </div>
                   <div className="space-y-2">
                     <Label>Mulliri Fillim (kg)</Label>
                     <Input type="number" value={turn2.mulliriFillim || ""} onChange={e => setTurn2(prev => ({
                     ...prev,
                     mulliriFillim: Number(e.target.value)
-                  }))} disabled={!isAdminUnlocked} />
+                  }))} disabled={true} className="bg-muted/50" title="Automatkisht nga Mulliri Perfund T1" />
                   </div>
                   <div className="space-y-2">
                     <Label>Mulliri Perfund (kg)</Label>
                     <Input type="number" value={turn2.mulliriPerfund || ""} onChange={e => setTurn2(prev => ({
                     ...prev,
                     mulliriPerfund: Number(e.target.value)
-                  }))} />
+                  }))} disabled={isFieldDisabled()} />
                   </div>
                   <div className="space-y-2">
                     <Label>Diferenca Mulliri (kg)</Label>
@@ -534,21 +565,21 @@ const DailyEntry = () => {
                 <Input placeholder="Përshkrimi i furnizimit" value={furnizime.emertimi} onChange={e => setFurnizime(prev => ({
                 ...prev,
                 emertimi: e.target.value
-              }))} />
+              }))} disabled={isFieldDisabled()} />
               </div>
               <div className="space-y-2">
                 <Label>Vlera (ALL)</Label>
                 <Input type="number" value={furnizime.vlera || ""} onChange={e => setFurnizime(prev => ({
                 ...prev,
                 vlera: Number(e.target.value)
-              }))} />
+              }))} disabled={isFieldDisabled()} />
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button onClick={handleSave} className="flex-1 md:flex-none bg-gradient-primary">
+              <Button onClick={handleSave} className="flex-1 md:flex-none bg-gradient-primary" disabled={isFieldDisabled()}>
                 💾 Ruaj të Dhënat
               </Button>
-              <Button onClick={saveForNextDay} variant="outline" className="flex-1 md:flex-none">
+              <Button onClick={saveForNextDay} variant="outline" className="flex-1 md:flex-none" disabled={isFieldDisabled()}>
                 📅 Ruaj për nesër
               </Button>
             </div>
