@@ -113,19 +113,34 @@ export class StorageService {
 
   static async setStockForDate(date: string, stock: { [key: string]: number }): Promise<void> {
     try {
-      const { error } = await supabase
+      // Provo të update fillimisht
+      const { data: existing } = await supabase
         .from('next_day_stock')
-        .upsert(
-          {
+        .select('id')
+        .eq('stock_date', date)
+        .maybeSingle();
+      
+      if (existing) {
+        const { error } = await supabase
+          .from('next_day_stock')
+          .update({
+            stock_data: stock,
+            updated_at: new Date().toISOString()
+          })
+          .eq('stock_date', date);
+        
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('next_day_stock')
+          .insert({
             stock_date: date,
             stock_data: stock
-          },
-          {
-            onConflict: 'stock_date'
-          }
-        );
+          });
+        
+        if (error) throw error;
+      }
       
-      if (error) throw error;
       this.setItem(`stock_${date}`, stock);
     } catch (error) {
       console.error('Error saving stock:', error);
@@ -161,24 +176,32 @@ export class StorageService {
     try {
       const { data: existing } = await supabase
         .from('next_day_stock')
-        .select('stock_data')
+        .select('id, stock_data')
         .eq('stock_date', date)
         .maybeSingle();
       
-      const { error } = await supabase
-        .from('next_day_stock')
-        .upsert(
-          {
+      if (existing) {
+        const { error } = await supabase
+          .from('next_day_stock')
+          .update({
+            mulliri_fillim: value,
+            updated_at: new Date().toISOString()
+          })
+          .eq('stock_date', date);
+        
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('next_day_stock')
+          .insert({
             stock_date: date,
             mulliri_fillim: value,
-            stock_data: existing?.stock_data || {}
-          },
-          {
-            onConflict: 'stock_date'
-          }
-        );
+            stock_data: {}
+          });
+        
+        if (error) throw error;
+      }
       
-      if (error) throw error;
       this.setItem(`mulliri_fillim_${date}`, value.toString());
     } catch (error) {
       console.error('Error saving mulliri:', error);
@@ -300,20 +323,37 @@ export class StorageService {
 
   static async setDailyEntryData(date: string, data: DailyEntryData): Promise<void> {
     try {
-      const { error } = await supabase
+      // Provo të update fillimisht
+      const { data: existing } = await supabase
         .from('daily_entries')
-        .upsert(
-          {
+        .select('id')
+        .eq('entry_date', date)
+        .maybeSingle();
+      
+      if (existing) {
+        // Nëse ekziston, bëj update
+        const { error } = await supabase
+          .from('daily_entries')
+          .update({
+            turn1_data: data.turn1 as any,
+            turn2_data: data.turn2 as any,
+            updated_at: new Date().toISOString()
+          })
+          .eq('entry_date', date);
+        
+        if (error) throw error;
+      } else {
+        // Nëse nuk ekziston, bëj insert
+        const { error } = await supabase
+          .from('daily_entries')
+          .insert({
             entry_date: date,
             turn1_data: data.turn1 as any,
             turn2_data: data.turn2 as any
-          },
-          {
-            onConflict: 'entry_date'
-          }
-        );
-      
-      if (error) throw error;
+          });
+        
+        if (error) throw error;
+      }
       
       // Backup në localStorage
       this.setItem(`daily_entry_${date}`, data);
