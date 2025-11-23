@@ -14,11 +14,11 @@ export class StorageService {
 
   private static setItem<T>(key: string, value: T): void {
     try {
-      console.log(`💾 localStorage.setItem: ${key}`, value);
-      localStorage.setItem(key, JSON.stringify(value));
-      console.log(`✅ localStorage.setItem success: ${key}`);
+      const serialized = JSON.stringify(value);
+      localStorage.setItem(key, serialized);
     } catch (error) {
-      console.error(`❌ Error writing to localStorage (${key}):`, error);
+      console.error(`Error writing to localStorage (${key}):`, error);
+      throw error; // Re-throw to let caller know it failed
     }
   }
 
