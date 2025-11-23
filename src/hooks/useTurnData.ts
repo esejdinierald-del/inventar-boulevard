@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { TurnData, ProductData } from '@/types/turn.types';
 import { StorageService } from '@/services/storage.service';
 import { CalculationService } from '@/services/calculations';
@@ -28,9 +28,11 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
 
   const [turn1, setTurn1] = useState<TurnData>(createEmptyTurnData);
   const [turn2, setTurn2] = useState<TurnData>(createEmptyTurnData);
+  const isInitialLoad = useRef(true);
 
   // Load data for current date on mount and when date changes
   useEffect(() => {
+    isInitialLoad.current = true;
     const savedData = StorageService.getDailyEntryData(selectedDate);
     if (savedData) {
       setTurn1(savedData.turn1);
@@ -39,7 +41,27 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       setTurn1(createEmptyTurnData());
       setTurn2(createEmptyTurnData());
     }
+    // Mark initial load as complete after a short delay
+    setTimeout(() => {
+      isInitialLoad.current = false;
+    }, 100);
   }, [selectedDate, createEmptyTurnData]);
+
+  // Auto-save current day data when turn1 or turn2 changes
+  useEffect(() => {
+    if (isInitialLoad.current) return;
+    
+    const timeoutId = setTimeout(() => {
+      const dataToSave = {
+        turn1,
+        turn2,
+        date: selectedDate
+      };
+      StorageService.setDailyEntryData(selectedDate, dataToSave);
+    }, 500); // Debounce for 500ms
+
+    return () => clearTimeout(timeoutId);
+  }, [turn1, turn2, selectedDate]);
 
   // Update product in turn
   const updateTurn1Product = useCallback((product: string, field: keyof ProductData, value: number) => {
