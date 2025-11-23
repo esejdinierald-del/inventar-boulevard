@@ -1,4 +1,4 @@
-import { TurnData } from '@/types/turn.types';
+import { TurnData, DailyEntryData } from '@/types/turn.types';
 import { MappingData } from '@/types/mapping.types';
 
 export class StorageService {
@@ -95,11 +95,11 @@ export class StorageService {
   }
 
   // Daily entry data
-  static getDailyEntryData(date: string): TurnData | null {
-    return this.getItem<TurnData>(`daily_entry_${date}`);
+  static getDailyEntryData(date: string): DailyEntryData | null {
+    return this.getItem<DailyEntryData>(`daily_entry_${date}`);
   }
 
-  static setDailyEntryData(date: string, data: TurnData): void {
+  static setDailyEntryData(date: string, data: DailyEntryData): void {
     this.setItem(`daily_entry_${date}`, data);
   }
 }

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { TurnData, ProductData } from '@/types/turn.types';
 import { StorageService } from '@/services/storage.service';
 import { CalculationService } from '@/services/calculations';
@@ -28,6 +28,18 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
 
   const [turn1, setTurn1] = useState<TurnData>(createEmptyTurnData);
   const [turn2, setTurn2] = useState<TurnData>(createEmptyTurnData);
+
+  // Load data for current date on mount and when date changes
+  useEffect(() => {
+    const savedData = StorageService.getDailyEntryData(selectedDate);
+    if (savedData) {
+      setTurn1(savedData.turn1);
+      setTurn2(savedData.turn2);
+    } else {
+      setTurn1(createEmptyTurnData());
+      setTurn2(createEmptyTurnData());
+    }
+  }, [selectedDate, createEmptyTurnData]);
 
   // Update product in turn
   const updateTurn1Product = useCallback((product: string, field: keyof ProductData, value: number) => {
@@ -79,8 +91,22 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     toast.success("Stoku i T1 u kalkulua dhe u kopjua në T2");
   }, [turn1]);
 
+  // Save current day data
+  const saveCurrentDay = useCallback(() => {
+    const dataToSave = {
+      turn1,
+      turn2,
+      date: selectedDate
+    };
+    StorageService.setDailyEntryData(selectedDate, dataToSave);
+  }, [turn1, turn2, selectedDate]);
+
   // Save data for next day
   const saveForNextDay = useCallback(() => {
+    // First save current day
+    saveCurrentDay();
+
+    // Then prepare for next day
     const nextDayStock = Object.fromEntries(
       Object.entries(turn2.products).map(([key, data]) => {
         const calculatedStock = CalculationService.calculateNewStock(data);
@@ -94,8 +120,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
 
     StorageService.setStockForDate(nextDayDate, nextDayStock);
     StorageService.setMulliriForDate(nextDayDate, turn2.mulliriPerfund);
-    toast.success("Stoku dhe mulliri u ruajtën për ditën e nesërme!");
-  }, [turn2, selectedDate]);
+  }, [turn1, turn2, selectedDate, saveCurrentDay]);
 
   // Load data from previous day
   const loadFromPreviousDay = useCallback(() => {
