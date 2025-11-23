@@ -76,9 +76,9 @@ const DailyEntry = () => {
     return stokFillim + furnizime - gjendje - shiriti;
   };
 
-  // Formula: Diferenca Mulliri = (Mulliri Fillim - Mulliri Perfund) - Total Kafe
+  // Formula: Diferenca Mulliri = (Mulliri Perfund - Mulliri Fillim) - Total Kafe
   const calculateMulliriDif = (fillim: number, perfund: number, totalKafe: number) => {
-    return (fillim - perfund) - totalKafe;
+    return (perfund - fillim) - totalKafe;
   };
 
   // Update product data for Turn 1
