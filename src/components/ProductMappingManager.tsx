@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
@@ -23,7 +24,7 @@ export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingM
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [detectedProducts, setDetectedProducts] = useState<ReceiptProduct[]>([]);
-  const [productMapping, setProductMapping] = useState<{ [key: string]: { type: 'product' | 'coffee'; name: string } }>({});
+  const [productMapping, setProductMapping] = useState<{ [key: string]: { type: 'product' | 'coffee'; name: string; quantity: number } }>({});
   const [step, setStep] = useState<'upload' | 'mapping'>('upload');
 
   // Load saved mapping from localStorage
@@ -113,10 +114,10 @@ export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingM
     }
   };
 
-  const handleMappingChange = (receiptProduct: string, type: 'product' | 'coffee', name: string) => {
+  const handleMappingChange = (receiptProduct: string, type: 'product' | 'coffee', name: string, quantity: number) => {
     setProductMapping(prev => ({
       ...prev,
-      [receiptProduct]: { type, name }
+      [receiptProduct]: { type, name, quantity }
     }));
   };
 
@@ -276,37 +277,54 @@ export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingM
                           <p className="text-xs text-muted-foreground">Nga shiriti</p>
                         </div>
                         <div className="text-muted-foreground">→</div>
-                        <select
-                          value={currentValue}
-                          onChange={(e) => {
-                            const [type, name] = e.target.value.split(':');
-                            if (type && name) {
-                              handleMappingChange(product.name, type as 'product' | 'coffee', name);
-                            }
-                          }}
-                          className="text-sm border rounded p-2 min-w-[200px]"
-                        >
-                          <option value="">-- Zgjidh --</option>
-                          <optgroup label="📦 Produkte">
-                            {products.map(p => (
-                              <option key={p} value={`product:${p}`}>
-                                {p}
-                              </option>
-                            ))}
-                          </optgroup>
-                          <optgroup label="☕ Kafe">
-                            {coffeeTypes.map(c => (
-                              <option key={c} value={`coffee:${c}`}>
-                                {c}
-                              </option>
-                            ))}
-                          </optgroup>
-                        </select>
-                        {mapping && (
-                          <span className="text-xs text-green-600">
-                            ✓ {mapping.type === 'product' ? '📦' : '☕'}
-                          </span>
-                        )}
+                        <div className="flex gap-2 items-center">
+                          <select
+                            value={currentValue}
+                            onChange={(e) => {
+                              const [type, name] = e.target.value.split(':');
+                              if (type && name) {
+                                const currentQuantity = mapping?.quantity || 1;
+                                handleMappingChange(product.name, type as 'product' | 'coffee', name, currentQuantity);
+                              }
+                            }}
+                            className="text-sm border rounded p-2 min-w-[200px]"
+                          >
+                            <option value="">-- Zgjidh --</option>
+                            <optgroup label="📦 Produkte">
+                              {products.map(p => (
+                                <option key={p} value={`product:${p}`}>
+                                  {p}
+                                </option>
+                              ))}
+                            </optgroup>
+                            <optgroup label="☕ Kafe">
+                              {coffeeTypes.map(c => (
+                                <option key={c} value={`coffee:${c}`}>
+                                  {c}
+                                </option>
+                              ))}
+                            </optgroup>
+                          </select>
+                          {mapping && (
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                value={mapping.quantity || 1}
+                                onChange={(e) => {
+                                  const quantity = parseFloat(e.target.value) || 1;
+                                  handleMappingChange(product.name, mapping.type, mapping.name, quantity);
+                                }}
+                                className="w-20 text-sm"
+                                placeholder="Sasi"
+                              />
+                              <span className="text-xs text-green-600 whitespace-nowrap">
+                                ✓ {mapping.type === 'product' ? '📦' : '☕'} x{mapping.quantity}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
