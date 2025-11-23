@@ -76,9 +76,9 @@ const DailyEntry = () => {
     return stokFillim + furnizime - gjendje - shiriti;
   };
 
-  // Formula: Diferenca Mulliri = Mulliri Fillim - Mulliri Perfund
-  const calculateMulliriDif = (fillim: number, perfund: number) => {
-    return fillim - perfund;
+  // Formula: Diferenca Mulliri = (Mulliri Fillim - Mulliri Perfund) - Total Kafe
+  const calculateMulliriDif = (fillim: number, perfund: number, totalKafe: number) => {
+    return (fillim - perfund) - totalKafe;
   };
 
   // Update product data for Turn 1
@@ -189,8 +189,8 @@ const DailyEntry = () => {
   };
   const handleSave = () => {
     const totalXhiro = calculateTotalXhiro();
-    const mulliri1Dif = calculateMulliriDif(turn1.mulliriFillim, turn1.mulliriPerfund);
-    const mulliri2Dif = calculateMulliriDif(turn2.mulliriFillim, turn2.mulliriPerfund);
+    const mulliri1Dif = calculateMulliriDif(turn1.mulliriFillim, turn1.mulliriPerfund, calculateTotalCoffee(turn1));
+    const mulliri2Dif = calculateMulliriDif(turn2.mulliriFillim, turn2.mulliriPerfund, calculateTotalCoffee(turn2));
 
     // Automatikisht ruaj për ditën e nesërme
     saveForNextDay();
@@ -349,7 +349,7 @@ const DailyEntry = () => {
                   <div className="space-y-2">
                     <Label>Diferenca Mëlliri (kg)</Label>
                     <div className="rounded-md border border-input bg-muted px-3 py-2 text-sm font-medium">
-                      {calculateMulliriDif(turn1.mulliriFillim, turn1.mulliriPerfund)}
+                      {calculateMulliriDif(turn1.mulliriFillim, turn1.mulliriPerfund, calculateTotalCoffee(turn1))}
                     </div>
                   </div>
                 </div>
@@ -492,7 +492,7 @@ const DailyEntry = () => {
                   <div className="space-y-2">
                     <Label>Diferenca Mëlliri (kg)</Label>
                     <div className="rounded-md border border-input bg-muted px-3 py-2 text-sm font-medium">
-                      {calculateMulliriDif(turn2.mulliriFillim, turn2.mulliriPerfund)}
+                      {calculateMulliriDif(turn2.mulliriFillim, turn2.mulliriPerfund, calculateTotalCoffee(turn2))}
                     </div>
                   </div>
                 </div>
