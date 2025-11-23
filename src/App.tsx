@@ -8,9 +8,6 @@ import DailyEntry from "./pages/DailyEntry";
 import Reports from "./pages/Reports";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
-import SimpleLogin from "./pages/SimpleLogin";
-import UserManagement from "./pages/UserManagement";
-import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -21,11 +18,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<SimpleLogin />} />
-          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/daily" element={<ProtectedRoute><DailyEntry /></ProtectedRoute>} />
-          <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-          <Route path="/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/daily" element={<DailyEntry />} />
+          <Route path="/reports" element={<Reports />} />
           <Route path="/install" element={<Install />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

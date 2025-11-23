@@ -4,13 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Lock, Unlock, History } from "lucide-react";
+import { Calendar, History } from "lucide-react";
 import { toast } from "sonner";
 import { ProductMappingManager } from "@/components/ProductMappingManager";
 
 import { TurnSection } from "@/components/DailyEntry/TurnSection";
 import { HistoryDialog } from "@/components/DailyEntry/HistoryDialog";
-import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import { useProductList } from "@/hooks/useProductList";
 import { useTurnData } from "@/hooks/useTurnData";
 import { TurnData } from "@/types/turn.types";
@@ -24,7 +23,6 @@ const DailyEntry = () => {
   const [currentTab, setCurrentTab] = useState<"turn1" | "turn2">("turn1");
 
   // Custom hooks
-  const { isAdmin, logout } = useSimpleAuth();
   const { products, coffeeTypes, addProduct, deleteProduct, updateProduct } = useProductList();
   const {
     turn1,
@@ -49,8 +47,8 @@ const DailyEntry = () => {
   }, [selectedDate]);
 
   const isFieldDisabled = useCallback(() => {
-    return isPastDate() && !isAdmin;
-  }, [isPastDate, isAdmin]);
+    return false; // No restrictions now
+  }, []);
 
   // Product editing
   const startEditingProduct = useCallback((productName: string) => {
@@ -134,15 +132,6 @@ const DailyEntry = () => {
   return (
     <Layout>
       <div className="space-y-6 pb-20 md:pb-6">
-        {/* Past date warning */}
-        {isPastDate() && !isAdmin && (
-          <div className="rounded-lg border border-warning/50 bg-warning/10 p-4">
-            <p className="text-sm font-medium text-warning">
-              🔒 Po shikon të dhëna nga e kaluara. Vetëm shikimi është i lejuar. Për të modifikuar, hyr si Admin.
-            </p>
-          </div>
-        )}
-
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
@@ -153,16 +142,7 @@ const DailyEntry = () => {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {isAdmin && <ProductMappingManager products={products} coffeeTypes={coffeeTypes} />}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={logout}
-              className="text-xs touch-manipulation min-h-[44px] sm:min-h-0"
-            >
-              <Unlock className="h-3 w-3 mr-1" />
-              Dil
-            </Button>
+            <ProductMappingManager products={products} coffeeTypes={coffeeTypes} />
             <Button 
               variant="outline" 
               size="sm" 
@@ -207,7 +187,7 @@ const DailyEntry = () => {
               turnData={turn1}
               products={products}
               coffeeTypes={coffeeTypes}
-              isAdminUnlocked={isAdmin}
+              isAdminUnlocked={true}
               isFieldDisabled={isFieldDisabled()}
               showCopyButton
               onProductUpdate={updateTurn1Product}
@@ -233,7 +213,7 @@ const DailyEntry = () => {
               turnData={turn2}
               products={products}
               coffeeTypes={coffeeTypes}
-              isAdminUnlocked={isAdmin}
+              isAdminUnlocked={true}
               isFieldDisabled={isFieldDisabled()}
               mulliriFillimDisabled
               onProductUpdate={updateTurn2Product}

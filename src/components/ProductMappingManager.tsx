@@ -5,10 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Loader2, Upload, Save, Trash2, Lock } from "lucide-react";
+import { Loader2, Upload, Save, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 
 interface ProductMappingManagerProps {
   products: string[];
@@ -21,7 +20,6 @@ interface ReceiptProduct {
 }
 
 export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingManagerProps) => {
-  const { isAdmin } = useSimpleAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -149,10 +147,6 @@ export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingM
   };
 
   const handleOpenClick = () => {
-    if (!isAdmin) {
-      toast.error("Vetëm adminët mund të menaxhojnë mapimin!");
-      return;
-    }
     loadSavedMapping();
     setIsOpen(true);
   };
@@ -164,13 +158,11 @@ export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingM
           variant="outline"
           size="sm"
           onClick={handleOpenClick}
-          disabled={!isAdmin}
           className="text-xs"
         >
-          <Lock className="h-3 w-3 mr-1" />
-          ⚙️ Menaxho Mapimin (Admin)
+          ⚙️ Menaxho Mapimin
         </Button>
-        {isAdmin && Object.keys(productMapping).length > 0 && (
+        {Object.keys(productMapping).length > 0 && (
           <Button
             variant="ghost"
             size="sm"
