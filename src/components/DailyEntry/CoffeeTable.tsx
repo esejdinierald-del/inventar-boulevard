@@ -23,30 +23,29 @@ export const CoffeeTable = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="min-w-[120px]">Lloji</TableHead>
-            <TableHead className="min-w-[100px]">Sasia</TableHead>
+            <TableHead>Lloji</TableHead>
+            <TableHead>Sasia</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {coffeeTypes.map(coffee => (
             <TableRow key={coffee}>
-              <TableCell className="font-medium text-sm sm:text-base">{coffee}</TableCell>
+              <TableCell className="font-medium">{coffee}</TableCell>
               <TableCell>
                 <Input
                   type="number"
                   step="any"
-                  inputMode="decimal"
                   value={coffeeData[coffee] || ""}
                   onChange={(e) => onCoffeeUpdate(coffee, Number(e.target.value))}
-                  className="w-full sm:w-24 text-base touch-manipulation"
+                  className="w-24"
                   disabled={isFieldDisabled}
                 />
               </TableCell>
             </TableRow>
           ))}
           <TableRow className="bg-muted/50">
-            <TableCell className="font-bold text-sm sm:text-base">TOTALI</TableCell>
-            <TableCell className="font-bold text-primary text-sm sm:text-base">{totalCoffee}</TableCell>
+            <TableCell className="font-bold">TOTALI</TableCell>
+            <TableCell className="font-bold text-primary">{totalCoffee}</TableCell>
           </TableRow>
         </TableBody>
       </Table>

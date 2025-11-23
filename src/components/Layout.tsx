@@ -79,7 +79,7 @@ const Layout = ({ children }: LayoutProps) => {
 
       {/* Mobile Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card">
-        <div className="grid gap-1 p-2 grid-cols-3">
+        <div className="grid grid-cols-3 gap-1 p-2">
           {navItems.map((item) => (
             <Link
               key={item.to}

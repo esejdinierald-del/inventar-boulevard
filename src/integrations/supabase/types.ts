@@ -14,69 +14,16 @@ export type Database = {
   }
   public: {
     Tables: {
-      daily_entry_history: {
-        Row: {
-          action_type: string | null
-          created_at: string
-          data: Json
-          entry_date: string
-          id: string
-          turn_number: number
-        }
-        Insert: {
-          action_type?: string | null
-          created_at?: string
-          data: Json
-          entry_date: string
-          id?: string
-          turn_number: number
-        }
-        Update: {
-          action_type?: string | null
-          created_at?: string
-          data?: Json
-          entry_date?: string
-          id?: string
-          turn_number?: number
-        }
-        Relationships: []
-      }
-      user_roles: {
-        Row: {
-          created_at: string | null
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
-      app_role: "admin" | "staff"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -203,8 +150,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["admin", "staff"],
-    },
+    Enums: {},
   },
 } as const

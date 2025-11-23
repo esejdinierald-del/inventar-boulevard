@@ -38,12 +38,12 @@ export const ProductTable = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="min-w-[120px]">Produkti</TableHead>
-            <TableHead className="min-w-[80px]">Stok Fillim</TableHead>
-            <TableHead className="min-w-[80px]">Gjendje</TableHead>
-            <TableHead className="min-w-[80px]">Shiriti</TableHead>
-            <TableHead className="min-w-[80px]">Furnizime</TableHead>
-            <TableHead className="min-w-[60px]">Dif</TableHead>
+            <TableHead>Produkti</TableHead>
+            <TableHead>Stok Fillim</TableHead>
+            <TableHead>Gjendje</TableHead>
+            <TableHead>Shiriti</TableHead>
+            <TableHead>Furnizime</TableHead>
+            <TableHead>Dif</TableHead>
             {isAdminUnlocked && <TableHead className="w-[50px]"></TableHead>}
           </TableRow>
         </TableHeader>
@@ -61,41 +61,39 @@ export const ProductTable = ({
               <TableRow key={product}>
                 <TableCell className="font-medium">
                   {isAdminUnlocked && editingProduct === product ? (
-                    <div className="flex items-center gap-1 flex-wrap sm:flex-nowrap">
+                    <div className="flex items-center gap-2">
                       <Input
                         value={editedProductName}
                         onChange={(e) => onEditedNameChange(e.target.value)}
-                        className="w-full sm:w-32 text-base"
+                        className="w-32"
                         autoFocus
                       />
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onSaveEdit(product)}
-                          className="h-8 w-8 p-0 text-success touch-manipulation"
-                        >
-                          ✓
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={onCancelEdit}
-                          className="h-8 w-8 p-0 text-destructive touch-manipulation"
-                        >
-                          ✕
-                        </Button>
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onSaveEdit(product)}
+                        className="h-7 px-2 text-success"
+                      >
+                        ✓
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onCancelEdit}
+                        className="h-7 px-2 text-destructive"
+                      >
+                        ✕
+                      </Button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <span className="text-sm sm:text-base">{product}</span>
+                      <span>{product}</span>
                       {isAdminUnlocked && onProductEdit && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => onProductEdit(product)}
-                          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground touch-manipulation"
+                          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                         >
                           ✏️
                         </Button>
@@ -107,10 +105,9 @@ export const ProductTable = ({
                   <Input
                     type="number"
                     step="any"
-                    inputMode="decimal"
                     value={data.stokFillim || ""}
                     onChange={(e) => onProductUpdate(product, 'stokFillim', Number(e.target.value))}
-                    className="w-full sm:w-20 text-base touch-manipulation"
+                    className="w-20"
                     disabled={!isAdminUnlocked}
                   />
                 </TableCell>
@@ -118,10 +115,9 @@ export const ProductTable = ({
                   <Input
                     type="number"
                     step="any"
-                    inputMode="decimal"
                     value={data.gjendje || ""}
                     onChange={(e) => onProductUpdate(product, 'gjendje', Number(e.target.value))}
-                    className="w-full sm:w-20 text-base touch-manipulation"
+                    className="w-20"
                     disabled={isFieldDisabled}
                   />
                 </TableCell>
@@ -129,10 +125,9 @@ export const ProductTable = ({
                   <Input
                     type="number"
                     step="any"
-                    inputMode="decimal"
                     value={data.shiriti || ""}
                     onChange={(e) => onProductUpdate(product, 'shiriti', Number(e.target.value))}
-                    className="w-full sm:w-20 text-base touch-manipulation"
+                    className="w-20"
                     disabled={isFieldDisabled}
                   />
                 </TableCell>
@@ -140,14 +135,13 @@ export const ProductTable = ({
                   <Input
                     type="number"
                     step="any"
-                    inputMode="decimal"
                     value={data.furnizime || ""}
                     onChange={(e) => onProductUpdate(product, 'furnizime', Number(e.target.value))}
-                    className="w-full sm:w-20 bg-success/10 text-base touch-manipulation"
+                    className="w-20 bg-success/10"
                     disabled={isFieldDisabled}
                   />
                 </TableCell>
-                <TableCell className={`font-medium text-sm sm:text-base ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
+                <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
                   {dif}
                 </TableCell>
                 {isAdminUnlocked && onProductDelete && (
@@ -156,7 +150,7 @@ export const ProductTable = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => onProductDelete(product)}
-                      className="h-10 w-10 p-0 text-destructive hover:text-destructive touch-manipulation"
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                     >
                       ✕
                     </Button>
