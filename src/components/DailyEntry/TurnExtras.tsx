@@ -36,6 +36,7 @@ export const TurnExtras = ({
         <Label>Xhiro {turnName} (ALL)</Label>
         <Input
           type="number"
+          step="any"
           value={turnData.xhiro || ""}
           onChange={(e) => onUpdate('xhiro', Number(e.target.value))}
           disabled={isFieldDisabled}
@@ -46,6 +47,7 @@ export const TurnExtras = ({
         <Label>Xhiro Embëlsirat {turnName} (ALL)</Label>
         <Input
           type="number"
+          step="any"
           value={turnData.xhiroEmbelsira || ""}
           onChange={(e) => onUpdate('xhiroEmbelsira', Number(e.target.value))}
           disabled={isFieldDisabled}
@@ -56,6 +58,7 @@ export const TurnExtras = ({
         <Label>Akullore {turnName} (ALL)</Label>
         <Input
           type="number"
+          step="any"
           value={turnData.akullore || ""}
           onChange={(e) => onUpdate('akullore', Number(e.target.value))}
           disabled={isFieldDisabled}
@@ -66,6 +69,7 @@ export const TurnExtras = ({
         <Label>Mulliri Fillim (kg)</Label>
         <Input
           type="number"
+          step="any"
           value={turnData.mulliriFillim || ""}
           onChange={(e) => onUpdate('mulliriFillim', Number(e.target.value))}
           disabled={mulliriFillimDisabled || !isAdminUnlocked}
@@ -86,6 +90,7 @@ export const TurnExtras = ({
         </div>
         <Input
           type="number"
+          step="any"
           value={turnData.mulliriPerfund || ""}
           onChange={(e) => {
             const value = Number(e.target.value);

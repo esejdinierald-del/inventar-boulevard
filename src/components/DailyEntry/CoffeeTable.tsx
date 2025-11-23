@@ -34,6 +34,7 @@ export const CoffeeTable = ({
               <TableCell>
                 <Input
                   type="number"
+                  step="any"
                   value={coffeeData[coffee] || ""}
                   onChange={(e) => onCoffeeUpdate(coffee, Number(e.target.value))}
                   className="w-24"
