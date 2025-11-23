@@ -2,8 +2,24 @@ import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Lock } from "lucide-react";
+import { toast } from "sonner";
 
 const Reports = () => {
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [password, setPassword] = useState("");
+
+  const handleUnlock = () => {
+    if (password === "1983") {
+      setIsUnlocked(true);
+      toast.success("Raportet u zhbllokuan");
+    } else {
+      toast.error("Fjalëkalimi është i gabuar");
+    }
+  };
   const monthlyData = Array.from({ length: 31 }, (_, i) => ({
     day: i + 1,
     sales: 0,
@@ -14,6 +30,26 @@ const Reports = () => {
   return (
     <Layout>
       <div className="space-y-6">
+        {!isUnlocked && (
+          <Card className="border-warning">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <Lock className="h-5 w-5 text-warning" />
+                <Input
+                  type="password"
+                  placeholder="Fut fjalëkalimin për të parë raportet"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
+                  className="flex-1"
+                />
+                <Button onClick={handleUnlock}>Zhblloko</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
+        <div className={!isUnlocked ? "blur-sm pointer-events-none select-none" : ""}>
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold tracking-tight text-foreground">Raporte</h2>
@@ -134,6 +170,7 @@ const Reports = () => {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     </Layout>
   );
