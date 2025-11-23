@@ -44,28 +44,6 @@ export const TurnExtras = ({
       </div>
 
       <div className="space-y-2">
-        <Label>Xhiro Embëlsirat {turnName} (ALL)</Label>
-        <Input
-          type="number"
-          step="any"
-          value={turnData.xhiroEmbelsira || ""}
-          onChange={(e) => onUpdate('xhiroEmbelsira', Number(e.target.value))}
-          disabled={isFieldDisabled}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label>Akullore {turnName} (ALL)</Label>
-        <Input
-          type="number"
-          step="any"
-          value={turnData.akullore || ""}
-          onChange={(e) => onUpdate('akullore', Number(e.target.value))}
-          disabled={isFieldDisabled}
-        />
-      </div>
-
-      <div className="space-y-2">
         <Label>Mulliri Fillim (kg)</Label>
         <Input
           type="number"
