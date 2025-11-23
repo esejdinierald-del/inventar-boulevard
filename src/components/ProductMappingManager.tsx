@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Loader2, Upload, Save, Trash2 } from "lucide-react";
+import { Loader2, Upload, Save, Trash2, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
+import { AdminPasswordDialog } from "@/components/DailyEntry/AdminPasswordDialog";
 
 interface ProductMappingManagerProps {
   products: string[];
@@ -19,6 +20,8 @@ interface ReceiptProduct {
   originalName: string;
 }
 
+const ADMIN_PASSWORD = "1983";
+
 export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingManagerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -26,6 +29,7 @@ export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingM
   const [detectedProducts, setDetectedProducts] = useState<ReceiptProduct[]>([]);
   const [productMapping, setProductMapping] = useState<{ [key: string]: { type: 'product' | 'coffee'; name: string; quantity: number } }>({});
   const [step, setStep] = useState<'upload' | 'mapping'>('upload');
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
   // Load saved mapping from localStorage
   const loadSavedMapping = () => {
@@ -146,20 +150,32 @@ export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingM
     toast.success("Mapimi u fshi!");
   };
 
+  const handlePasswordSubmit = (password: string) => {
+    if (password === ADMIN_PASSWORD) {
+      setShowPasswordDialog(false);
+      loadSavedMapping();
+      setIsOpen(true);
+      toast.success("Admin u verifikua!");
+    } else {
+      toast.error("Fjalëkalimi është gabim!");
+    }
+  };
+
+  const handleOpenClick = () => {
+    setShowPasswordDialog(true);
+  };
+
   return (
     <>
       <div className="flex gap-2">
         <Button
           variant="outline"
           size="sm"
-          onClick={() => {
-            loadSavedMapping();
-            setIsOpen(true);
-          }}
+          onClick={handleOpenClick}
           className="text-xs"
         >
-          <Upload className="h-3 w-3 mr-1" />
-          ⚙️ Menaxho Mapimin
+          <Lock className="h-3 w-3 mr-1" />
+          ⚙️ Menaxho Mapimin (Admin)
         </Button>
         {Object.keys(productMapping).length > 0 && (
           <Button
@@ -173,6 +189,12 @@ export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingM
           </Button>
         )}
       </div>
+
+      <AdminPasswordDialog
+        isOpen={showPasswordDialog}
+        onClose={() => setShowPasswordDialog(false)}
+        onSubmit={handlePasswordSubmit}
+      />
 
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
