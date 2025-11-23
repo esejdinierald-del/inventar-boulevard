@@ -46,9 +46,22 @@ const DailyEntry = () => {
     return isPastDate() && !isAdminUnlocked;
   };
 
-  // Lista e produkteve nga Excel
-  const products = ["Kanace", "u.vit", "heineken 330", "korona", "paulaner", "rose", "r.bull", "b.52", "crodino", "biter", "Bustina", "uje", "caj", "caj bio"];
-  const coffeeTypes = ["KAFE", "KORRETO", "LATE", "AMERIKANE", "LECE.LECE", "KAPUCIN KAFE"];
+  // Lista dinamike e produkteve dhe kafeve
+  const defaultProducts = ["Kanace", "u.vit", "heineken 330", "korona", "paulaner", "rose", "r.bull", "b.52", "crodino", "biter", "Bustina", "uje", "caj", "caj bio"];
+  const defaultCoffeeTypes = ["KAFE", "KORRETO", "LATE", "AMERIKANE", "LECE.LECE", "KAPUCIN KAFE"];
+  
+  const [products, setProducts] = useState<string[]>(() => {
+    const saved = localStorage.getItem('products_list');
+    return saved ? JSON.parse(saved) : defaultProducts;
+  });
+  
+  const [coffeeTypes, setCoffeeTypes] = useState<string[]>(() => {
+    const saved = localStorage.getItem('coffee_types_list');
+    return saved ? JSON.parse(saved) : defaultCoffeeTypes;
+  });
+  
+  const [newProductName, setNewProductName] = useState("");
+  const [newCoffeeName, setNewCoffeeName] = useState("");
   const [turn1, setTurn1] = useState<TurnData>({
     products: Object.fromEntries(products.map(p => [p, {
       stokFillim: 0,
@@ -155,34 +168,48 @@ const DailyEntry = () => {
     toast.success("Stoku i T1 u kalkulua dhe u kopjua në T2");
   };
 
-  // Ruaj (Stok Fillim + Furnizime - Shiriti) T2 për ditën e nesërme
+  // Ruaj (Stok Fillim + Furnizime - Shiriti) T2 dhe Mulliri Perfund T2 për ditën e nesërme
   const saveForNextDay = () => {
     const nextDayStock = Object.fromEntries(Object.entries(turn2.products).map(([key, data]) => {
       const calculatedStock = data.stokFillim + data.furnizime - data.shiriti;
       return [key, calculatedStock];
     }));
-    localStorage.setItem(`stock_${selectedDate}`, JSON.stringify(nextDayStock));
-    toast.success("Stoku u ruajt për ditën e nesërme!");
+    const nextDay = new Date(selectedDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    const nextDayDate = nextDay.toISOString().split('T')[0];
+    
+    localStorage.setItem(`stock_${nextDayDate}`, JSON.stringify(nextDayStock));
+    localStorage.setItem(`mulliri_fillim_${nextDayDate}`, turn2.mulliriPerfund.toString());
+    toast.success("Stoku dhe mulliri u ruajtën për ditën e nesërme!");
   };
 
-  // Ngarko stokun nga dita e kaluar
+  // Ngarko stokun dhe mullirin nga dita e kaluar
   const loadFromPreviousDay = () => {
-    const yesterday = new Date(selectedDate);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayDate = yesterday.toISOString().split('T')[0];
-    const savedStock = localStorage.getItem(`stock_${yesterdayDate}`);
-    if (savedStock) {
-      const stockData = JSON.parse(savedStock);
-      setTurn1(prev => ({
-        ...prev,
-        products: Object.fromEntries(Object.entries(prev.products).map(([key, data]) => [key, {
-          ...data,
-          stokFillim: stockData[key] || 0
-        }]))
-      }));
-      toast.success("Stoku u ngarkua nga dita e kaluar!");
+    const savedStock = localStorage.getItem(`stock_${selectedDate}`);
+    const savedMulliri = localStorage.getItem(`mulliri_fillim_${selectedDate}`);
+    
+    if (savedStock || savedMulliri) {
+      if (savedStock) {
+        const stockData = JSON.parse(savedStock);
+        setTurn1(prev => ({
+          ...prev,
+          products: Object.fromEntries(Object.entries(prev.products).map(([key, data]) => [key, {
+            ...data,
+            stokFillim: stockData[key] || 0
+          }]))
+        }));
+      }
+      
+      if (savedMulliri) {
+        setTurn1(prev => ({
+          ...prev,
+          mulliriFillim: Number(savedMulliri)
+        }));
+      }
+      
+      toast.success("Të dhënat u ngarkuan nga dita e kaluar!");
     } else {
-      toast.error("Nuk ka të dhëna për ditën e kaluar");
+      toast.error("Nuk ka të dhëna për këtë datë");
     }
   };
 
@@ -206,6 +233,60 @@ const DailyEntry = () => {
       setShowPasswordDialog(true);
     }
   };
+  // Shto produkt të ri
+  const addProduct = () => {
+    if (!newProductName.trim()) {
+      toast.error("Shkruaj emrin e produktit!");
+      return;
+    }
+    if (products.includes(newProductName.trim())) {
+      toast.error("Produkti ekziston tashmë!");
+      return;
+    }
+    const updatedProducts = [...products, newProductName.trim()];
+    setProducts(updatedProducts);
+    localStorage.setItem('products_list', JSON.stringify(updatedProducts));
+    
+    // Shto produktin në të dy turnet
+    setTurn1(prev => ({
+      ...prev,
+      products: {
+        ...prev.products,
+        [newProductName.trim()]: { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 }
+      }
+    }));
+    setTurn2(prev => ({
+      ...prev,
+      products: {
+        ...prev.products,
+        [newProductName.trim()]: { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 }
+      }
+    }));
+    
+    setNewProductName("");
+    toast.success("Produkti u shtua!");
+  };
+
+  // Fshi produkt
+  const deleteProduct = (productName: string) => {
+    const updatedProducts = products.filter(p => p !== productName);
+    setProducts(updatedProducts);
+    localStorage.setItem('products_list', JSON.stringify(updatedProducts));
+    
+    setTurn1(prev => {
+      const newProducts = { ...prev.products };
+      delete newProducts[productName];
+      return { ...prev, products: newProducts };
+    });
+    setTurn2(prev => {
+      const newProducts = { ...prev.products };
+      delete newProducts[productName];
+      return { ...prev, products: newProducts };
+    });
+    
+    toast.success("Produkti u fshi!");
+  };
+
   const handleSave = () => {
     const totalXhiro = calculateTotalXhiro();
     const mulliri1Dif = calculateMulliriDif(turn1.mulliriFillim, turn1.mulliriPerfund, calculateTotalCoffee(turn1));
@@ -275,6 +356,7 @@ const DailyEntry = () => {
                         <TableHead>Shiriti</TableHead>
                         <TableHead>Furnizime</TableHead>
                         <TableHead>Dif</TableHead>
+                        {isAdminUnlocked && <TableHead className="w-[50px]"></TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -298,8 +380,41 @@ const DailyEntry = () => {
                             <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
                               {dif}
                             </TableCell>
+                            {isAdminUnlocked && (
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => deleteProduct(product)}
+                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                >
+                                  ✕
+                                </Button>
+                              </TableCell>
+                            )}
                           </TableRow>;
                     })}
+                      {isAdminUnlocked && (
+                        <TableRow className="bg-accent/20">
+                          <TableCell>
+                            <Input
+                              placeholder="Emri i produktit të ri..."
+                              value={newProductName}
+                              onChange={(e) => setNewProductName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') addProduct();
+                              }}
+                              className="h-8"
+                            />
+                          </TableCell>
+                          <TableCell colSpan={5}>
+                            <Button onClick={addProduct} size="sm" variant="outline" className="h-8">
+                              + Shto Produkt
+                            </Button>
+                          </TableCell>
+                          <TableCell></TableCell>
+                        </TableRow>
+                      )}
                       <TableRow className="bg-muted/50">
                         <TableCell className="font-bold">TOTALI</TableCell>
                         <TableCell className="font-bold">{Object.values(turn1.products).reduce((sum, p) => sum + p.stokFillim, 0)}</TableCell>
@@ -307,6 +422,7 @@ const DailyEntry = () => {
                         <TableCell className="font-bold text-primary">{calculateTotalProducts(turn1)}</TableCell>
                         <TableCell className="font-bold text-success">{Object.values(turn1.products).reduce((sum, p) => sum + p.furnizime, 0)}</TableCell>
                         <TableCell className="font-bold">{Object.values(turn1.products).reduce((sum, p) => sum + calculateDif(p.stokFillim, p.furnizime, p.gjendje, p.shiriti), 0)}</TableCell>
+                        {isAdminUnlocked && <TableCell></TableCell>}
                       </TableRow>
                     </TableBody>
                   </Table>
@@ -404,6 +520,7 @@ const DailyEntry = () => {
                         <TableHead>Shiriti</TableHead>
                         <TableHead>Furnizime</TableHead>
                         <TableHead>Dif</TableHead>
+                        {isAdminUnlocked && <TableHead className="w-[50px]"></TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -427,6 +544,18 @@ const DailyEntry = () => {
                             <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
                               {dif}
                             </TableCell>
+                            {isAdminUnlocked && (
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => deleteProduct(product)}
+                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                >
+                                  ✕
+                                </Button>
+                              </TableCell>
+                            )}
                           </TableRow>;
                     })}
                       <TableRow className="bg-muted/50">
@@ -436,6 +565,7 @@ const DailyEntry = () => {
                         <TableCell className="font-bold text-primary">{calculateTotalProducts(turn2)}</TableCell>
                         <TableCell className="font-bold text-success">{Object.values(turn2.products).reduce((sum, p) => sum + p.furnizime, 0)}</TableCell>
                         <TableCell className="font-bold">{Object.values(turn2.products).reduce((sum, p) => sum + calculateDif(p.stokFillim, p.furnizime, p.gjendje, p.shiriti), 0)}</TableCell>
+                        {isAdminUnlocked && <TableCell></TableCell>}
                       </TableRow>
                     </TableBody>
                   </Table>
