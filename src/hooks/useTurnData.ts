@@ -30,48 +30,44 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
 
   // Load data for current date on mount and when date changes
   useEffect(() => {
-    console.log('📅 Loading data for date:', selectedDate);
     isInitialLoad.current = true;
     const savedData = StorageService.getDailyEntryData(selectedDate);
     if (savedData) {
-      console.log('📂 Found saved data:', savedData);
       setTurn1(savedData.turn1);
       setTurn2(savedData.turn2);
     } else {
-      console.log('📝 No saved data, creating empty');
       setTurn1(createEmptyTurnData());
       setTurn2(createEmptyTurnData());
     }
     // Mark initial load as complete after a short delay
     setTimeout(() => {
-      console.log('✅ Initial load complete');
       isInitialLoad.current = false;
     }, 100);
   }, [selectedDate, createEmptyTurnData]);
 
   // Auto-save current day data when turn1 or turn2 changes
   useEffect(() => {
-    if (isInitialLoad.current) {
-      console.log('🔵 Auto-save skipped: initial load');
-      return;
-    }
+    if (isInitialLoad.current) return;
     
-    console.log('🟢 Auto-save scheduled for date:', selectedDate);
     const timeoutId = setTimeout(() => {
       const dataToSave = {
         turn1,
         turn2,
         date: selectedDate
       };
-      console.log('💾 Saving data:', dataToSave);
       StorageService.setDailyEntryData(selectedDate, dataToSave);
-      console.log('✅ Data saved successfully');
+      
+      // Verify save with toast
+      const verified = StorageService.getDailyEntryData(selectedDate);
+      if (verified) {
+        console.log('✅ Auto-save verified');
+      } else {
+        console.error('❌ Auto-save failed - data not found after save');
+        toast.error('Gabim në ruajtje! Kontrollo localStorage');
+      }
     }, 500); // Debounce for 500ms
 
-    return () => {
-      console.log('🔴 Auto-save cancelled');
-      clearTimeout(timeoutId);
-    };
+    return () => clearTimeout(timeoutId);
   }, [turn1, turn2, selectedDate]);
 
   // Auto-sync T1 stock to T2 when T1 changes
