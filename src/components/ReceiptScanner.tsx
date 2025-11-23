@@ -135,6 +135,11 @@ export const ReceiptScanner = ({ products, onDataExtracted, turnName, turnData, 
   };
 
   const handleApplyData = () => {
+    console.log("🔍 handleApplyData called");
+    console.log("receiptItems:", receiptItems);
+    console.log("mappedData:", mappedData);
+    console.log("hasAnyDifferences:", hasAnyDifferences());
+    
     // Check for differences before applying
     if (hasAnyDifferences()) {
       toast.error("⚠️ Ka diferenca në shiriti aktual! Të gjitha diferencat duhet të jenë 0 para se të ngarkosh shiriti të ri.");
@@ -144,33 +149,42 @@ export const ReceiptScanner = ({ products, onDataExtracted, turnName, turnData, 
     try {
       // Use the stored receipt items instead of making another API call
       if (!receiptItems || receiptItems.length === 0) {
+        console.error("❌ No receipt items");
         toast.error("Nuk ka të dhëna për t'u ngarkuar");
         return;
       }
 
       const data: { [key: string]: number } = {};
       let hasUnmapped = false;
+      let unmappedItems: string[] = [];
       
       receiptItems.forEach((item: { name: string; quantity: number }, index: number) => {
         const productName = mappedData[index.toString()];
+        console.log(`Item ${index}: ${item.name} -> ${productName || 'UNMAPPED'}`);
         if (productName) {
           data[productName] = item.quantity;
         } else {
           hasUnmapped = true;
+          unmappedItems.push(item.name);
         }
       });
 
+      console.log("Final data to apply:", data);
+      console.log("Unmapped items:", unmappedItems);
+
       if (hasUnmapped) {
-        toast.error("Duhet të maposh të gjitha produktet para se të aplikosh!");
+        toast.error(`Duhet të maposh të gjitha produktet! Të pamapuara: ${unmappedItems.join(', ')}`);
         return;
       }
 
       if (Object.keys(data).length > 0) {
+        console.log("✅ Calling onDataExtracted with:", data);
         onDataExtracted(data);
         toast.success(`${Object.keys(data).length} produkte u ngarkuan!`);
         setIsOpen(false);
         resetState();
       } else {
+        console.error("❌ No data to apply");
         toast.error("Nuk u gjetën të dhëna për t'u ngarkuar");
       }
     } catch (error) {
