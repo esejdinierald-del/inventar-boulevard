@@ -320,6 +320,24 @@ const DailyEntry = () => {
     setProducts(updatedProducts);
     localStorage.setItem('products_list', JSON.stringify(updatedProducts));
 
+    // Përditëso mapimet e ruajtura të shiritave
+    const savedMapping = localStorage.getItem('receipt_product_mapping');
+    if (savedMapping) {
+      const mapping: { [key: string]: string } = JSON.parse(savedMapping);
+      const updatedMapping: { [key: string]: string } = {};
+      
+      // Përditëso çdo mapping që përdor emrin e vjetër të produktit
+      Object.entries(mapping).forEach(([receiptName, productName]) => {
+        if (productName === oldName) {
+          updatedMapping[receiptName] = editedProductName.trim();
+        } else {
+          updatedMapping[receiptName] = productName;
+        }
+      });
+      
+      localStorage.setItem('receipt_product_mapping', JSON.stringify(updatedMapping));
+    }
+
     // Përditëso të dhënat në të dy turnet
     setTurn1(prev => {
       const newProducts = { ...prev.products };
@@ -336,7 +354,7 @@ const DailyEntry = () => {
       return { ...prev, products: newProducts };
     });
 
-    toast.success("Emri i produktit u ndryshua!");
+    toast.success("Emri i produktit dhe mapimet u përditësuan!");
     cancelEditingProduct();
   };
 
