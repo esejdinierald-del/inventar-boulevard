@@ -3,18 +3,46 @@ import { StorageService } from '@/services/storage.service';
 import { toast } from 'sonner';
 
 const DEFAULT_PRODUCTS = [
-  "Kanace", "u.vit", "heineken 330", "korona", "paulaner", 
-  "rose", "r.bull", "b.52", "crodino", "biter", 
-  "Bustina", "uje", "caj", "caj bio"
+  "Kanace", "Uje .vit", "Heineken shishe", "Korona", "Paulaner", 
+  "Rose", "Red.bull", "B 52", "Crodino", "Biter", 
+  "Bustina", "Uje", "Caj", "Caj bio"
 ];
 
 const DEFAULT_COFFEE_TYPES = [
   "KAFE", "KORRETO", "LATE", "AMERIKANE", "LECE.LECE", "KAPUCIN KAFE"
 ];
 
+// Normalizimi i emrave të vjetër në të rinj
+const PRODUCT_NAME_MIGRATION: { [key: string]: string } = {
+  "u.vit": "Uje .vit",
+  "heineken 330": "Heineken shishe",
+  "korona": "Korona",
+  "paulaner": "Paulaner",
+  "rose": "Rose",
+  "r.bull": "Red.bull",
+  "b.52": "B 52",
+  "crodino": "Crodino",
+  "biter": "Biter",
+  "uje": "Uje",
+  "caj": "Caj",
+  "caj bio": "Caj bio"
+};
+
+const normalizeProductName = (name: string): string => {
+  return PRODUCT_NAME_MIGRATION[name] || name;
+};
+
 export const useProductList = () => {
   const [products, setProducts] = useState<string[]>(() => {
-    return StorageService.getProducts() || DEFAULT_PRODUCTS;
+    const saved = StorageService.getProducts();
+    if (saved) {
+      // Migro emrat e vjetër në të rinj
+      const normalized = saved.map(p => normalizeProductName(p));
+      // Ruaj emrat e normalizuar
+      StorageService.setProducts(normalized);
+      return normalized;
+    }
+    return DEFAULT_PRODUCTS;
   });
 
   const [coffeeTypes] = useState<string[]>(() => {

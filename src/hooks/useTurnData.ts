@@ -10,6 +10,49 @@ interface UseTurnDataProps {
   selectedDate: string;
 }
 
+// Migrim për emrat e produkteve
+const PRODUCT_NAME_MIGRATION: { [key: string]: string } = {
+  "u.vit": "Uje .vit",
+  "heineken 330": "Heineken shishe",
+  "korona": "Korona",
+  "paulaner": "Paulaner",
+  "rose": "Rose",
+  "r.bull": "Red.bull",
+  "b.52": "B 52",
+  "crodino": "Crodino",
+  "biter": "Biter",
+  "uje": "Uje",
+  "caj": "Caj",
+  "caj bio": "Caj bio"
+};
+
+const migrateProductNames = (turnData: TurnData, productList: string[]): TurnData => {
+  const migratedProducts: { [key: string]: ProductData } = {};
+  
+  // Migro emrat e vjetër
+  Object.entries(turnData.products).forEach(([oldName, data]) => {
+    const newName = PRODUCT_NAME_MIGRATION[oldName] || oldName;
+    migratedProducts[newName] = data;
+  });
+  
+  // Shto produktet e munguara me vlera 0
+  productList.forEach(product => {
+    if (!migratedProducts[product]) {
+      migratedProducts[product] = {
+        stokFillim: 0,
+        gjendje: 0,
+        shiriti: 0,
+        furnizime: 0
+      };
+    }
+  });
+  
+  return {
+    ...turnData,
+    products: migratedProducts
+  };
+};
+
 export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnDataProps) => {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   
@@ -36,9 +79,18 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     isInitialLoad.current = true;
     const savedData = StorageService.getDailyEntryData(selectedDate);
     if (savedData) {
-      console.log('📂 Found saved data:', savedData);
-      setTurn1(savedData.turn1);
-      setTurn2(savedData.turn2);
+      console.log('📂 Found saved data - migrating if needed');
+      // Migro emrat e produkteve
+      const migratedT1 = migrateProductNames(savedData.turn1, products);
+      const migratedT2 = migrateProductNames(savedData.turn2, products);
+      setTurn1(migratedT1);
+      setTurn2(migratedT2);
+      // Ruaj të dhënat e migруara
+      StorageService.setDailyEntryData(selectedDate, {
+        turn1: migratedT1,
+        turn2: migratedT2,
+        date: selectedDate
+      });
     } else {
       console.log('📝 No saved data - creating empty');
       setTurn1(createEmptyTurnData());
@@ -49,7 +101,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       console.log('✅ Initial load complete - auto-save enabled');
       isInitialLoad.current = false;
     }, 100);
-  }, [selectedDate, createEmptyTurnData]);
+  }, [selectedDate, createEmptyTurnData, products]);
 
   // Auto-save current day data when turn1 or turn2 changes
   useEffect(() => {
@@ -227,12 +279,19 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
 
     if (savedStock || savedMulliri) {
       if (savedStock) {
+        // Migro emrat e produkteve
+        const migratedStock: { [key: string]: number } = {};
+        Object.entries(savedStock).forEach(([oldName, value]) => {
+          const newName = PRODUCT_NAME_MIGRATION[oldName] || oldName;
+          migratedStock[newName] = value;
+        });
+        
         setTurn1(prev => ({
           ...prev,
           products: Object.fromEntries(
             Object.entries(prev.products).map(([key, data]) => [
               key,
-              { ...data, stokFillim: savedStock[key] || 0 }
+              { ...data, stokFillim: migratedStock[key] || 0 }
             ])
           )
         }));
@@ -245,7 +304,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
         }));
       }
 
-      toast.success("Të dhënat u ngarkuan nga dita e kaluar!");
+      toast.success("Të dhënat u ngarkuan dhe u përditësuan!");
     } else {
       toast.error("Nuk ka të dhëna për këtë datë");
     }
