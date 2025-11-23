@@ -223,9 +223,11 @@ export const ReceiptScanner = ({ products, onDataExtracted, turnName, turnData, 
             <DialogTitle>Ngarko dhe Analizо Shiriti - {turnName}</DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Left side - Image upload */}
+          <div className="flex-1 overflow-auto">
+            <div className="space-y-4 p-1">
+            {/* Image upload section */}
             <div className="space-y-4">
+              <Label className="text-base font-semibold">Hapi 1: Ngarko Foton</Label>
               <div className="border-2 border-dashed rounded-lg p-4 text-center">
                 {!selectedImage ? (
                   <label className="cursor-pointer block">
@@ -263,27 +265,26 @@ export const ReceiptScanner = ({ products, onDataExtracted, turnName, turnData, 
               </div>
 
               {extractedText && (
-                <div className="space-y-2">
+                <div className="space-y-2 mt-4">
                   <Label>Teksti i Lexuar:</Label>
-                  <ScrollArea className="h-48 border rounded p-2">
+                  <ScrollArea className="h-32 border rounded p-2">
                     <pre className="text-xs whitespace-pre-wrap">{extractedText}</pre>
                   </ScrollArea>
                 </div>
               )}
             </div>
 
-            {/* Right side - Product mapping */}
+            {/* Product mapping section */}
             {extractedText && (
-              <div className="space-y-4">
+              <div className="space-y-4 mt-6 pt-6 border-t">
                 <div>
-                  <Label>Lidh Produktet me Rreshtat:</Label>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Zgjidh se cili produkt përputhet me cilën rresht në shiriti
+                  <Label className="text-base font-semibold">Hapi 2: Mapo Produktet</Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    ⚠️ Duhet të maposh të gjitha produktet para se të aplikosh!
                   </p>
                 </div>
 
-                <ScrollArea className="h-96">
-                  <div className="space-y-2 pr-4">
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
                     {(() => {
                       // Only show product lines (skip headers and separators)
                       const lines = extractedText.split('\n');
@@ -300,39 +301,54 @@ export const ReceiptScanner = ({ products, onDataExtracted, turnName, turnData, 
                         }
                       }
                       
-                      return productLines.map((line, index) => (
-                        <div key={index} className="flex items-center gap-2 p-2 border rounded">
-                          <div className="flex-1 text-sm font-mono bg-muted p-2 rounded">
-                            {line}
+                      return productLines.map((line, index) => {
+                        const isMapped = !!mappedData[index.toString()];
+                        return (
+                          <div key={index} className="space-y-2 p-3 border rounded bg-card">
+                            <div className="text-xs font-mono bg-muted p-2 rounded">
+                              {line}
+                            </div>
+                            <select
+                              value={mappedData[index.toString()] || ""}
+                              onChange={(e) => handleMapProduct(index.toString(), e.target.value)}
+                              className={`w-full text-sm border rounded p-2 ${
+                                isMapped ? 'border-green-500 bg-green-50' : 'border-orange-500'
+                              }`}
+                            >
+                              <option value="">🔴 Zgjidh produktin...</option>
+                              {products.map(product => (
+                                <option key={product} value={product}>
+                                  {product}
+                                </option>
+                              ))}
+                            </select>
                           </div>
-                          <select
-                            value={mappedData[index.toString()] || ""}
-                            onChange={(e) => handleMapProduct(index.toString(), e.target.value)}
-                            className="text-xs border rounded p-1 min-w-[120px]"
-                          >
-                            <option value="">-- Zgjidh --</option>
-                            {products.map(product => (
-                              <option key={product} value={product}>
-                                {product}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      ));
+                        );
+                      });
                     })()}
-                  </div>
-                </ScrollArea>
+                </div>
 
-                <div className="flex gap-2 pt-4 border-t">
-                  <Button onClick={handleApplyData} className="flex-1">
-                    ✓ Apliko të Dhënat
-                  </Button>
-                  <Button onClick={handleClose} variant="outline">
-                    Anulo
-                  </Button>
+                <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t mt-4">
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleApplyData} 
+                      className="flex-1 h-12 text-base"
+                      disabled={isProcessing}
+                    >
+                      ✓ Apliko të Dhënat
+                    </Button>
+                    <Button 
+                      onClick={handleClose} 
+                      variant="outline"
+                      className="h-12"
+                    >
+                      Anulo
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
