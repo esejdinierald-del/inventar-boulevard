@@ -52,35 +52,29 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
   // Auto-save current day data when turn1 or turn2 changes
   useEffect(() => {
     if (isInitialLoad.current) {
-      console.log('⏭️ Skipping auto-save (initial load)');
       return;
     }
     
-    console.log('⏳ Auto-save scheduled...');
     const timeoutId = setTimeout(() => {
-      console.log('💾 Saving to localStorage...');
-      const dataToSave = {
-        turn1,
-        turn2,
-        date: selectedDate
-      };
-      console.log('💾 Data to save:', dataToSave);
-      StorageService.setDailyEntryData(selectedDate, dataToSave);
-      
-      // Verify save
-      const verified = StorageService.getDailyEntryData(selectedDate);
-      if (verified) {
-        console.log('✅ Save verified - data found in localStorage');
-      } else {
-        console.error('❌ Save failed - data NOT found after save!');
-        toast.error('GABIM: Të dhënat nuk u ruajtën!');
+      try {
+        const dataToSave = {
+          turn1,
+          turn2,
+          date: selectedDate
+        };
+        StorageService.setDailyEntryData(selectedDate, dataToSave);
+        
+        // Verify save
+        const verified = StorageService.getDailyEntryData(selectedDate);
+        if (!verified) {
+          toast.error('❌ Të dhënat NUK u ruajtën!');
+        }
+      } catch (error) {
+        toast.error(`❌ Gabim në ruajtje: ${error}`);
       }
     }, 500);
 
-    return () => {
-      console.log('🚫 Auto-save cancelled');
-      clearTimeout(timeoutId);
-    };
+    return () => clearTimeout(timeoutId);
   }, [turn1, turn2, selectedDate]);
 
   // Auto-sync T1 stock to T2 when T1 changes
