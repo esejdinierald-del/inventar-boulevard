@@ -260,13 +260,13 @@ const DailyEntry = () => {
                               <Input type="number" value={data.stokFillim || ""} onChange={e => updateTurn1Product(product, 'stokFillim', Number(e.target.value))} className="w-20" disabled={!isAdminUnlocked} />
                             </TableCell>
                             <TableCell>
-                              <Input type="number" value={data.gjendje || ""} onChange={e => updateTurn1Product(product, 'gjendje', Number(e.target.value))} className="w-20" disabled={!isAdminUnlocked} />
+                              <Input type="number" value={data.gjendje || ""} onChange={e => updateTurn1Product(product, 'gjendje', Number(e.target.value))} className="w-20" />
                             </TableCell>
                             <TableCell>
-                              <Input type="number" value={data.shiriti || ""} onChange={e => updateTurn1Product(product, 'shiriti', Number(e.target.value))} className="w-20" disabled={!isAdminUnlocked} />
+                              <Input type="number" value={data.shiriti || ""} onChange={e => updateTurn1Product(product, 'shiriti', Number(e.target.value))} className="w-20" />
                             </TableCell>
                             <TableCell>
-                              <Input type="number" value={data.furnizime || ""} onChange={e => updateTurn1Product(product, 'furnizime', Number(e.target.value))} className="w-20 bg-success/10" disabled={!isAdminUnlocked} />
+                              <Input type="number" value={data.furnizime || ""} onChange={e => updateTurn1Product(product, 'furnizime', Number(e.target.value))} className="w-20 bg-success/10" />
                             </TableCell>
                             <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
                               {dif}
@@ -385,13 +385,13 @@ const DailyEntry = () => {
                               <Input type="number" value={data.stokFillim || ""} onChange={e => updateTurn2Product(product, 'stokFillim', Number(e.target.value))} className="w-20" disabled={!isAdminUnlocked} />
                             </TableCell>
                             <TableCell>
-                              <Input type="number" value={data.gjendje || ""} onChange={e => updateTurn2Product(product, 'gjendje', Number(e.target.value))} className="w-20" disabled={!isAdminUnlocked} />
+                              <Input type="number" value={data.gjendje || ""} onChange={e => updateTurn2Product(product, 'gjendje', Number(e.target.value))} className="w-20" />
                             </TableCell>
                             <TableCell>
-                              <Input type="number" value={data.shiriti || ""} onChange={e => updateTurn2Product(product, 'shiriti', Number(e.target.value))} className="w-20" disabled={!isAdminUnlocked} />
+                              <Input type="number" value={data.shiriti || ""} onChange={e => updateTurn2Product(product, 'shiriti', Number(e.target.value))} className="w-20" />
                             </TableCell>
                             <TableCell>
-                              <Input type="number" value={data.furnizime || ""} onChange={e => updateTurn2Product(product, 'furnizime', Number(e.target.value))} className="w-20 bg-success/10" disabled={!isAdminUnlocked} />
+                              <Input type="number" value={data.furnizime || ""} onChange={e => updateTurn2Product(product, 'furnizime', Number(e.target.value))} className="w-20 bg-success/10" />
                             </TableCell>
                             <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
                               {dif}
