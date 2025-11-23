@@ -265,15 +265,15 @@ export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingM
           )}
 
           {step === 'mapping' && (
-            <div className="flex-1 space-y-4 overflow-hidden flex flex-col">
-               <div>
+            <div className="space-y-4">
+              <div>
                 <Label>Mapo produktet dhe kafen nga shiriti me artikujt e sistemit</Label>
                 <p className="text-xs text-muted-foreground">
                   U gjetën {detectedProducts.length} artikuj unikë nga shiritat. Zgjidh se cili artikull i shiritit korrespondon me produktet ose kafet në sistem.
                 </p>
               </div>
 
-              <ScrollArea className="flex-1 pr-4">
+              <ScrollArea className="h-[50vh] pr-4">
                 <div className="space-y-2">
                   {detectedProducts.map((product, index) => {
                     const mapping = productMapping[product.name];
@@ -340,7 +340,7 @@ export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingM
                 </div>
               </ScrollArea>
 
-              <div className="flex gap-2 pt-4 border-t">
+              <div className="flex gap-2 pt-2 border-t mt-2">
                 <Button onClick={() => setStep('upload')} variant="outline">
                   ← Kthehu
                 </Button>
