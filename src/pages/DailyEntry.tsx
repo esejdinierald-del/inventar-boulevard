@@ -10,7 +10,7 @@ import { ProductMappingManager } from "@/components/ProductMappingManager";
 
 import { TurnSection } from "@/components/DailyEntry/TurnSection";
 import { HistoryDialog } from "@/components/DailyEntry/HistoryDialog";
-import { useAuth } from "@/hooks/useAuth";
+import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import { useProductList } from "@/hooks/useProductList";
 import { useTurnData } from "@/hooks/useTurnData";
 import { TurnData } from "@/types/turn.types";
@@ -24,7 +24,7 @@ const DailyEntry = () => {
   const [currentTab, setCurrentTab] = useState<"turn1" | "turn2">("turn1");
 
   // Custom hooks
-  const { isAdmin, signOut } = useAuth();
+  const { isAdmin, logout } = useSimpleAuth();
   const { products, coffeeTypes, addProduct, deleteProduct, updateProduct } = useProductList();
   const {
     turn1,
@@ -157,7 +157,7 @@ const DailyEntry = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={signOut}
+              onClick={logout}
               className="text-xs touch-manipulation min-h-[44px] sm:min-h-0"
             >
               <Unlock className="h-3 w-3 mr-1" />
