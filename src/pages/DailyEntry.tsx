@@ -333,21 +333,21 @@ const DailyEntry = () => {
                   
                   
                   <div className="space-y-2">
-                    <Label>Mëlliri Fillim (kg)</Label>
+                    <Label>Mulliri Fillim (kg)</Label>
                     <Input type="number" value={turn1.mulliriFillim || ""} onChange={e => setTurn1(prev => ({
                     ...prev,
                     mulliriFillim: Number(e.target.value)
                   }))} disabled={!isAdminUnlocked} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Mëlliri Perfund (kg)</Label>
+                    <Label>Mulliri Perfund (kg)</Label>
                     <Input type="number" value={turn1.mulliriPerfund || ""} onChange={e => setTurn1(prev => ({
                     ...prev,
                     mulliriPerfund: Number(e.target.value)
                   }))} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Diferenca Mëlliri (kg)</Label>
+                    <Label>Diferenca Mulliri (kg)</Label>
                     <div className="rounded-md border border-input bg-muted px-3 py-2 text-sm font-medium">
                       {calculateMulliriDif(turn1.mulliriFillim, turn1.mulliriPerfund, calculateTotalCoffee(turn1))}
                     </div>
@@ -476,21 +476,21 @@ const DailyEntry = () => {
                   }))} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Mëlliri Fillim (kg)</Label>
+                    <Label>Mulliri Fillim (kg)</Label>
                     <Input type="number" value={turn2.mulliriFillim || ""} onChange={e => setTurn2(prev => ({
                     ...prev,
                     mulliriFillim: Number(e.target.value)
                   }))} disabled={!isAdminUnlocked} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Mëlliri Perfund (kg)</Label>
+                    <Label>Mulliri Perfund (kg)</Label>
                     <Input type="number" value={turn2.mulliriPerfund || ""} onChange={e => setTurn2(prev => ({
                     ...prev,
                     mulliriPerfund: Number(e.target.value)
                   }))} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Diferenca Mëlliri (kg)</Label>
+                    <Label>Diferenca Mulliri (kg)</Label>
                     <div className="rounded-md border border-input bg-muted px-3 py-2 text-sm font-medium">
                       {calculateMulliriDif(turn2.mulliriFillim, turn2.mulliriPerfund, calculateTotalCoffee(turn2))}
                     </div>
