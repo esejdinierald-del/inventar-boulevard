@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar, ArrowLeft, LayoutGrid } from "lucide-react";
+import { Calendar, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { TurnSection } from "@/components/DailyEntry/TurnSection";
@@ -96,15 +96,6 @@ const DailyEntryTurn2 = () => {
             <p className="text-muted-foreground">Regjistro shitjet dhe inventarin për turnin e dytë</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/daily/turn1")}
-              className="text-xs gap-2"
-            >
-              <ArrowLeft className="h-3 w-3" />
-              Turni 1
-            </Button>
             <Button
               variant="outline"
               size="sm"

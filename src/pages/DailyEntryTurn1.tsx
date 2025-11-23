@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar, ArrowRight, LayoutGrid } from "lucide-react";
+import { Calendar, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { TurnSection } from "@/components/DailyEntry/TurnSection";
@@ -104,15 +104,6 @@ const DailyEntryTurn1 = () => {
             >
               <LayoutGrid className="h-3 w-3" />
               Overview
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => navigate("/daily/turn2")}
-              className="text-xs gap-2"
-            >
-              Turni 2
-              <ArrowRight className="h-3 w-3" />
             </Button>
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
