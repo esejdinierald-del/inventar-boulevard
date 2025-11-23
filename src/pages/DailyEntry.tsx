@@ -116,10 +116,60 @@ const DailyEntry = () => {
     return Object.values(turn.coffee).reduce((sum, qty) => sum + qty, 0);
   };
 
+  // Kopjon Gjendje T1 në Stok Fillim T2
+  const copyT1ToT2 = () => {
+    setTurn2(prev => ({
+      ...prev,
+      products: Object.fromEntries(
+        Object.entries(prev.products).map(([key, data]) => [
+          key,
+          { ...data, stokFillim: turn1.products[key].gjendje }
+        ])
+      )
+    }));
+    toast.success("Gjendja e T1 u kopjua në Stok Fillim të T2");
+  };
+
+  // Ruaj Gjendje T2 për ditën e nesërme
+  const saveForNextDay = () => {
+    const nextDayStock = Object.fromEntries(
+      Object.entries(turn2.products).map(([key, data]) => [key, data.gjendje])
+    );
+    localStorage.setItem(`stock_${selectedDate}`, JSON.stringify(nextDayStock));
+    toast.success("Gjendja u ruajt për ditën e nesërme!");
+  };
+
+  // Ngarko stokun nga dita e kaluar
+  const loadFromPreviousDay = () => {
+    const yesterday = new Date(selectedDate);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayDate = yesterday.toISOString().split('T')[0];
+    
+    const savedStock = localStorage.getItem(`stock_${yesterdayDate}`);
+    if (savedStock) {
+      const stockData = JSON.parse(savedStock);
+      setTurn1(prev => ({
+        ...prev,
+        products: Object.fromEntries(
+          Object.entries(prev.products).map(([key, data]) => [
+            key,
+            { ...data, stokFillim: stockData[key] || 0 }
+          ])
+        )
+      }));
+      toast.success("Stoku u ngarkua nga dita e kaluar!");
+    } else {
+      toast.error("Nuk ka të dhëna për ditën e kaluar");
+    }
+  };
+
   const handleSave = () => {
     const totalXhiro = calculateTotalXhiro();
     const mulliri1Dif = calculateMulliriDif(turn1.mulliriFillim, turn1.mulliriPerfund);
     const mulliri2Dif = calculateMulliriDif(turn2.mulliriFillim, turn2.mulliriPerfund);
+    
+    // Automatikisht ruaj për ditën e nesërme
+    saveForNextDay();
     
     toast.success(`Të dhënat u ruajtën! Xhiro totale: ${totalXhiro.toLocaleString()} ALL`);
   };
@@ -127,19 +177,29 @@ const DailyEntry = () => {
   return (
     <Layout>
       <div className="space-y-6 pb-20 md:pb-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-3xl font-bold tracking-tight text-foreground">Regjistrimi Ditor</h2>
             <p className="text-muted-foreground">Regjistro shitjet dhe inventarin për secilin turn</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <Input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-auto"
-            />
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={loadFromPreviousDay}
+              className="text-xs"
+            >
+              📥 Ngarko nga dje
+            </Button>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <Input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-auto"
+              />
+            </div>
           </div>
         </div>
 
@@ -151,8 +211,16 @@ const DailyEntry = () => {
 
           <TabsContent value="turn1" className="space-y-4">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Produktet - Turni 1</CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={copyT1ToT2}
+                  className="text-xs"
+                >
+                  Kopjo në T2 →
+                </Button>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
@@ -543,9 +611,18 @@ const DailyEntry = () => {
                 />
               </div>
             </div>
-            <Button onClick={handleSave} className="w-full md:w-auto bg-gradient-primary">
-              Ruaj të Dhënat
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={handleSave} className="flex-1 md:flex-none bg-gradient-primary">
+                💾 Ruaj të Dhënat
+              </Button>
+              <Button 
+                onClick={saveForNextDay} 
+                variant="outline"
+                className="flex-1 md:flex-none"
+              >
+                📅 Ruaj për nesër
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
