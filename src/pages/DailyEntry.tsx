@@ -116,27 +116,31 @@ const DailyEntry = () => {
     return Object.values(turn.coffee).reduce((sum, qty) => sum + qty, 0);
   };
 
-  // Kopjon Gjendje T1 në Stok Fillim T2
+  // Kopjon (Stok Fillim + Furnizime - Shiriti) T1 në Stok Fillim T2
   const copyT1ToT2 = () => {
     setTurn2(prev => ({
       ...prev,
       products: Object.fromEntries(
-        Object.entries(prev.products).map(([key, data]) => [
-          key,
-          { ...data, stokFillim: turn1.products[key].gjendje }
-        ])
+        Object.entries(prev.products).map(([key, data]) => {
+          const t1Data = turn1.products[key];
+          const calculatedStock = t1Data.stokFillim + t1Data.furnizime - t1Data.shiriti;
+          return [key, { ...data, stokFillim: calculatedStock }];
+        })
       )
     }));
-    toast.success("Gjendja e T1 u kopjua në Stok Fillim të T2");
+    toast.success("Stoku i T1 u kalkulua dhe u kopjua në T2");
   };
 
-  // Ruaj Gjendje T2 për ditën e nesërme
+  // Ruaj (Stok Fillim + Furnizime - Shiriti) T2 për ditën e nesërme
   const saveForNextDay = () => {
     const nextDayStock = Object.fromEntries(
-      Object.entries(turn2.products).map(([key, data]) => [key, data.gjendje])
+      Object.entries(turn2.products).map(([key, data]) => {
+        const calculatedStock = data.stokFillim + data.furnizime - data.shiriti;
+        return [key, calculatedStock];
+      })
     );
     localStorage.setItem(`stock_${selectedDate}`, JSON.stringify(nextDayStock));
-    toast.success("Gjendja u ruajt për ditën e nesërme!");
+    toast.success("Stoku u ruajt për ditën e nesërme!");
   };
 
   // Ngarko stokun nga dita e kaluar
