@@ -108,6 +108,30 @@ const DailyEntry = () => {
     syncMulliriT1ToT2(value);
   }, [updateTurn1Field, syncMulliriT1ToT2]);
 
+  // Test localStorage
+  const testLocalStorage = useCallback(() => {
+    try {
+      const testKey = 'test_storage_key';
+      const testValue = { test: 'data', time: new Date().toISOString() };
+      
+      // Try to write
+      localStorage.setItem(testKey, JSON.stringify(testValue));
+      
+      // Try to read
+      const retrieved = localStorage.getItem(testKey);
+      
+      if (retrieved) {
+        const parsed = JSON.parse(retrieved);
+        localStorage.removeItem(testKey);
+        toast.success('✅ localStorage PUNON!');
+      } else {
+        toast.error('❌ localStorage NUK punon - nuk lexon dot!');
+      }
+    } catch (error) {
+      toast.error(`❌ localStorage ERROR: ${error}`);
+    }
+  }, []);
+
   // Save handler
   const handleSave = useCallback(() => {
     saveForNextDay();
@@ -237,9 +261,12 @@ const DailyEntry = () => {
                 <p className="text-xl font-semibold">{turn2.xhiro.toLocaleString()} ALL</p>
               </div>
             </div>
-            <div className="mt-4">
-              <Button onClick={handleSave} className="w-full md:w-auto">
+            <div className="mt-4 flex gap-2 flex-wrap">
+              <Button onClick={handleSave} className="flex-1 md:flex-initial">
                 💾 Ruaj të Dhënat
+              </Button>
+              <Button onClick={testLocalStorage} variant="outline" className="flex-1 md:flex-initial">
+                🔍 Test Storage
               </Button>
             </div>
           </CardContent>
