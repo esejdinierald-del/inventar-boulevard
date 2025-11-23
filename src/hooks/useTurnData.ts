@@ -131,7 +131,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
   // Handle receipt data
   const handleReceiptDataT1 = useCallback((
     productData: { [key: string]: number },
-    coffeeData: { [key: string]: number }
+    coffeeData: { [key: string]: number },
+    total?: number
   ) => {
     setTurn1(prev => ({
       ...prev,
@@ -141,13 +142,15 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
           productData[key] !== undefined ? { ...value, shiriti: productData[key] } : value
         ])
       ),
-      coffee: { ...prev.coffee, ...coffeeData }
+      coffee: { ...prev.coffee, ...coffeeData },
+      xhiro: total !== undefined ? total : prev.xhiro
     }));
   }, []);
 
   const handleReceiptDataT2 = useCallback((
     productData: { [key: string]: number },
-    coffeeData: { [key: string]: number }
+    coffeeData: { [key: string]: number },
+    total?: number
   ) => {
     setTurn2(prev => ({
       ...prev,
@@ -157,7 +160,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
           productData[key] !== undefined ? { ...value, shiriti: productData[key] } : value
         ])
       ),
-      coffee: { ...prev.coffee, ...coffeeData }
+      coffee: { ...prev.coffee, ...coffeeData },
+      xhiro: total !== undefined ? total : prev.xhiro
     }));
   }, []);
 

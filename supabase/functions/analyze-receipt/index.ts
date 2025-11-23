@@ -44,11 +44,14 @@ serve(async (req) => {
               "items": [
                 {"name": "emri i produktit", "quantity": sasia},
                 ...
-              ]
+              ],
+              "total": totali_i_xhiros
             }
             Rregullat:
             - Ekstraktoni vetëm emrin e produktit dhe sasinë (nga kolona "Sasia")
-            - Mos përfshini çmimet ose totalet
+            - Gjeni dhe ekstraktoni totalin e shiritit (zakonisht në fund me etiketë "Total", "Totali", "TOTALI", etj.)
+            - Totali duhet të jetë një numër (pa simbole valutore)
+            - Mos përfshini çmimet individuale të produkteve
             - Emrat duhet të jenë SAKTËSISHT siç janë në shiriti
             - Sasitë duhet të jenë numra të plotë
             - Mos përfshini rreshtat e totaleve ose rreshtat që nuk janë produkte
