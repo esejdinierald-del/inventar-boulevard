@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Calendar, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
+import { ReceiptScanner } from "@/components/ReceiptScanner";
 interface ProductData {
   stokFillim: number;
   gjendje: number;
@@ -287,6 +288,31 @@ const DailyEntry = () => {
     toast.success("Produkti u fshi!");
   };
 
+  // Handle data extracted from receipt scanner
+  const handleReceiptDataT1 = (data: { [key: string]: number }) => {
+    setTurn1(prev => ({
+      ...prev,
+      products: Object.fromEntries(
+        Object.entries(prev.products).map(([key, value]) => [
+          key,
+          data[key] !== undefined ? { ...value, shiriti: data[key] } : value
+        ])
+      )
+    }));
+  };
+
+  const handleReceiptDataT2 = (data: { [key: string]: number }) => {
+    setTurn2(prev => ({
+      ...prev,
+      products: Object.fromEntries(
+        Object.entries(prev.products).map(([key, value]) => [
+          key,
+          data[key] !== undefined ? { ...value, shiriti: data[key] } : value
+        ])
+      )
+    }));
+  };
+
   const handleSave = () => {
     const totalXhiro = calculateTotalXhiro();
     const mulliri1Dif = calculateMulliriDif(turn1.mulliriFillim, turn1.mulliriPerfund, calculateTotalCoffee(turn1));
@@ -341,9 +367,16 @@ const DailyEntry = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Produktet - Turni 1</CardTitle>
-                <Button variant="outline" size="sm" onClick={copyT1ToT2} className="text-xs">
-                  Kopjo në T2 →
-                </Button>
+                <div className="flex gap-2">
+                  <ReceiptScanner
+                    products={products}
+                    onDataExtracted={handleReceiptDataT1}
+                    turnName="T1"
+                  />
+                  <Button variant="outline" size="sm" onClick={copyT1ToT2} className="text-xs">
+                    Kopjo në T2 →
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
@@ -506,8 +539,13 @@ const DailyEntry = () => {
 
           <TabsContent value="turn2" className="space-y-4">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Produktet - Turni 2</CardTitle>
+                <ReceiptScanner
+                  products={products}
+                  onDataExtracted={handleReceiptDataT2}
+                  turnName="T2"
+                />
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
