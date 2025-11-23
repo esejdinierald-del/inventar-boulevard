@@ -142,7 +142,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
         }
       } catch (error) {
         setSaveStatus('idle');
-        toast.error(`❌ Gabim në ruajtje: ${error}`);
+        const errorMessage = error instanceof Error ? error.message : 'Gabim në ruajtje';
+        toast.error(`❌ ${errorMessage}`);
       }
     };
     
