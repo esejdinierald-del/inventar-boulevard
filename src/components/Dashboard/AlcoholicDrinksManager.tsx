@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, Save, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 interface AlcoholicDrink {
   id: string;
@@ -13,6 +14,7 @@ interface AlcoholicDrink {
   shitje: number;
   gjendje: number;
   sort_order: number;
+  updated_at: string;
 }
 
 export const AlcoholicDrinksManager = () => {
@@ -29,7 +31,7 @@ export const AlcoholicDrinksManager = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('alcoholic_drinks_inventory')
-        .select('*')
+        .select('id, drink_name, furnizime, shitje, gjendje, sort_order, updated_at')
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
@@ -146,6 +148,7 @@ export const AlcoholicDrinksManager = () => {
                   <th className="p-3 text-left font-medium">Furnizim</th>
                   <th className="p-3 text-left font-medium">Shitje</th>
                   <th className="p-3 text-left font-medium">Gjendje</th>
+                  <th className="p-3 text-left font-medium">Përditësuar</th>
                   <th className="p-3 text-left font-medium">Veprime</th>
                 </tr>
               </thead>
@@ -173,6 +176,9 @@ export const AlcoholicDrinksManager = () => {
                       <span className={`font-medium ${drink.gjendje < 0 ? 'text-destructive' : 'text-success'}`}>
                         {drink.gjendje}
                       </span>
+                    </td>
+                    <td className="p-3 text-sm text-muted-foreground">
+                      {format(new Date(drink.updated_at), 'dd/MM/yyyy HH:mm')}
                     </td>
                     <td className="p-3">
                       <Button
