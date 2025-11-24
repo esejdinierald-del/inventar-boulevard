@@ -17,6 +17,7 @@ const Reports = () => {
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [topProducts, setTopProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [totalExpenses, setTotalExpenses] = useState(0);
   const [stats, setStats] = useState({
     totalSales: 0,
     avgDaily: 0,
@@ -44,6 +45,7 @@ const Reports = () => {
       const startDate = startOfMonth(new Date(parseInt(year), parseInt(month) - 1));
       const endDate = endOfMonth(startDate);
 
+      // Load daily entries
       const { data, error } = await supabase
         .from("daily_entries")
         .select("*")
@@ -52,6 +54,18 @@ const Reports = () => {
         .order("entry_date", { ascending: true });
 
       if (error) throw error;
+
+      // Load expenses for the same period
+      const { data: expensesData, error: expensesError } = await supabase
+        .from("expenses")
+        .select("cost")
+        .gte("expense_date", format(startDate, "yyyy-MM-dd"))
+        .lte("expense_date", format(endDate, "yyyy-MM-dd"));
+
+      if (expensesError) throw expensesError;
+
+      const expensesTotal = expensesData?.reduce((sum, exp) => sum + exp.cost, 0) || 0;
+      setTotalExpenses(expensesTotal);
 
       // Process data
       const daysInMonth = endDate.getDate();
@@ -180,7 +194,7 @@ const Reports = () => {
         ) : (
           <>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium text-muted-foreground">Xhiro Totale</CardTitle>
@@ -190,6 +204,30 @@ const Reports = () => {
                 {stats.totalSales.toLocaleString()} ALL
               </div>
               <p className="text-xs text-muted-foreground">Total për muajin</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Shpenzime</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-destructive">
+                {totalExpenses.toLocaleString()} ALL
+              </div>
+              <p className="text-xs text-muted-foreground">Furnizime & shpenzime</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Fitim</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {(stats.totalSales - totalExpenses).toLocaleString()} ALL
+              </div>
+              <p className="text-xs text-muted-foreground">Xhiro - Shpenzime</p>
             </CardContent>
           </Card>
 
