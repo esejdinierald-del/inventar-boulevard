@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ProductData } from "@/types/turn.types";
 import { CalculationService } from "@/services/calculations";
+import { AddProductRow } from "./AddProductRow";
 
 interface ProductTableProps {
   products: string[];
@@ -12,6 +13,7 @@ interface ProductTableProps {
   onProductUpdate: (product: string, field: keyof ProductData, value: number) => void;
   onProductDelete?: (product: string) => void;
   onProductEdit?: (product: string) => void;
+  onProductAdd?: (productName: string) => boolean | Promise<boolean>;
   editingProduct: string | null;
   editedProductName: string;
   onEditedNameChange: (name: string) => void;
@@ -37,6 +39,7 @@ export const ProductTable = ({
   onProductUpdate,
   onProductDelete,
   onProductEdit,
+  onProductAdd,
   editingProduct,
   editedProductName,
   onEditedNameChange,
@@ -193,6 +196,11 @@ export const ProductTable = ({
             </TableCell>
             {isAdminUnlocked && <TableCell></TableCell>}
           </TableRow>
+          
+          {/* Add Product Row */}
+          {isAdminUnlocked && onProductAdd && (
+            <AddProductRow onAdd={onProductAdd} colSpan={7} />
+          )}
         </TableBody>
       </Table>
     </div>
