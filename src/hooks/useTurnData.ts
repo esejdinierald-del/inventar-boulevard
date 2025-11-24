@@ -224,16 +224,21 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
   }, []);
 
   const updateTurn2Product = useCallback((product: string, field: keyof ProductData, value: number) => {
-    setTurn2(prev => ({
-      ...prev,
-      products: {
-        ...prev.products,
-        [product]: {
-          ...prev.products[product],
-          [field]: value
+    console.log(`📝 Updating T2 ${product}.${field} = ${value}`);
+    setTurn2(prev => {
+      const updated = {
+        ...prev,
+        products: {
+          ...prev.products,
+          [product]: {
+            ...prev.products[product],
+            [field]: value
+          }
         }
-      }
-    }));
+      };
+      console.log('📝 New T2 state:', updated);
+      return updated;
+    });
   }, []);
 
   // Sync mulliri from T1 to T2
