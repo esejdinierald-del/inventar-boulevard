@@ -203,6 +203,15 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
       toast.error("Vetëm admin mund të ruajë mapimin!");
       return;
     }
+    
+    console.log("Saving mapping:", invoiceMapping);
+    console.log("Mapping entries count:", Object.keys(invoiceMapping).length);
+    
+    if (Object.keys(invoiceMapping).length === 0) {
+      toast.error("Nuk ka asnjë mapping për të ruajtur!");
+      return;
+    }
+    
     try {
       await StorageService.setInvoiceMapping(invoiceMapping);
       toast.success("Mapimi i faturave u ruajt me sukses!");

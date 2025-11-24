@@ -324,6 +324,8 @@ export class StorageService {
 
   static async setInvoiceMapping(mapping: MappingData): Promise<void> {
     try {
+      console.log('setInvoiceMapping called with:', mapping);
+      
       // Fshi të gjitha dhe ri-shto
       const { error: deleteError } = await supabase
         .from('invoice_mappings')
@@ -341,9 +343,14 @@ export class StorageService {
         quantity: value.quantity || 1
       }));
       
+      console.log('Inserting mappings:', mappingsData);
+      
       if (mappingsData.length > 0) {
-        const { error } = await supabase.from('invoice_mappings').insert(mappingsData);
+        const { error, data } = await supabase.from('invoice_mappings').insert(mappingsData).select();
+        console.log('Insert result:', { error, data });
         if (error) throw error;
+      } else {
+        console.warn('No mappings to insert!');
       }
     } catch (error) {
       console.error('Error saving invoice mapping:', error);
