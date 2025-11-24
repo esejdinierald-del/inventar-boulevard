@@ -192,10 +192,13 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
   };
 
   const handleMappingChange = (invoiceProduct: string, type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink', name: string, quantity: number) => {
-    setInvoiceMapping(prev => ({
-      ...prev,
+    const newMapping = {
+      ...invoiceMapping,
       [invoiceProduct]: { type, name, quantity }
-    }));
+    };
+    console.log('Mapping changed:', { invoiceProduct, type, name, quantity });
+    console.log('New mapping state:', newMapping);
+    setInvoiceMapping(newMapping);
   };
 
   const saveMapping = async () => {
