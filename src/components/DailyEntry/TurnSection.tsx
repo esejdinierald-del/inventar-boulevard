@@ -4,7 +4,6 @@ import { TurnData, ProductData } from "@/types/turn.types";
 import { ProductTable } from "./ProductTable";
 import { CoffeeTable } from "./CoffeeTable";
 import { TurnExtras } from "./TurnExtras";
-import { AddProductRow } from "./AddProductRow";
 import { ReceiptScanner } from "@/components/ReceiptScanner";
 import { CalculationService } from "@/services/calculations";
 
@@ -88,19 +87,13 @@ export const TurnSection = ({
             onProductUpdate={onProductUpdate}
             onProductDelete={onProductDelete}
             onProductEdit={onProductEdit}
+            onProductAdd={onProductAdd}
             editingProduct={editingProduct}
             editedProductName={editedProductName}
             onEditedNameChange={onEditedNameChange}
             onSaveEdit={onSaveEdit}
             onCancelEdit={onCancelEdit}
           />
-          {isAdminUnlocked && onProductAdd && (
-            <table className="w-full">
-              <tbody>
-                <AddProductRow onAdd={onProductAdd} colSpan={7} />
-              </tbody>
-            </table>
-          )}
         </CardContent>
       </Card>
 
