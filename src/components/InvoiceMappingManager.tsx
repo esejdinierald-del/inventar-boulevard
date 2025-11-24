@@ -202,27 +202,33 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
   };
 
   const saveMapping = async () => {
+    console.log("=== SAVE MAPPING CALLED ===");
+    console.log("isAdmin:", isAdmin);
+    console.log("invoiceMapping:", invoiceMapping);
+    console.log("Mapping entries count:", Object.keys(invoiceMapping).length);
+    
     if (!isAdmin) {
+      console.error("User is not admin!");
       toast.error("Vetëm admin mund të ruajë mapimin!");
       return;
     }
     
-    console.log("Saving mapping:", invoiceMapping);
-    console.log("Mapping entries count:", Object.keys(invoiceMapping).length);
-    
     if (Object.keys(invoiceMapping).length === 0) {
+      console.error("No mappings to save!");
       toast.error("Nuk ka asnjë mapping për të ruajtur!");
       return;
     }
     
     try {
+      console.log("Calling StorageService.setInvoiceMapping...");
       await StorageService.setInvoiceMapping(invoiceMapping);
+      console.log("Successfully saved mapping!");
       toast.success("Mapimi i faturave u ruajt me sukses!");
       setIsOpen(false);
       resetState();
     } catch (error) {
       console.error("Error saving invoice mapping:", error);
-      toast.error("Gabim gjatë ruajtjes së mapimit");
+      toast.error("Gabim gjatë ruajtjes së mapimit: " + (error as Error).message);
     }
   };
 
