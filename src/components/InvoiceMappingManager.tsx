@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { AdminPasswordDialog } from "@/components/DailyEntry/AdminPasswordDialog";
 import { StorageService } from "@/services/storage.service";
+import { MappingData } from "@/types/mapping.types";
 
 interface InvoiceMappingManagerProps {
   products: string[];
@@ -23,6 +24,46 @@ interface InvoiceProduct {
   name: string;
   originalName: string;
 }
+
+// Normalizo emrin e produktit për matching më të mirë
+const normalizeProductName = (name: string): string => {
+  return name
+    .toUpperCase()
+    .trim()
+    .replace(/\s+/g, ' ')  // Zëvendëso hapësira të shumta me një
+    .replace(/\s*(E|I|TE)\s*\d+\s*(CP|GR|ML|KG|L|PCS|COPE|COPË)?\s*$/i, '')  // Heq paketimin në fund
+    .replace(/\s*(NGA|ME|PA|PER|PRO)\s+.*$/i, '')  // Heq detaje shtesë
+    .trim();
+};
+
+// Gjej mapping më të mirë për një produkt
+const findBestMapping = (productName: string, savedMapping: MappingData | null) => {
+  if (!savedMapping) return null;
+  
+  const normalized = normalizeProductName(productName);
+  
+  // Provo match të saktë së pari
+  if (savedMapping[productName]) {
+    return savedMapping[productName];
+  }
+  
+  // Provo match me emrin e normalizuar
+  for (const [key, value] of Object.entries(savedMapping)) {
+    if (normalizeProductName(key) === normalized) {
+      return value;
+    }
+  }
+  
+  // Provo partial match
+  for (const [key, value] of Object.entries(savedMapping)) {
+    const normalizedKey = normalizeProductName(key);
+    if (normalized.includes(normalizedKey) || normalizedKey.includes(normalized)) {
+      return value;
+    }
+  }
+  
+  return null;
+};
 
 export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, alcoholicDrinks = [], isAdmin = false }: InvoiceMappingManagerProps) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -113,26 +154,32 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
 
       setDetectedProducts(uniqueProducts);
       
-      // Ngarko mappings e ruajtura dhe apliko automatikisht
+      // Ngarko mappings e ruajtura dhe apliko automatikisht me fuzzy matching
       const savedMapping = await StorageService.getInvoiceMapping();
       if (savedMapping) {
-        // Apliko automatikisht mappings për produktet e detektuara
         const autoMapped: typeof invoiceMapping = {};
+        const matchedProducts: string[] = [];
+        
         uniqueProducts.forEach(product => {
-          if (savedMapping[product.name]) {
-            autoMapped[product.name] = savedMapping[product.name];
+          const bestMatch = findBestMapping(product.name, savedMapping);
+          if (bestMatch) {
+            autoMapped[product.name] = bestMatch;
+            matchedProducts.push(product.name);
           }
         });
+        
         setInvoiceMapping(autoMapped);
         
-        const mappedCount = Object.keys(autoMapped).length;
+        const mappedCount = matchedProducts.length;
         if (mappedCount > 0) {
-          toast.success(`U gjetën ${uniqueProducts.length} produkte unike! ${mappedCount} janë tashmë të mapuara.`);
+          toast.success(`U gjetën ${uniqueProducts.length} produkte! ${mappedCount} u mapuan automatikisht.`, {
+            description: matchedProducts.slice(0, 3).join(", ") + (mappedCount > 3 ? "..." : "")
+          });
         } else {
-          toast.success(`U gjetën ${uniqueProducts.length} produkte unike!`);
+          toast.info(`U gjetën ${uniqueProducts.length} produkte unike, por asnjë nuk është i mapuar.`);
         }
       } else {
-        toast.success(`U gjetën ${uniqueProducts.length} produkte unike!`);
+        toast.info(`U gjetën ${uniqueProducts.length} produkte unike. Admini duhet të krijojë mapping.`);
       }
       
       setStep('mapping');
