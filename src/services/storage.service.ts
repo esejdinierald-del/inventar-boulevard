@@ -294,6 +294,71 @@ export class StorageService {
     }
   }
 
+  // Invoice mapping (për faturat e blerjes)
+  static async getInvoiceMapping(): Promise<MappingData | null> {
+    try {
+      const { data, error } = await supabase
+        .from('invoice_mappings')
+        .select('*');
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        const mapping: MappingData = {};
+        data.forEach(item => {
+          mapping[item.invoice_name] = {
+            type: item.product_type as 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink',
+            name: item.product_name,
+            quantity: item.quantity || 1
+          };
+        });
+        return mapping;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error fetching invoice mapping:', error);
+      return null;
+    }
+  }
+
+  static async setInvoiceMapping(mapping: MappingData): Promise<void> {
+    try {
+      // Fshi të gjitha dhe ri-shto
+      const { error: deleteError } = await supabase
+        .from('invoice_mappings')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      if (deleteError) {
+        console.error('Error deleting invoice mappings:', deleteError);
+      }
+      
+      const mappingsData = Object.entries(mapping).map(([invoiceName, value]) => ({
+        invoice_name: invoiceName,
+        product_type: value.type,
+        product_name: value.name,
+        quantity: value.quantity || 1
+      }));
+      
+      if (mappingsData.length > 0) {
+        const { error } = await supabase.from('invoice_mappings').insert(mappingsData);
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error('Error saving invoice mapping:', error);
+      throw error;
+    }
+  }
+
+  static async removeInvoiceMapping(): Promise<void> {
+    try {
+      await supabase.from('invoice_mappings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    } catch (error) {
+      console.error('Error removing invoice mapping:', error);
+    }
+  }
+
   // Daily entry data (në Supabase)
   static async getDailyEntryData(date: string): Promise<DailyEntryData | null> {
     try {

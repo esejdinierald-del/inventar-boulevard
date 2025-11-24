@@ -134,6 +134,36 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_mappings: {
+        Row: {
+          created_at: string | null
+          id: string
+          invoice_name: string
+          product_name: string
+          product_type: string
+          quantity: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          invoice_name: string
+          product_name: string
+          product_type: string
+          quantity?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          invoice_name?: string
+          product_name?: string
+          product_type?: string
+          quantity?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       kitchen_products: {
         Row: {
           created_at: string | null
