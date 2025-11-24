@@ -22,6 +22,7 @@ const DailyEntry = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [editingProduct, setEditingProduct] = useState<string | null>(null);
   const [editedProductName, setEditedProductName] = useState("");
+  const [activeTurn, setActiveTurn] = useState<"turn1" | "turn2">("turn1");
 
   // Custom hooks
   const { isAdminUnlocked, showPasswordDialog, validatePassword, toggleAdminMode, closePasswordDialog, isWithinStaffEditWindow } = useAuth();
@@ -133,17 +134,22 @@ const DailyEntry = () => {
 
   const handleApplySupplies = useCallback((mapping: any) => {
     console.log("Applying supplies from mapping:", mapping);
+    console.log("Active turn:", activeTurn);
     
     for (const [invoiceName, mappedItem] of Object.entries(mapping)) {
       const item = mappedItem as any;
       if (!item.name) continue;
       
       const quantity = item.quantity || 1;
-      console.log(`Applying ${quantity} of ${item.name} (type: ${item.type})`);
+      console.log(`Applying ${quantity} of ${item.name} (type: ${item.type}) to ${activeTurn}`);
       
       if (item.type === 'product') {
-        // Update product furnizime in turn1
-        updateTurn1Product(item.name, 'furnizime', quantity);
+        // Update product furnizime in active turn
+        if (activeTurn === 'turn1') {
+          updateTurn1Product(item.name, 'furnizime', quantity);
+        } else {
+          updateTurn2Product(item.name, 'furnizime', quantity);
+        }
       } else if (item.type === 'coffee') {
         // For coffee, we don't have furnizime field in the current structure
         console.log("Coffee supplies not yet implemented");
@@ -153,7 +159,7 @@ const DailyEntry = () => {
         console.log("Alcoholic supplies not yet implemented");
       }
     }
-  }, [updateTurn1Product]);
+  }, [updateTurn1Product, updateTurn2Product, activeTurn]);
 
   // Test localStorage
   const testLocalStorage = useCallback(() => {
@@ -242,7 +248,7 @@ const DailyEntry = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="turn1" className="w-full">
+        <Tabs defaultValue="turn1" className="w-full" onValueChange={(value) => setActiveTurn(value as "turn1" | "turn2")}>
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="turn1">Turni 1</TabsTrigger>
             <TabsTrigger value="turn2">Turni 2</TabsTrigger>
