@@ -2,15 +2,19 @@ import Layout from "@/components/Layout";
 import StatsCard from "@/components/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, DollarSign, Package, ShoppingCart, Lock } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { KitchenProductsManager } from "@/components/Dashboard/KitchenProductsManager";
+import { supabase } from "@/integrations/supabase/client";
+import { TurnData } from "@/types/turn.types";
 
 const Dashboard = () => {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [password, setPassword] = useState("");
+  const [xhiroProgresive, setXhiroProgresive] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   const handleUnlock = () => {
     if (password === "1983") {
@@ -21,8 +25,46 @@ const Dashboard = () => {
     }
   };
 
-  // Të dhënat nga Excel
-  const xhiroProgresive = 63000;
+  useEffect(() => {
+    loadMonthlyData();
+  }, []);
+
+  const loadMonthlyData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Merr të dhënat për muajin Tetor 2024
+      const startDate = '2024-10-01';
+      const endDate = '2024-10-31';
+      
+      const { data: entries, error } = await supabase
+        .from('daily_entries')
+        .select('turn1_data, turn2_data')
+        .gte('entry_date', startDate)
+        .lte('entry_date', endDate);
+
+      if (error) {
+        console.error('Error loading data:', error);
+        toast.error('Gabim në ngarkimin e të dhënave');
+        return;
+      }
+
+      // Llogarit xhiron totale
+      let totalXhiro = 0;
+      entries?.forEach(entry => {
+        const turn1 = entry.turn1_data as unknown as TurnData;
+        const turn2 = entry.turn2_data as unknown as TurnData;
+        totalXhiro += (turn1?.xhiro || 0) + (turn2?.xhiro || 0);
+      });
+
+      setXhiroProgresive(totalXhiro);
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Gabim në ngarkimin e të dhënave');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Layout>
@@ -55,10 +97,9 @@ const Dashboard = () => {
         {/* Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
-            title="Xhiro Progresive"
-            value={`${xhiroProgresive.toLocaleString()} ALL`}
+            title="Xhiro Progresive - Tetor"
+            value={isLoading ? "Duke ngarkuar..." : `${xhiroProgresive.toLocaleString()} ALL`}
             icon={<DollarSign className="h-4 w-4" />}
-            trend={{ value: 12.5, isPositive: true }}
           />
           <StatsCard
             title="Shitje Ditore"
