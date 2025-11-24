@@ -131,6 +131,30 @@ const DailyEntry = () => {
     syncMulliriT1ToT2(value);
   }, [updateTurn1Field, syncMulliriT1ToT2]);
 
+  const handleApplySupplies = useCallback((mapping: any) => {
+    console.log("Applying supplies from mapping:", mapping);
+    
+    for (const [invoiceName, mappedItem] of Object.entries(mapping)) {
+      const item = mappedItem as any;
+      if (!item.name) continue;
+      
+      const quantity = item.quantity || 1;
+      console.log(`Applying ${quantity} of ${item.name} (type: ${item.type})`);
+      
+      if (item.type === 'product') {
+        // Update product furnizime in turn1
+        updateTurn1Product(item.name, 'furnizime', quantity);
+      } else if (item.type === 'coffee') {
+        // For coffee, we don't have furnizime field in the current structure
+        console.log("Coffee supplies not yet implemented");
+      } else if (item.type === 'kitchen') {
+        console.log("Kitchen supplies not yet implemented");
+      } else if (item.type === 'alcoholic') {
+        console.log("Alcoholic supplies not yet implemented");
+      }
+    }
+  }, [updateTurn1Product]);
+
   // Test localStorage
   const testLocalStorage = useCallback(() => {
     try {
@@ -191,7 +215,7 @@ const DailyEntry = () => {
             <p className="text-muted-foreground">Regjistro shitjet dhe inventarin për secilin turn</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <InvoiceMappingManager products={products} coffeeTypes={coffeeTypes} kitchenProducts={kitchenProducts} alcoholicDrinks={alcoholicDrinks} isAdmin={isAdminUnlocked} />
+            <InvoiceMappingManager products={products} coffeeTypes={coffeeTypes} kitchenProducts={kitchenProducts} alcoholicDrinks={alcoholicDrinks} isAdmin={isAdminUnlocked} onApplySupplies={handleApplySupplies} />
             <ProductMappingManager products={products} coffeeTypes={coffeeTypes} kitchenProducts={kitchenProducts} alcoholicDrinks={alcoholicDrinks} />
             <Button
               variant={isAdminUnlocked ? "default" : "outline"}

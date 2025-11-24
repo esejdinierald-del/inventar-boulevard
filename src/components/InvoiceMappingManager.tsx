@@ -18,6 +18,7 @@ interface InvoiceMappingManagerProps {
   kitchenProducts: string[];
   alcoholicDrinks?: string[];
   isAdmin?: boolean;
+  onApplySupplies?: (mapping: MappingData) => void;
 }
 
 interface InvoiceProduct {
@@ -65,7 +66,7 @@ const findBestMapping = (productName: string, savedMapping: MappingData | null) 
   return null;
 };
 
-export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, alcoholicDrinks = [], isAdmin = false }: InvoiceMappingManagerProps) => {
+export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, alcoholicDrinks = [], isAdmin = false, onApplySupplies }: InvoiceMappingManagerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -237,6 +238,10 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
     if (mappedProducts.length === 0) {
       toast.error("Nuk ka produkte të mapuara për t'u aplikuar!");
       return;
+    }
+
+    if (onApplySupplies) {
+      onApplySupplies(invoiceMapping);
     }
 
     toast.success(`${mappedProducts.length} produkte u aplikuan në stok!`, {
