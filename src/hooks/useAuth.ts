@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
 const ADMIN_PASSWORD = "1983";
-const STAFF_EDIT_WINDOW_MINUTES = 10; // Staff mund të modifikojë të dhënat për 10 minuta pas mesnatës
+const STAFF_EDIT_WINDOW_MINUTES = 30; // Staff mund të modifikojë të dhënat për 30 minuta pas mesnatës
 
 export const useAuth = () => {
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
