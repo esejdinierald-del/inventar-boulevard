@@ -12,6 +12,7 @@ interface TurnSectionProps {
   turnData: TurnData;
   products: string[];
   coffeeTypes: string[];
+  alcoholicDrinks?: string[];
   isAdminUnlocked: boolean;
   isFieldDisabled: boolean;
   showCopyButton?: boolean;
@@ -21,7 +22,7 @@ interface TurnSectionProps {
   onTurnUpdate: (field: keyof TurnData, value: number) => void;
   onMulliriPerfundUpdate?: (value: number) => void;
   onCopyToNextTurn?: () => void;
-  onReceiptData: (productData: { [key: string]: number }, coffeeData: { [key: string]: number }) => void;
+  onReceiptData: (productData: { [key: string]: number }, coffeeData: { [key: string]: number }, alcoholicDrinksData?: { [key: string]: number }) => void;
   onProductDelete?: (product: string) => void | Promise<void>;
   onProductAdd?: (productName: string) => boolean | Promise<boolean>;
   onProductEdit?: (product: string) => void;
@@ -37,6 +38,7 @@ export const TurnSection = ({
   turnData,
   products,
   coffeeTypes,
+  alcoholicDrinks = [],
   isAdminUnlocked,
   isFieldDisabled,
   showCopyButton = false,
@@ -66,6 +68,7 @@ export const TurnSection = ({
             <ReceiptScanner
               products={products}
               coffeeTypes={coffeeTypes}
+              alcoholicDrinks={alcoholicDrinks}
               onDataExtracted={onReceiptData}
               turnName={turnName}
               turnData={turnData}

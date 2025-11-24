@@ -336,8 +336,10 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
   const handleReceiptDataT1 = useCallback((
     productData: { [key: string]: number },
     coffeeData: { [key: string]: number },
+    alcoholicDrinksData?: { [key: string]: number },
     total?: number
   ) => {
+    console.log('T1 Receipt Data - Alcoholic Drinks:', alcoholicDrinksData);
     setTurn1(prev => ({
       ...prev,
       products: Object.fromEntries(
@@ -349,13 +351,21 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       coffee: { ...prev.coffee, ...coffeeData },
       xhiro: total !== undefined ? total : prev.xhiro
     }));
-  }, []);
+    
+    // Ruaj shitjet e pijeve alkoolike në localStorage per tu zbritur me vone
+    if (alcoholicDrinksData && Object.keys(alcoholicDrinksData).length > 0) {
+      const key = `alcoholic_sales_t1_${selectedDate}`;
+      localStorage.setItem(key, JSON.stringify(alcoholicDrinksData));
+    }
+  }, [selectedDate]);
 
   const handleReceiptDataT2 = useCallback((
     productData: { [key: string]: number },
     coffeeData: { [key: string]: number },
+    alcoholicDrinksData?: { [key: string]: number },
     total?: number
   ) => {
+    console.log('T2 Receipt Data - Alcoholic Drinks:', alcoholicDrinksData);
     setTurn2(prev => ({
       ...prev,
       products: Object.fromEntries(
@@ -367,7 +377,13 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       coffee: { ...prev.coffee, ...coffeeData },
       xhiro: total !== undefined ? total : prev.xhiro
     }));
-  }, []);
+    
+    // Ruaj shitjet e pijeve alkoolike në localStorage per tu zbritur me vone
+    if (alcoholicDrinksData && Object.keys(alcoholicDrinksData).length > 0) {
+      const key = `alcoholic_sales_t2_${selectedDate}`;
+      localStorage.setItem(key, JSON.stringify(alcoholicDrinksData));
+    }
+  }, [selectedDate]);
 
   // Memoized calculations
   const totalXhiro = useMemo(
