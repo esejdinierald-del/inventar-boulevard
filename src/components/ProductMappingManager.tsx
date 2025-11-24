@@ -9,6 +9,7 @@ import { Loader2, Upload, Save, Trash2, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { AdminPasswordDialog } from "@/components/DailyEntry/AdminPasswordDialog";
+import { StorageService } from "@/services/storage.service";
 
 interface ProductMappingManagerProps {
   products: string[];
@@ -33,13 +34,17 @@ export const ProductMappingManager = ({ products, coffeeTypes, kitchenProducts, 
   const [step, setStep] = useState<'upload' | 'mapping'>('upload');
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
-  // Load saved mapping from localStorage
-  const loadSavedMapping = () => {
-    const saved = localStorage.getItem('receipt_product_mapping');
-    if (saved) {
-      const mapping = JSON.parse(saved);
-      setProductMapping(mapping);
-      toast.success("Mapimi i ruajtur u ngarkua!");
+  // Load saved mapping from Supabase
+  const loadSavedMapping = async () => {
+    try {
+      const mapping = await StorageService.getProductMapping();
+      if (mapping) {
+        setProductMapping(mapping);
+        toast.success("Mapimi i ruajtur u ngarkua!");
+      }
+    } catch (error) {
+      console.error("Error loading mapping:", error);
+      toast.error("Gabim gjatë ngarkimit të mapimit");
     }
   };
 
@@ -127,11 +132,16 @@ export const ProductMappingManager = ({ products, coffeeTypes, kitchenProducts, 
     }));
   };
 
-  const saveMapping = () => {
-    localStorage.setItem('receipt_product_mapping', JSON.stringify(productMapping));
-    toast.success("Mapimi u ruajt me sukses!");
-    setIsOpen(false);
-    resetState();
+  const saveMapping = async () => {
+    try {
+      await StorageService.setProductMapping(productMapping);
+      toast.success("Mapimi u ruajt me sukses në databazë!");
+      setIsOpen(false);
+      resetState();
+    } catch (error) {
+      console.error("Error saving mapping:", error);
+      toast.error("Gabim gjatë ruajtjes së mapimit");
+    }
   };
 
   const resetState = () => {
@@ -146,16 +156,21 @@ export const ProductMappingManager = ({ products, coffeeTypes, kitchenProducts, 
     resetState();
   };
 
-  const deleteMapping = () => {
-    localStorage.removeItem('receipt_product_mapping');
-    setProductMapping({});
-    toast.success("Mapimi u fshi!");
+  const deleteMapping = async () => {
+    try {
+      await StorageService.removeProductMapping();
+      setProductMapping({});
+      toast.success("Mapimi u fshi nga databaza!");
+    } catch (error) {
+      console.error("Error deleting mapping:", error);
+      toast.error("Gabim gjatë fshirjes së mapimit");
+    }
   };
 
-  const handlePasswordSubmit = (password: string) => {
+  const handlePasswordSubmit = async (password: string) => {
     if (password === ADMIN_PASSWORD) {
       setShowPasswordDialog(false);
-      loadSavedMapping();
+      await loadSavedMapping();
       setIsOpen(true);
       toast.success("Admin u verifikua!");
     } else {

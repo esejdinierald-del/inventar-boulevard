@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { Loader2, Upload, Camera, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { StorageService } from "@/services/storage.service";
 
 interface ReceiptScannerProps {
   products: string[];
@@ -38,7 +39,7 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedText, setExtractedText] = useState<string>("");
-  const [mappedData, setMappedData] = useState<{ [key: string]: { type: 'product' | 'coffee' | 'alcoholic_drink'; name: string; quantity: number } }>({});
+  const [mappedData, setMappedData] = useState<{ [key: string]: { type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink'; name: string; quantity: number } }>({});
   const [receiptItems, setReceiptItems] = useState<Array<{ name: string; quantity: number }>>([]);
   const [receiptTotal, setReceiptTotal] = useState<number | null>(null);
   const [showDifferenceWarning, setShowDifferenceWarning] = useState(false);
@@ -101,9 +102,8 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
         text += "Emer          Sasia\n";
         text += "------------------------\n";
         
-        // Load saved mapping
-        const savedMapping = localStorage.getItem('receipt_product_mapping');
-        const mapping = savedMapping ? JSON.parse(savedMapping) : {};
+        // Load saved mapping from Supabase
+        const mapping = await StorageService.getProductMapping() || {};
         
         data.items.forEach((item: { name: string; quantity: number }, index: number) => {
           text += `${item.name.padEnd(15)} ${item.quantity}\n`;
@@ -170,7 +170,7 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
     reader.readAsDataURL(file);
   };
 
-  const handleMapProduct = (lineNumber: string, type: 'product' | 'coffee' | 'alcoholic_drink', name: string, quantity: number) => {
+  const handleMapProduct = (lineNumber: string, type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink', name: string, quantity: number) => {
     setMappedData(prev => ({
       ...prev,
       [lineNumber]: { type, name, quantity }
