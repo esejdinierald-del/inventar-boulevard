@@ -16,6 +16,7 @@ interface InvoiceMappingManagerProps {
   coffeeTypes: string[];
   kitchenProducts: string[];
   alcoholicDrinks?: string[];
+  isAdmin?: boolean;
 }
 
 interface InvoiceProduct {
@@ -23,16 +24,13 @@ interface InvoiceProduct {
   originalName: string;
 }
 
-const ADMIN_PASSWORD = "1983";
-
-export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, alcoholicDrinks = [] }: InvoiceMappingManagerProps) => {
+export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, alcoholicDrinks = [], isAdmin = false }: InvoiceMappingManagerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [detectedProducts, setDetectedProducts] = useState<InvoiceProduct[]>([]);
   const [invoiceMapping, setInvoiceMapping] = useState<{ [key: string]: { type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink'; name: string; quantity: number } }>({});
   const [step, setStep] = useState<'upload' | 'mapping'>('upload');
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
   const loadSavedMapping = async () => {
     try {
@@ -132,6 +130,10 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
   };
 
   const saveMapping = async () => {
+    if (!isAdmin) {
+      toast.error("Vetëm admin mund të ruajë mapimin!");
+      return;
+    }
     try {
       await StorageService.setInvoiceMapping(invoiceMapping);
       toast.success("Mapimi i faturave u ruajt me sukses!");
@@ -156,6 +158,10 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
   };
 
   const deleteMapping = async () => {
+    if (!isAdmin) {
+      toast.error("Vetëm admin mund të fshijë mapimin!");
+      return;
+    }
     try {
       await StorageService.removeInvoiceMapping();
       setInvoiceMapping({});
@@ -166,19 +172,9 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
     }
   };
 
-  const handlePasswordSubmit = async (password: string) => {
-    if (password === ADMIN_PASSWORD) {
-      setShowPasswordDialog(false);
-      await loadSavedMapping();
-      setIsOpen(true);
-      toast.success("Admin u verifikua!");
-    } else {
-      toast.error("Fjalëkalimi është gabim!");
-    }
-  };
-
-  const handleOpenClick = () => {
-    setShowPasswordDialog(true);
+  const handleOpenClick = async () => {
+    await loadSavedMapping();
+    setIsOpen(true);
   };
 
   return (
@@ -190,10 +186,10 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
           onClick={handleOpenClick}
           className="text-xs"
         >
-          <Lock className="h-3 w-3 mr-1" />
-          📋 Mapo Emërtimet Faturave
+          <Upload className="h-3 w-3 mr-1" />
+          📦 Ngarko Furnizime
         </Button>
-        {Object.keys(invoiceMapping).length > 0 && (
+        {isAdmin && Object.keys(invoiceMapping).length > 0 && (
           <Button
             variant="ghost"
             size="sm"
@@ -205,12 +201,6 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
           </Button>
         )}
       </div>
-
-      <AdminPasswordDialog
-        isOpen={showPasswordDialog}
-        onClose={() => setShowPasswordDialog(false)}
-        onSubmit={handlePasswordSubmit}
-      />
 
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -326,6 +316,7 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
                               }
                             }}
                             className="text-sm border rounded p-2 min-w-[200px]"
+                            disabled={!isAdmin}
                           >
                             <option value="">-- Zgjidh --</option>
                             <optgroup label="📦 Produkte">
@@ -370,6 +361,7 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
                                 }}
                                 className="w-20 text-sm"
                                 placeholder="Sasi"
+                                disabled={!isAdmin}
                               />
                               <span className="text-xs text-green-600 whitespace-nowrap">
                                 ✓ {mapping.type === 'product' ? '📦' : mapping.type === 'coffee' ? '☕' : mapping.type === 'kitchen' ? '🍳' : '🍸'} x{mapping.quantity}
@@ -383,14 +375,24 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
                 </div>
               </ScrollArea>
 
+              {!isAdmin && (
+                <div className="rounded-lg border border-warning/50 bg-warning/10 p-3">
+                  <p className="text-sm text-warning">
+                    ℹ️ Mund të ngarkosh furnizime, por vetëm admin mund të krijojë/modifikojë mapimin e produkteve.
+                  </p>
+                </div>
+              )}
+
               <div className="flex gap-2 pt-4 border-t">
                 <Button onClick={() => setStep('upload')} variant="outline">
                   ← Kthehu
                 </Button>
-                <Button onClick={saveMapping} className="flex-1">
-                  <Save className="mr-2 h-4 w-4" />
-                  Ruaj Mapimin
-                </Button>
+                {isAdmin && (
+                  <Button onClick={saveMapping} className="flex-1">
+                    <Save className="mr-2 h-4 w-4" />
+                    Ruaj Mapimin
+                  </Button>
+                )}
               </div>
             </div>
           )}
