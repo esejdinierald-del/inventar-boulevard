@@ -99,9 +99,39 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
             });
           }
         } else {
-          console.log('📝 No saved data - creating empty');
-          setTurn1(createEmptyTurnData());
-          setTurn2(createEmptyTurnData());
+          console.log('📝 No saved data - checking for next day stock');
+          const newT1 = createEmptyTurnData();
+          const newT2 = createEmptyTurnData();
+          
+          // Ngarko stokun e ruajtur nga dita e mëparshme (nëse ka)
+          const savedStock = await StorageService.getStockForDate(selectedDate);
+          const savedMulliri = await StorageService.getMulliriForDate(selectedDate);
+          
+          if (savedStock || savedMulliri) {
+            console.log('📦 Found next day stock - loading into T1');
+            if (savedStock) {
+              // Migro emrat e produkteve
+              const migratedStock: { [key: string]: number } = {};
+              Object.entries(savedStock).forEach(([oldName, value]) => {
+                const newName = PRODUCT_NAME_MIGRATION[oldName] || oldName;
+                migratedStock[newName] = value;
+              });
+              
+              newT1.products = Object.fromEntries(
+                Object.entries(newT1.products).map(([key, data]) => [
+                  key,
+                  { ...data, stokFillim: migratedStock[key] || 0 }
+                ])
+              );
+            }
+            
+            if (savedMulliri !== null) {
+              newT1.mulliriFillim = savedMulliri;
+            }
+          }
+          
+          setTurn1(newT1);
+          setTurn2(newT2);
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -117,7 +147,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     };
     
     loadData();
-  }, [selectedDate, products]);
+  }, [selectedDate, products, createEmptyTurnData]);
 
   // Auto-save current day data when turn1 or turn2 changes
   useEffect(() => {
