@@ -145,6 +145,22 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
     }
   };
 
+  const applySupplies = async () => {
+    const mappedProducts = detectedProducts.filter(p => invoiceMapping[p.name]);
+    if (mappedProducts.length === 0) {
+      toast.error("Nuk ka produkte të mapuara për t'u aplikuar!");
+      return;
+    }
+
+    toast.success(`${mappedProducts.length} produkte u aplikuan në stok!`, {
+      description: mappedProducts.map(p => 
+        `${invoiceMapping[p.name].name} (+${invoiceMapping[p.name].quantity})`
+      ).join(", ")
+    });
+    setIsOpen(false);
+    resetState();
+  };
+
   const resetState = () => {
     setUploadedImages([]);
     setDetectedProducts([]);
@@ -375,22 +391,32 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
                 </div>
               </ScrollArea>
 
-              {!isAdmin && (
-                <div className="rounded-lg border border-warning/50 bg-warning/10 p-3">
-                  <p className="text-sm text-warning">
-                    ℹ️ Mund të ngarkosh furnizime, por vetëm admin mund të krijojë/modifikojë mapimin e produkteve.
-                  </p>
-                </div>
-              )}
+              <div className="rounded-lg border border-info/50 bg-info/10 p-3">
+                <p className="text-sm">
+                  {isAdmin 
+                    ? "💡 Mund të modifikosh mappings dhe të aplikosh furnizime në stok."
+                    : `✓ ${detectedProducts.filter(p => invoiceMapping[p.name]).length} produkte janë tashmë të mapuara dhe gati për t'u aplikuar në stok.`
+                  }
+                </p>
+              </div>
 
               <div className="flex gap-2 pt-4 border-t">
                 <Button onClick={() => setStep('upload')} variant="outline">
                   ← Kthehu
                 </Button>
-                {isAdmin && (
+                {isAdmin ? (
                   <Button onClick={saveMapping} className="flex-1">
                     <Save className="mr-2 h-4 w-4" />
                     Ruaj Mapimin
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={applySupplies} 
+                    className="flex-1"
+                    disabled={detectedProducts.filter(p => invoiceMapping[p.name]).length === 0}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Apliko Furnizime ({detectedProducts.filter(p => invoiceMapping[p.name]).length})
                   </Button>
                 )}
               </div>
