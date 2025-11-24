@@ -63,6 +63,13 @@ export const ProductTable = ({
         <TableBody>
           {products.map(product => {
             const data = turnProducts[product];
+            
+            // Skip if no data for this product
+            if (!data) {
+              console.warn(`No data found for product: ${product}`);
+              return null;
+            }
+            
             const dif = CalculationService.calculateDif(
               data.stokFillim,
               data.furnizime,
@@ -177,19 +184,19 @@ export const ProductTable = ({
           <TableRow className="bg-muted/50">
             <TableCell className="font-bold">TOTALI</TableCell>
             <TableCell className="font-bold">
-              {Object.values(turnProducts).reduce((sum, p) => sum + p.stokFillim, 0)}
+              {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.stokFillim, 0)}
             </TableCell>
             <TableCell className="font-bold">
-              {Object.values(turnProducts).reduce((sum, p) => sum + p.gjendje, 0)}
+              {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.gjendje, 0)}
             </TableCell>
             <TableCell className="font-bold text-primary">
-              {Object.values(turnProducts).reduce((sum, p) => sum + p.shiriti, 0)}
+              {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.shiriti, 0)}
             </TableCell>
             <TableCell className="font-bold text-success">
-              {Object.values(turnProducts).reduce((sum, p) => sum + p.furnizime, 0)}
+              {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.furnizime, 0)}
             </TableCell>
             <TableCell className="font-bold">
-              {Object.values(turnProducts).reduce(
+              {Object.values(turnProducts).filter(p => p).reduce(
                 (sum, p) => sum + CalculationService.calculateDif(p.stokFillim, p.furnizime, p.gjendje, p.shiriti),
                 0
               )}
