@@ -21,13 +21,17 @@ interface ProductTableProps {
   onCancelEdit: () => void;
 }
 
-const isGjendjeDisabled = (data: ProductData, isAdminUnlocked: boolean): boolean => {
-  // Gjendje is disabled if it has been set (value > 0) and user is not admin
+const isGjendjeDisabled = (data: ProductData, isAdminUnlocked: boolean, isFieldDisabled: boolean): boolean => {
+  // If field is disabled due to date, always disable
+  if (isFieldDisabled) return true;
+  // Otherwise, gjendje is disabled if it has been set (value > 0) and user is not admin
   return data.gjendje > 0 && !isAdminUnlocked;
 };
 
-const isFurnizimeDisabled = (data: ProductData, isAdminUnlocked: boolean): boolean => {
-  // Furnizime is disabled if it has been set (value > 0) and user is not admin
+const isFurnizimeDisabled = (data: ProductData, isAdminUnlocked: boolean, isFieldDisabled: boolean): boolean => {
+  // If field is disabled due to date, always disable
+  if (isFieldDisabled) return true;
+  // Otherwise, furnizime is disabled if it has been set (value > 0) and user is not admin
   return data.furnizime > 0 && !isAdminUnlocked;
 };
 
@@ -138,7 +142,7 @@ export const ProductTable = ({
                     value={data.gjendje || ""}
                     onChange={(e) => onProductUpdate(product, 'gjendje', Number(e.target.value))}
                     className="w-20"
-                    disabled={isGjendjeDisabled(data, isAdminUnlocked)}
+                    disabled={isGjendjeDisabled(data, isAdminUnlocked, isFieldDisabled)}
                   />
                 </TableCell>
                 <TableCell>
@@ -158,7 +162,7 @@ export const ProductTable = ({
                     value={data.furnizime || ""}
                     onChange={(e) => onProductUpdate(product, 'furnizime', Number(e.target.value))}
                     className="w-20 bg-success/10"
-                    disabled={isFurnizimeDisabled(data, isAdminUnlocked)}
+                    disabled={isFurnizimeDisabled(data, isAdminUnlocked, isFieldDisabled)}
                   />
                 </TableCell>
                 <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
