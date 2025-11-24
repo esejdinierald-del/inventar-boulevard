@@ -6,8 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Camera, Upload } from "lucide-react";
+import { Loader2, Plus, Trash2, Camera } from "lucide-react";
 import { format } from "date-fns";
+import { useProductList } from "@/hooks/useProductList";
+import { useKitchenProducts } from "@/hooks/useKitchenProducts";
+import { useAlcoholicDrinksList } from "@/hooks/useAlcoholicDrinksList";
+import { InvoiceMappingManager } from "@/components/InvoiceMappingManager";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +35,9 @@ interface Expense {
 
 const Expenses = () => {
   const { toast } = useToast();
+  const { products, coffeeTypes } = useProductList();
+  const { kitchenProducts } = useKitchenProducts();
+  const { alcoholicDrinks } = useAlcoholicDrinksList();
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [password, setPassword] = useState("");
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -251,7 +258,15 @@ const Expenses = () => {
     <Layout>
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex flex-wrap justify-between items-center gap-4">
-          <h1 className="text-3xl font-bold">Furnizime & Shpenzime</h1>
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold mb-2">Furnizime & Shpenzime</h1>
+            <InvoiceMappingManager 
+              products={products}
+              coffeeTypes={coffeeTypes}
+              kitchenProducts={kitchenProducts}
+              alcoholicDrinks={alcoholicDrinks}
+            />
+          </div>
           <div className="flex gap-2">
             <div className="relative">
               <input
