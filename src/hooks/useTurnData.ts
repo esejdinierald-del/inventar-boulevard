@@ -88,12 +88,16 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
           const migratedT2 = migrateProductNames(savedData.turn2, products);
           setTurn1(migratedT1);
           setTurn2(migratedT2);
-          // Ruaj të dhënat e migruara
-          await StorageService.setDailyEntryData(selectedDate, {
-            turn1: migratedT1,
-            turn2: migratedT2,
-            date: selectedDate
-          });
+          // Ruaj të dhënat e migruara vetëm nëse ka ndryshime
+          const hasChanges = JSON.stringify(savedData.turn1) !== JSON.stringify(migratedT1) ||
+                            JSON.stringify(savedData.turn2) !== JSON.stringify(migratedT2);
+          if (hasChanges) {
+            await StorageService.setDailyEntryData(selectedDate, {
+              turn1: migratedT1,
+              turn2: migratedT2,
+              date: selectedDate
+            });
+          }
         } else {
           console.log('📝 No saved data - creating empty');
           setTurn1(createEmptyTurnData());
@@ -109,19 +113,21 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       setTimeout(() => {
         console.log('✅ Initial load complete - auto-save enabled');
         isInitialLoad.current = false;
-      }, 100);
+      }, 500);
     };
     
     loadData();
-  }, [selectedDate, createEmptyTurnData, products]);
+  }, [selectedDate, products]);
 
   // Auto-save current day data when turn1 or turn2 changes
   useEffect(() => {
     if (isInitialLoad.current) {
+      console.log('⏭️ Skipping auto-save during initial load');
       return;
     }
     
     const saveData = async () => {
+      console.log('💾 Auto-saving data for date:', selectedDate);
       setSaveStatus('saving');
       try {
         const dataToSave = {
@@ -130,24 +136,19 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
           date: selectedDate
         };
         await StorageService.setDailyEntryData(selectedDate, dataToSave);
+        console.log('✅ Data saved successfully');
         
-        // Verify save
-        const verified = await StorageService.getDailyEntryData(selectedDate);
-        if (verified) {
-          setSaveStatus('saved');
-          setTimeout(() => setSaveStatus('idle'), 2000);
-        } else {
-          setSaveStatus('idle');
-          toast.error('❌ Të dhënat NUK u ruajtën!');
-        }
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 2000);
       } catch (error) {
         setSaveStatus('idle');
         const errorMessage = error instanceof Error ? error.message : 'Gabim në ruajtje';
+        console.error('❌ Save error:', errorMessage);
         toast.error(`❌ ${errorMessage}`);
       }
     };
     
-    const timeoutId = setTimeout(saveData, 500);
+    const timeoutId = setTimeout(saveData, 1000);
     return () => clearTimeout(timeoutId);
   }, [turn1, turn2, selectedDate]);
 
