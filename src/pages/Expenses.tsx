@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, Camera, Upload } from "lucide-react";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -35,6 +35,9 @@ const Expenses = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isScanningInvoice, setIsScanningInvoice] = useState(false);
+  const [scannedItems, setScannedItems] = useState<any[]>([]);
+  const [isShowingScannedData, setIsShowingScannedData] = useState(false);
   
   // Form state
   const [expenseDate, setExpenseDate] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -78,6 +81,82 @@ const Expenses = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleInvoiceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsScanningInvoice(true);
+    try {
+      // Convert image to base64
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Image = reader.result as string;
+
+        const { data, error } = await supabase.functions.invoke("analyze-invoice", {
+          body: { imageBase64: base64Image },
+        });
+
+        if (error) throw error;
+
+        if (data.success && data.data) {
+          const { date, items } = data.data;
+          setExpenseDate(date || format(new Date(), "yyyy-MM-dd"));
+          setScannedItems(items || []);
+          setIsShowingScannedData(true);
+          toast({ 
+            title: "Fatura u skanua me sukses!", 
+            description: `U gjetën ${items?.length || 0} produkte` 
+          });
+        } else {
+          throw new Error(data.error || "Gabim në skanimin e faturës");
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Error scanning invoice:", error);
+      toast({
+        title: "Gabim në skanimin e faturës",
+        description: error instanceof Error ? error.message : "Provoni përsëri",
+        variant: "destructive",
+      });
+    } finally {
+      setIsScanningInvoice(false);
+    }
+  };
+
+  const handleSaveScannedItems = async () => {
+    if (scannedItems.length === 0) return;
+
+    try {
+      const expensesToInsert = scannedItems.map(item => ({
+        expense_date: expenseDate,
+        product_name: item.name,
+        cost: item.price,
+        notes: item.quantity > 1 ? `Sasia: ${item.quantity}` : null,
+      }));
+
+      const { error } = await supabase.from("expenses").insert(expensesToInsert);
+
+      if (error) throw error;
+
+      toast({ 
+        title: "Shpenzimet u regjistruan", 
+        description: `${scannedItems.length} produkte u shtuan` 
+      });
+      
+      setScannedItems([]);
+      setIsShowingScannedData(false);
+      setExpenseDate(format(new Date(), "yyyy-MM-dd"));
+      loadExpenses();
+    } catch (error) {
+      console.error("Error saving scanned items:", error);
+      toast({
+        title: "Gabim në regjistrimin e shpenzimeve",
+        variant: "destructive",
+      });
     }
   };
 
@@ -169,15 +248,38 @@ const Expenses = () => {
   return (
     <Layout>
       <div className="container mx-auto p-6 space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-wrap justify-between items-center gap-4">
           <h1 className="text-3xl font-bold">Furnizime & Shpenzime</h1>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Shto Shpenzim
+          <div className="flex gap-2">
+            <div className="relative">
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleInvoiceUpload}
+                className="hidden"
+                id="invoice-upload"
+              />
+              <Button
+                onClick={() => document.getElementById("invoice-upload")?.click()}
+                disabled={isScanningInvoice}
+                variant="outline"
+              >
+                {isScanningInvoice ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Camera className="w-4 h-4 mr-2" />
+                )}
+                Skano Faturë
               </Button>
-            </DialogTrigger>
+            </div>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Shto Manual
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Shto Shpenzim të Ri</DialogTitle>
@@ -232,7 +334,77 @@ const Expenses = () => {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
+
+        {/* Dialog për rezultatet e skanimit të faturës */}
+        <Dialog open={isShowingScannedData} onOpenChange={setIsShowingScannedData}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Produktet e Skanuar nga Fatura</DialogTitle>
+              <DialogDescription>
+                Kontrollo dhe konfirmo produktet para se t'i ruash
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="scanned-date">Data</Label>
+                <Input
+                  id="scanned-date"
+                  type="date"
+                  value={expenseDate}
+                  onChange={(e) => setExpenseDate(e.target.value)}
+                />
+              </div>
+              {scannedItems.length > 0 ? (
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Produkti</TableHead>
+                        <TableHead>Sasia</TableHead>
+                        <TableHead>Çmimi</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {scannedItems.map((item, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{item.name}</TableCell>
+                          <TableCell>{item.quantity || 1}</TableCell>
+                          <TableCell>{item.price.toLocaleString()} Lekë</TableCell>
+                        </TableRow>
+                      ))}
+                      <TableRow className="bg-muted/50">
+                        <TableCell colSpan={2} className="font-bold">TOTALI</TableCell>
+                        <TableCell className="font-bold">
+                          {scannedItems.reduce((sum, item) => sum + item.price, 0).toLocaleString()} Lekë
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <p className="text-center py-4 text-muted-foreground">
+                  Nuk u gjetën produkte në faturë
+                </p>
+              )}
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => {
+                setIsShowingScannedData(false);
+                setScannedItems([]);
+              }}>
+                Anulo
+              </Button>
+              <Button 
+                onClick={handleSaveScannedItems}
+                disabled={scannedItems.length === 0}
+              >
+                Ruaj Të Gjitha
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Card>
           <CardHeader>
