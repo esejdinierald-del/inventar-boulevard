@@ -25,6 +25,7 @@ interface Expense {
   product_name: string;
   cost: number;
   notes: string | null;
+  category: 'kitchen' | 'drink';
   created_at: string;
 }
 
@@ -72,7 +73,7 @@ const Expenses = () => {
         .order("expense_date", { ascending: false });
 
       if (error) throw error;
-      setExpenses(data || []);
+      setExpenses((data || []) as Expense[]);
     } catch (error) {
       console.error("Error loading expenses:", error);
       toast({
@@ -135,6 +136,7 @@ const Expenses = () => {
         expense_date: expenseDate,
         product_name: item.name,
         cost: item.price,
+        category: item.category || 'drink',
         notes: item.quantity > 1 ? `Sasia: ${item.quantity}` : null,
       }));
 
@@ -362,6 +364,7 @@ const Expenses = () => {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Produkti</TableHead>
+                        <TableHead>Kategoria</TableHead>
                         <TableHead>Sasia</TableHead>
                         <TableHead>Çmimi</TableHead>
                       </TableRow>
@@ -370,12 +373,21 @@ const Expenses = () => {
                       {scannedItems.map((item, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium">{item.name}</TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              item.category === 'kitchen' 
+                                ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' 
+                                : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                            }`}>
+                              {item.category === 'kitchen' ? '🍳 Kuzhinë' : '🥤 Pije'}
+                            </span>
+                          </TableCell>
                           <TableCell>{item.quantity || 1}</TableCell>
                           <TableCell>{item.price.toLocaleString()} Lekë</TableCell>
                         </TableRow>
                       ))}
                       <TableRow className="bg-muted/50">
-                        <TableCell colSpan={2} className="font-bold">TOTALI</TableCell>
+                        <TableCell colSpan={3} className="font-bold">TOTALI</TableCell>
                         <TableCell className="font-bold">
                           {scannedItems.reduce((sum, item) => sum + item.price, 0).toLocaleString()} Lekë
                         </TableCell>
@@ -435,6 +447,7 @@ const Expenses = () => {
                     <TableRow>
                       <TableHead>Data</TableHead>
                       <TableHead>Produkti</TableHead>
+                      <TableHead>Kategoria</TableHead>
                       <TableHead>Kostoja</TableHead>
                       <TableHead>Shënime</TableHead>
                       <TableHead></TableHead>
@@ -448,6 +461,15 @@ const Expenses = () => {
                         </TableCell>
                         <TableCell className="font-medium">
                           {expense.product_name}
+                        </TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            expense.category === 'kitchen' 
+                              ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' 
+                              : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                          }`}>
+                            {expense.category === 'kitchen' ? '🍳 Kuzhinë' : '🥤 Pije'}
+                          </span>
                         </TableCell>
                         <TableCell>{expense.cost.toLocaleString()} Lekë</TableCell>
                         <TableCell className="text-sm text-muted-foreground">

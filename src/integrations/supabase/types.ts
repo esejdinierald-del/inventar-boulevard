@@ -70,6 +70,7 @@ export type Database = {
       }
       expenses: {
         Row: {
+          category: string | null
           cost: number
           created_at: string
           expense_date: string
@@ -79,6 +80,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category?: string | null
           cost: number
           created_at?: string
           expense_date: string
@@ -88,6 +90,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category?: string | null
           cost?: number
           created_at?: string
           expense_date?: string
@@ -95,6 +98,27 @@ export type Database = {
           notes?: string | null
           product_name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      kitchen_products: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          sort_order?: number | null
         }
         Relationships: []
       }

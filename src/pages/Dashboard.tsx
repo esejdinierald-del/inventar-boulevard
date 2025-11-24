@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { KitchenProductsManager } from "@/components/Dashboard/KitchenProductsManager";
 
 const Dashboard = () => {
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -134,6 +135,9 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Kitchen Products Manager */}
+        <KitchenProductsManager />
 
         {/* Quick Actions */}
         <Card>

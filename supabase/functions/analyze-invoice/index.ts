@@ -46,7 +46,8 @@ serve(async (req) => {
                     {
                       "name": "emri i produktit",
                       "quantity": numri (nëse ka),
-                      "price": çmimi total për atë produkt (në lekë)
+                      "price": çmimi total për atë produkt (në lekë),
+                      "category": "kitchen" ose "drink"
                     }
                   ],
                   "total": totali i faturës (në lekë)
@@ -58,6 +59,9 @@ serve(async (req) => {
                 - Çmimet duhen të jenë në lekë (ALL)
                 - Përfshini VETËM produktet që shihni qartë
                 - Nëse fatura është e paqartë, ktheni një array bosh për items
+                - Category: "kitchen" për produkte të kuzhinës (mish, pule, perime, salca, vaj, miell, djathë etj)
+                - Category: "drink" për pije (ujë, birrë, verë, pije freskuese etj)
+                - Nëse nuk je i sigurt për kategorinë, vendos "drink"
                 
                 Ktheni VETËM JSON, pa tekst shtesë.`
               },
