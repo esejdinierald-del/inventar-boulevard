@@ -232,9 +232,6 @@ const DailyEntry = () => {
               {isAdminUnlocked ? <Unlock className="h-3 w-3 mr-1" /> : <Lock className="h-3 w-3 mr-1" />}
               {isAdminUnlocked ? "Admin (Mbyll)" : "Admin"}
             </Button>
-            <Button variant="outline" size="sm" onClick={loadFromPreviousDay} className="text-xs">
-              📥 Ngarko nga dje
-            </Button>
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <Input
