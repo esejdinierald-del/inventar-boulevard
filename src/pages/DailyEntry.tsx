@@ -23,7 +23,7 @@ const DailyEntry = () => {
   const [editedProductName, setEditedProductName] = useState("");
 
   // Custom hooks
-  const { isAdminUnlocked, showPasswordDialog, validatePassword, toggleAdminMode, closePasswordDialog } = useAuth();
+  const { isAdminUnlocked, showPasswordDialog, validatePassword, toggleAdminMode, closePasswordDialog, isWithinStaffEditWindow } = useAuth();
   const { products, coffeeTypes, addProduct, deleteProduct, updateProduct } = useProductList();
   const { kitchenProducts } = useKitchenProducts();
   const { alcoholicDrinks } = useAlcoholicDrinksList();
@@ -50,9 +50,25 @@ const DailyEntry = () => {
     return selectedDate < today;
   }, [selectedDate]);
 
+  const isYesterday = useCallback(() => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayDate = yesterday.toISOString().split('T')[0];
+    return selectedDate === yesterdayDate;
+  }, [selectedDate]);
+
   const isFieldDisabled = useCallback(() => {
-    return isPastDate() && !isAdminUnlocked;
-  }, [isPastDate, isAdminUnlocked]);
+    // Nëse është admin, nuk ka kufizime
+    if (isAdminUnlocked) return false;
+    
+    // Nëse është dita e djeshme dhe jemi brenda 10 minutave pas mesnatës, lejo modifikimin
+    if (isYesterday() && isWithinStaffEditWindow()) {
+      return false;
+    }
+    
+    // Përndryshe, blloko nëse është datë e kaluar
+    return isPastDate();
+  }, [isPastDate, isYesterday, isAdminUnlocked, isWithinStaffEditWindow]);
 
   // Product editing
   const startEditingProduct = useCallback((productName: string) => {
@@ -152,7 +168,14 @@ const DailyEntry = () => {
     <Layout>
       <div className="space-y-6 pb-20 md:pb-6">
         {/* Past date warning */}
-        {isPastDate() && !isAdminUnlocked && (
+        {isPastDate() && !isAdminUnlocked && !isFieldDisabled() && (
+          <div className="rounded-lg border border-success/50 bg-success/10 p-4">
+            <p className="text-sm font-medium text-success">
+              ✅ Jeni brenda 10 minutave pas mesnatës - mund të modifikoni të dhënat e djeshme.
+            </p>
+          </div>
+        )}
+        {isPastDate() && !isAdminUnlocked && isFieldDisabled() && (
           <div className="rounded-lg border border-warning/50 bg-warning/10 p-4">
             <p className="text-sm font-medium text-warning">
               🔒 Po shikon të dhëna nga e kaluara. Vetëm shikimi është i lejuar. Për të modifikuar, hyr si Admin.
