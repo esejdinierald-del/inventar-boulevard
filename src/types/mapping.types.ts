@@ -1,5 +1,5 @@
 export interface ProductMapping {
-  type: 'product' | 'coffee';
+  type: 'product' | 'coffee' | 'kitchen';
   name: string;
   quantity: number; // Sa copë merr nga stoku (psh 0.5 për "Kakao i vogel" = 0.5 bustine)
 }
