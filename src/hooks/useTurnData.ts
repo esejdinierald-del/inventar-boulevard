@@ -128,6 +128,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     
     const saveData = async () => {
       console.log('💾 Auto-saving data for date:', selectedDate);
+      console.log('📊 Turn1:', turn1);
+      console.log('📊 Turn2:', turn2);
       setSaveStatus('saving');
       try {
         const dataToSave = {
@@ -150,7 +152,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     
     const timeoutId = setTimeout(saveData, 1000);
     return () => clearTimeout(timeoutId);
-  }, [turn1, turn2, selectedDate]);
+  }, [turn1, turn2, selectedDate, setSaveStatus]);
 
   // Auto-sync T1 stock to T2 when T1 changes
   useEffect(() => {
