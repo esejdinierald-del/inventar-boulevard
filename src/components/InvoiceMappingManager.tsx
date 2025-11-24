@@ -112,8 +112,30 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
       }));
 
       setDetectedProducts(uniqueProducts);
+      
+      // Ngarko mappings e ruajtura dhe apliko automatikisht
+      const savedMapping = await StorageService.getInvoiceMapping();
+      if (savedMapping) {
+        // Apliko automatikisht mappings për produktet e detektuara
+        const autoMapped: typeof invoiceMapping = {};
+        uniqueProducts.forEach(product => {
+          if (savedMapping[product.name]) {
+            autoMapped[product.name] = savedMapping[product.name];
+          }
+        });
+        setInvoiceMapping(autoMapped);
+        
+        const mappedCount = Object.keys(autoMapped).length;
+        if (mappedCount > 0) {
+          toast.success(`U gjetën ${uniqueProducts.length} produkte unike! ${mappedCount} janë tashmë të mapuara.`);
+        } else {
+          toast.success(`U gjetën ${uniqueProducts.length} produkte unike!`);
+        }
+      } else {
+        toast.success(`U gjetën ${uniqueProducts.length} produkte unike!`);
+      }
+      
       setStep('mapping');
-      toast.success(`U gjetën ${uniqueProducts.length} produkte unike!`);
     } catch (error) {
       console.error("Error analyzing invoices:", error);
       toast.error("Gabim gjatë analizimit të faturave");
