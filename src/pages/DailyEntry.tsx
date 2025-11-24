@@ -13,6 +13,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProductList } from "@/hooks/useProductList";
 import { useTurnData } from "@/hooks/useTurnData";
 import { useKitchenProducts } from "@/hooks/useKitchenProducts";
+import { useAlcoholicDrinksList } from "@/hooks/useAlcoholicDrinksList";
+import { AlcoholicDrinksService } from "@/services/alcoholic-drinks.service";
 import { TurnData } from "@/types/turn.types";
 
 const DailyEntry = () => {
@@ -24,6 +26,7 @@ const DailyEntry = () => {
   const { isAdminUnlocked, showPasswordDialog, validatePassword, toggleAdminMode, closePasswordDialog } = useAuth();
   const { products, coffeeTypes, addProduct, deleteProduct, updateProduct } = useProductList();
   const { kitchenProducts } = useKitchenProducts();
+  const { alcoholicDrinks } = useAlcoholicDrinksList();
   const {
     turn1,
     turn2,
@@ -136,10 +139,14 @@ const DailyEntry = () => {
   }, []);
 
   // Save handler
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     saveForNextDay();
+    
+    // Apliko zbritjet e pijeve alkoolike
+    await AlcoholicDrinksService.applyAlcoholicDrinksSales(selectedDate);
+    
     toast.success(`Të dhënat u ruajtën! Xhiro totale: ${totalXhiro.toLocaleString()} ALL`);
-  }, [saveForNextDay, totalXhiro]);
+  }, [saveForNextDay, totalXhiro, selectedDate]);
 
   return (
     <Layout>
@@ -160,7 +167,7 @@ const DailyEntry = () => {
             <p className="text-muted-foreground">Regjistro shitjet dhe inventarin për secilin turn</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <ProductMappingManager products={products} coffeeTypes={coffeeTypes} kitchenProducts={kitchenProducts} />
+            <ProductMappingManager products={products} coffeeTypes={coffeeTypes} kitchenProducts={kitchenProducts} alcoholicDrinks={alcoholicDrinks} />
             <Button
               variant={isAdminUnlocked ? "default" : "outline"}
               size="sm"
@@ -198,6 +205,7 @@ const DailyEntry = () => {
               turnData={turn1}
               products={products}
               coffeeTypes={coffeeTypes}
+              alcoholicDrinks={alcoholicDrinks}
               isAdminUnlocked={isAdminUnlocked}
               isFieldDisabled={isFieldDisabled()}
               showCopyButton
@@ -224,6 +232,7 @@ const DailyEntry = () => {
               turnData={turn2}
               products={products}
               coffeeTypes={coffeeTypes}
+              alcoholicDrinks={alcoholicDrinks}
               isAdminUnlocked={isAdminUnlocked}
               isFieldDisabled={isFieldDisabled()}
               mulliriFillimDisabled

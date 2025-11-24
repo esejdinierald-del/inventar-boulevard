@@ -14,6 +14,7 @@ interface ProductMappingManagerProps {
   products: string[];
   coffeeTypes: string[];
   kitchenProducts: string[];
+  alcoholicDrinks?: string[];
 }
 
 interface ReceiptProduct {
@@ -23,12 +24,12 @@ interface ReceiptProduct {
 
 const ADMIN_PASSWORD = "1983";
 
-export const ProductMappingManager = ({ products, coffeeTypes, kitchenProducts }: ProductMappingManagerProps) => {
+export const ProductMappingManager = ({ products, coffeeTypes, kitchenProducts, alcoholicDrinks = [] }: ProductMappingManagerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [detectedProducts, setDetectedProducts] = useState<ReceiptProduct[]>([]);
-  const [productMapping, setProductMapping] = useState<{ [key: string]: { type: 'product' | 'coffee' | 'kitchen'; name: string; quantity: number } }>({});
+  const [productMapping, setProductMapping] = useState<{ [key: string]: { type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink'; name: string; quantity: number } }>({});
   const [step, setStep] = useState<'upload' | 'mapping'>('upload');
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
@@ -119,7 +120,7 @@ export const ProductMappingManager = ({ products, coffeeTypes, kitchenProducts }
     }
   };
 
-  const handleMappingChange = (receiptProduct: string, type: 'product' | 'coffee' | 'kitchen', name: string, quantity: number) => {
+  const handleMappingChange = (receiptProduct: string, type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink', name: string, quantity: number) => {
     setProductMapping(prev => ({
       ...prev,
       [receiptProduct]: { type, name, quantity }
@@ -334,6 +335,13 @@ export const ProductMappingManager = ({ products, coffeeTypes, kitchenProducts }
                                 </option>
                               ))}
                             </optgroup>
+                            <optgroup label="🍸 Pijet Alkoolike">
+                              {alcoholicDrinks.map(d => (
+                                <option key={d} value={`alcoholic_drink:${d}`}>
+                                  {d}
+                                </option>
+                              ))}
+                            </optgroup>
                           </select>
                           {mapping && (
                             <div className="flex items-center gap-2">
@@ -349,8 +357,8 @@ export const ProductMappingManager = ({ products, coffeeTypes, kitchenProducts }
                                 className="w-20 text-sm"
                                 placeholder="Sasi"
                               />
-                              <span className="text-xs text-green-600 whitespace-nowrap">
-                                ✓ {mapping.type === 'product' ? '📦' : mapping.type === 'coffee' ? '☕' : '🍳'} x{mapping.quantity}
+                               <span className="text-xs text-green-600 whitespace-nowrap">
+                                ✓ {mapping.type === 'product' ? '📦' : mapping.type === 'coffee' ? '☕' : mapping.type === 'kitchen' ? '🍳' : '🍸'} x{mapping.quantity}
                               </span>
                             </div>
                           )}

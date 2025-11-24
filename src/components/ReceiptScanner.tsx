@@ -12,9 +12,11 @@ import { supabase } from "@/integrations/supabase/client";
 interface ReceiptScannerProps {
   products: string[];
   coffeeTypes: string[];
+  alcoholicDrinks?: string[];
   onDataExtracted: (
     productData: { [key: string]: number }, 
     coffeeData: { [key: string]: number },
+    alcoholicDrinksData?: { [key: string]: number },
     total?: number
   ) => void;
   turnName: string;
@@ -31,12 +33,12 @@ interface ReceiptScannerProps {
   calculateDif: (stokFillim: number, furnizime: number, gjendje: number, shiriti: number) => number;
 }
 
-export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnName, turnData, calculateDif }: ReceiptScannerProps) => {
+export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], onDataExtracted, turnName, turnData, calculateDif }: ReceiptScannerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedText, setExtractedText] = useState<string>("");
-  const [mappedData, setMappedData] = useState<{ [key: string]: { type: 'product' | 'coffee'; name: string; quantity: number } }>({});
+  const [mappedData, setMappedData] = useState<{ [key: string]: { type: 'product' | 'coffee' | 'alcoholic_drink'; name: string; quantity: number } }>({});
   const [receiptItems, setReceiptItems] = useState<Array<{ name: string; quantity: number }>>([]);
   const [receiptTotal, setReceiptTotal] = useState<number | null>(null);
   const [showDifferenceWarning, setShowDifferenceWarning] = useState(false);
@@ -168,7 +170,7 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
     reader.readAsDataURL(file);
   };
 
-  const handleMapProduct = (lineNumber: string, type: 'product' | 'coffee', name: string, quantity: number) => {
+  const handleMapProduct = (lineNumber: string, type: 'product' | 'coffee' | 'alcoholic_drink', name: string, quantity: number) => {
     setMappedData(prev => ({
       ...prev,
       [lineNumber]: { type, name, quantity }
@@ -186,6 +188,7 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
 
       const productData: { [key: string]: number } = {};
       const coffeeData: { [key: string]: number } = {};
+      const alcoholicDrinksData: { [key: string]: number } = {};
       let unmappedCount = 0;
       
       receiptItems.forEach((item: { name: string; quantity: number }, index: number) => {
@@ -198,6 +201,8 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
             productData[mapping.name] = (productData[mapping.name] || 0) + adjustedQuantity;
           } else if (mapping.type === 'coffee') {
             coffeeData[mapping.name] = (coffeeData[mapping.name] || 0) + adjustedQuantity;
+          } else if (mapping.type === 'alcoholic_drink') {
+            alcoholicDrinksData[mapping.name] = (alcoholicDrinksData[mapping.name] || 0) + adjustedQuantity;
           }
         } else {
           unmappedCount++;
@@ -206,13 +211,14 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
 
       console.log("Final product data:", productData);
       console.log("Final coffee data:", coffeeData);
+      console.log("Final alcoholic drinks data:", alcoholicDrinksData);
       console.log("Unmapped/ignored items:", unmappedCount);
       console.log("Receipt total:", receiptTotal);
 
-      if (Object.keys(productData).length > 0 || Object.keys(coffeeData).length > 0) {
-        console.log("✅ Calling onDataExtracted with product, coffee data and total");
-        onDataExtracted(productData, coffeeData, receiptTotal || undefined);
-        const total = Object.keys(productData).length + Object.keys(coffeeData).length;
+      if (Object.keys(productData).length > 0 || Object.keys(coffeeData).length > 0 || Object.keys(alcoholicDrinksData).length > 0) {
+        console.log("✅ Calling onDataExtracted with product, coffee, alcoholic drinks data and total");
+        onDataExtracted(productData, coffeeData, alcoholicDrinksData, receiptTotal || undefined);
+        const total = Object.keys(productData).length + Object.keys(coffeeData).length + Object.keys(alcoholicDrinksData).length;
         let message = unmappedCount > 0 
           ? `${total} artikuj u ngarkuan (${unmappedCount} të pamapuar u injoruan)`
           : `${total} artikuj u ngarkuan!`;
@@ -421,7 +427,7 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
                                   const [type, name] = e.target.value.split(':');
                                   if (type && name) {
                                     const currentQuantity = mapping?.quantity || 1;
-                                    handleMapProduct(index.toString(), type as 'product' | 'coffee', name, currentQuantity);
+                                    handleMapProduct(index.toString(), type as 'product' | 'coffee' | 'alcoholic_drink', name, currentQuantity);
                                   }
                                 }}
                                 className={`flex-1 text-sm border rounded p-2 ${
@@ -440,6 +446,13 @@ export const ReceiptScanner = ({ products, coffeeTypes, onDataExtracted, turnNam
                                   {coffeeTypes.map(coffee => (
                                     <option key={coffee} value={`coffee:${coffee}`}>
                                       {coffee}
+                                    </option>
+                                  ))}
+                                </optgroup>
+                                <optgroup label="🍸 Pijet Alkoolike">
+                                  {alcoholicDrinks.map(drink => (
+                                    <option key={drink} value={`alcoholic_drink:${drink}`}>
+                                      {drink}
                                     </option>
                                   ))}
                                 </optgroup>
