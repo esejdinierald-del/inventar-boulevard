@@ -68,6 +68,36 @@ export type Database = {
         }
         Relationships: []
       }
+      expenses: {
+        Row: {
+          cost: number
+          created_at: string
+          expense_date: string
+          id: string
+          notes: string | null
+          product_name: string
+          updated_at: string
+        }
+        Insert: {
+          cost: number
+          created_at?: string
+          expense_date: string
+          id?: string
+          notes?: string | null
+          product_name: string
+          updated_at?: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          expense_date?: string
+          id?: string
+          notes?: string | null
+          product_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       next_day_stock: {
         Row: {
           created_at: string | null
