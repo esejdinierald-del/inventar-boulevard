@@ -91,12 +91,12 @@ export const GrinderPhotoScanner = ({ onValueExtracted, turnName, isAdminUnlocke
         variant="outline"
         size="sm"
         onClick={() => setIsOpen(true)}
-        className="text-xs"
+        className="text-xs px-2 h-8"
         type="button"
         disabled={currentValue > 0 && !isAdminUnlocked}
       >
         <Camera className="h-3 w-3 mr-1" />
-        📸 Ngarko Foto Mulliri
+        Foto
       </Button>
 
       <Dialog open={isOpen} onOpenChange={handleClose}>
