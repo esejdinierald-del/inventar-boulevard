@@ -13,6 +13,7 @@ import { AdminPasswordDialog } from "@/components/DailyEntry/AdminPasswordDialog
 interface ProductMappingManagerProps {
   products: string[];
   coffeeTypes: string[];
+  kitchenProducts: string[];
 }
 
 interface ReceiptProduct {
@@ -22,12 +23,12 @@ interface ReceiptProduct {
 
 const ADMIN_PASSWORD = "1983";
 
-export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingManagerProps) => {
+export const ProductMappingManager = ({ products, coffeeTypes, kitchenProducts }: ProductMappingManagerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [detectedProducts, setDetectedProducts] = useState<ReceiptProduct[]>([]);
-  const [productMapping, setProductMapping] = useState<{ [key: string]: { type: 'product' | 'coffee'; name: string; quantity: number } }>({});
+  const [productMapping, setProductMapping] = useState<{ [key: string]: { type: 'product' | 'coffee' | 'kitchen'; name: string; quantity: number } }>({});
   const [step, setStep] = useState<'upload' | 'mapping'>('upload');
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
@@ -118,7 +119,7 @@ export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingM
     }
   };
 
-  const handleMappingChange = (receiptProduct: string, type: 'product' | 'coffee', name: string, quantity: number) => {
+  const handleMappingChange = (receiptProduct: string, type: 'product' | 'coffee' | 'kitchen', name: string, quantity: number) => {
     setProductMapping(prev => ({
       ...prev,
       [receiptProduct]: { type, name, quantity }
@@ -306,7 +307,7 @@ export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingM
                               const [type, name] = e.target.value.split(':');
                               if (type && name) {
                                 const currentQuantity = mapping?.quantity || 1;
-                                handleMappingChange(product.name, type as 'product' | 'coffee', name, currentQuantity);
+                                handleMappingChange(product.name, type as 'product' | 'coffee' | 'kitchen', name, currentQuantity);
                               }
                             }}
                             className="text-sm border rounded p-2 min-w-[200px]"
@@ -326,6 +327,13 @@ export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingM
                                 </option>
                               ))}
                             </optgroup>
+                            <optgroup label="🍳 Kuzhinë">
+                              {kitchenProducts.map(k => (
+                                <option key={k} value={`kitchen:${k}`}>
+                                  {k}
+                                </option>
+                              ))}
+                            </optgroup>
                           </select>
                           {mapping && (
                             <div className="flex items-center gap-2">
@@ -342,7 +350,7 @@ export const ProductMappingManager = ({ products, coffeeTypes }: ProductMappingM
                                 placeholder="Sasi"
                               />
                               <span className="text-xs text-green-600 whitespace-nowrap">
-                                ✓ {mapping.type === 'product' ? '📦' : '☕'} x{mapping.quantity}
+                                ✓ {mapping.type === 'product' ? '📦' : mapping.type === 'coffee' ? '☕' : '🍳'} x{mapping.quantity}
                               </span>
                             </div>
                           )}

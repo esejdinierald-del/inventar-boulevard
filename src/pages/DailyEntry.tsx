@@ -12,6 +12,7 @@ import { TurnSection } from "@/components/DailyEntry/TurnSection";
 import { useAuth } from "@/hooks/useAuth";
 import { useProductList } from "@/hooks/useProductList";
 import { useTurnData } from "@/hooks/useTurnData";
+import { useKitchenProducts } from "@/hooks/useKitchenProducts";
 import { TurnData } from "@/types/turn.types";
 
 const DailyEntry = () => {
@@ -22,6 +23,7 @@ const DailyEntry = () => {
   // Custom hooks
   const { isAdminUnlocked, showPasswordDialog, validatePassword, toggleAdminMode, closePasswordDialog } = useAuth();
   const { products, coffeeTypes, addProduct, deleteProduct, updateProduct } = useProductList();
+  const { kitchenProducts } = useKitchenProducts();
   const {
     turn1,
     turn2,
@@ -158,7 +160,7 @@ const DailyEntry = () => {
             <p className="text-muted-foreground">Regjistro shitjet dhe inventarin për secilin turn</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <ProductMappingManager products={products} coffeeTypes={coffeeTypes} />
+            <ProductMappingManager products={products} coffeeTypes={coffeeTypes} kitchenProducts={kitchenProducts} />
             <Button
               variant={isAdminUnlocked ? "default" : "outline"}
               size="sm"
