@@ -81,6 +81,7 @@ const Dashboard = () => {
                 <Lock className="h-5 w-5 text-warning" />
                 <Input
                   type="password"
+                  autoComplete="current-password"
                   placeholder="Fut fjalëkalimin për të parë të dhënat"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
