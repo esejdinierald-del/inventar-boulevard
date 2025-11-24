@@ -27,6 +27,7 @@ export const AdminPasswordDialog = ({ isOpen, onClose, onSubmit }: AdminPassword
         </AlertDialogHeader>
         <Input
           type="password"
+          autoComplete="current-password"
           placeholder="Fjalëkalimi"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
