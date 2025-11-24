@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      alcoholic_drinks_inventory: {
+        Row: {
+          created_at: string | null
+          drink_name: string
+          furnizime: number
+          gjendje: number
+          id: string
+          shitje: number
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          drink_name: string
+          furnizime?: number
+          gjendje?: number
+          id?: string
+          shitje?: number
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          drink_name?: string
+          furnizime?: number
+          gjendje?: number
+          id?: string
+          shitje?: number
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       daily_entries: {
         Row: {
           created_at: string | null

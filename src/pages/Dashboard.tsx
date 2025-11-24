@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { KitchenProductsManager } from "@/components/Dashboard/KitchenProductsManager";
+import { AlcoholicDrinksManager } from "@/components/Dashboard/AlcoholicDrinksManager";
 import { supabase } from "@/integrations/supabase/client";
 import { TurnData } from "@/types/turn.types";
 
@@ -180,6 +181,9 @@ const Dashboard = () => {
 
         {/* Kitchen Products Manager */}
         <KitchenProductsManager />
+
+        {/* Alcoholic Drinks Manager */}
+        <AlcoholicDrinksManager />
 
         {/* Quick Actions */}
         <Card>
