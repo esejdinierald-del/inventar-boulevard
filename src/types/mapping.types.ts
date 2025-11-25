@@ -1,7 +1,7 @@
 export interface ProductMapping {
   type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink';
   name: string;
-  quantity: number; // Sa copë merr nga stoku (psh 0.5 për "Kakao i vogel" = 0.5 bustine)
+  quantity?: number; // Sa copë merr nga stoku - vendoset nga stafi kur ngarkojnë furnizime
 }
 
 export interface ReceiptItem {

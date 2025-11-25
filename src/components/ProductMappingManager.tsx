@@ -30,7 +30,7 @@ export const ProductMappingManager = ({ products, coffeeTypes, kitchenProducts, 
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [detectedProducts, setDetectedProducts] = useState<ReceiptProduct[]>([]);
-  const [productMapping, setProductMapping] = useState<{ [key: string]: { type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink'; name: string; quantity: number } }>({});
+  const [productMapping, setProductMapping] = useState<{ [key: string]: { type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink'; name: string; quantity?: number } }>({});
   const [step, setStep] = useState<'upload' | 'mapping'>('upload');
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
