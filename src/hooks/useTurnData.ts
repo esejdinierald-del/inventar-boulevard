@@ -80,32 +80,59 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       isInitialLoad.current = true;
       
       try {
+        // GJITHMONË kontrollo për next_day_stock fillimisht
+        const savedStock = await StorageService.getStockForDate(selectedDate);
+        const savedMulliri = await StorageService.getMulliriForDate(selectedDate);
+        
         const savedData = await StorageService.getDailyEntryData(selectedDate);
         if (savedData) {
           console.log('📂 Found saved data - migrating if needed');
           // Migro emrat e produkteve
-          const migratedT1 = migrateProductNames(savedData.turn1, products);
+          let migratedT1 = migrateProductNames(savedData.turn1, products);
           const migratedT2 = migrateProductNames(savedData.turn2, products);
+          
+          // KRITIKE: Nëse ka next_day_stock, mbishkruaj stokFillim në T1
+          if (savedStock || savedMulliri) {
+            console.log('📦 Found next_day_stock - overriding T1 stokFillim');
+            if (savedStock) {
+              const migratedStock: { [key: string]: number } = {};
+              Object.entries(savedStock).forEach(([oldName, value]) => {
+                const newName = PRODUCT_NAME_MIGRATION[oldName] || oldName;
+                migratedStock[newName] = value;
+              });
+              
+              migratedT1 = {
+                ...migratedT1,
+                products: Object.fromEntries(
+                  Object.entries(migratedT1.products).map(([key, data]) => [
+                    key,
+                    { ...data, stokFillim: migratedStock[key] || 0 }
+                  ])
+                )
+              };
+            }
+            
+            if (savedMulliri !== null) {
+              migratedT1 = {
+                ...migratedT1,
+                mulliriFillim: savedMulliri
+              };
+            }
+          }
+          
           setTurn1(migratedT1);
           setTurn2(migratedT2);
-          // Ruaj të dhënat e migruara vetëm nëse ka ndryshime
-          const hasChanges = JSON.stringify(savedData.turn1) !== JSON.stringify(migratedT1) ||
-                            JSON.stringify(savedData.turn2) !== JSON.stringify(migratedT2);
-          if (hasChanges) {
-            await StorageService.setDailyEntryData(selectedDate, {
-              turn1: migratedT1,
-              turn2: migratedT2,
-              date: selectedDate
-            });
-          }
+          
+          // Ruaj të dhënat e përditësuara
+          await StorageService.setDailyEntryData(selectedDate, {
+            turn1: migratedT1,
+            turn2: migratedT2,
+            date: selectedDate
+          });
         } else {
           console.log('📝 No saved data - checking for next day stock');
           const newT1 = createEmptyTurnData();
           const newT2 = createEmptyTurnData();
-          
-          // Ngarko stokun e ruajtur nga dita e mëparshme (nëse ka)
-          const savedStock = await StorageService.getStockForDate(selectedDate);
-          const savedMulliri = await StorageService.getMulliriForDate(selectedDate);
           
           if (savedStock || savedMulliri) {
             console.log('📦 Found next day stock - loading into T1');
