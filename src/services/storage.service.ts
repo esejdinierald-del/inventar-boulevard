@@ -80,13 +80,52 @@ export class StorageService {
     }
   }
 
-  // Coffee types
-  static getCoffeeTypes(): string[] | null {
-    return this.getItem<string[]>('coffee_types_list');
+  // Coffee types (në Supabase)
+  static async getCoffeeTypes(): Promise<string[] | null> {
+    try {
+      const { data, error } = await supabase
+        .from('coffee_types')
+        .select('name')
+        .order('sort_order', { ascending: true });
+      
+      if (error) throw error;
+      return data?.map(c => c.name) || null;
+    } catch (error) {
+      console.error('Error fetching coffee types:', error);
+      // Fallback to localStorage
+      return this.getItem<string[]>('coffee_types_list');
+    }
   }
 
-  static setCoffeeTypes(coffeeTypes: string[]): void {
-    this.setItem('coffee_types_list', coffeeTypes);
+  static async setCoffeeTypes(coffeeTypes: string[]): Promise<void> {
+    try {
+      // Fshi të gjitha dhe ri-shto me order të ri
+      const { error: deleteError } = await supabase
+        .from('coffee_types')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      if (deleteError) {
+        console.error('Error deleting coffee types:', deleteError);
+      }
+      
+      const coffeeTypesData = coffeeTypes.map((name, index) => ({
+        name,
+        sort_order: index
+      }));
+      
+      if (coffeeTypesData.length > 0) {
+        const { error } = await supabase.from('coffee_types').insert(coffeeTypesData);
+        if (error) throw error;
+      }
+      
+      // Backup në localStorage
+      this.setItem('coffee_types_list', coffeeTypes);
+    } catch (error) {
+      console.error('Error saving coffee types:', error);
+      // Fallback to localStorage only
+      this.setItem('coffee_types_list', coffeeTypes);
+    }
   }
 
   // Stock for specific date (në Supabase)
