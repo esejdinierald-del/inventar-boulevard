@@ -196,8 +196,12 @@ export const InvoiceMappingManager = ({ products, kitchenProducts, alcoholicDrin
         
         uniqueProducts.forEach(product => {
           const bestMatch = findBestMapping(product.name, savedMapping);
-          if (bestMatch) {
-            autoMapped[product.name] = bestMatch;
+          if (bestMatch && bestMatch.type !== 'coffee') {
+            autoMapped[product.name] = {
+              type: bestMatch.type as 'product' | 'kitchen' | 'alcoholic_drink',
+              name: bestMatch.name,
+              quantity: bestMatch.quantity
+            };
             matchedProducts.push(product.name);
           }
         });
