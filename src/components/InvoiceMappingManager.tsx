@@ -14,7 +14,6 @@ import { MappingData } from "@/types/mapping.types";
 
 interface InvoiceMappingManagerProps {
   products: string[];
-  coffeeTypes: string[];
   kitchenProducts: string[];
   alcoholicDrinks?: string[];
   isAdmin?: boolean;
@@ -66,12 +65,12 @@ const findBestMapping = (productName: string, savedMapping: MappingData | null) 
   return null;
 };
 
-export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, alcoholicDrinks = [], isAdmin = false, onApplySupplies }: InvoiceMappingManagerProps) => {
+export const InvoiceMappingManager = ({ products, kitchenProducts, alcoholicDrinks = [], isAdmin = false, onApplySupplies }: InvoiceMappingManagerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [detectedProducts, setDetectedProducts] = useState<InvoiceProduct[]>([]);
-  const [invoiceMapping, setInvoiceMapping] = useState<{ [key: string]: { type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink'; name: string; quantity: number } }>({});
+  const [invoiceMapping, setInvoiceMapping] = useState<{ [key: string]: { type: 'product' | 'kitchen' | 'alcoholic_drink'; name: string; quantity: number } }>({});
   const [step, setStep] = useState<'upload' | 'mapping'>('upload');
 
   const loadSavedMapping = async () => {
@@ -85,11 +84,14 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
       if (data && data.length > 0) {
         const mapping: typeof invoiceMapping = {};
         data.forEach(item => {
-          mapping[item.invoice_name] = {
-            type: item.product_type as 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink',
-            name: item.product_name,
-            quantity: item.quantity || 1
-          };
+          // Injoro mappings të kafesë (duhet të jenë vetëm për shitje)
+          if (item.product_type !== 'coffee') {
+            mapping[item.invoice_name] = {
+              type: item.product_type as 'product' | 'kitchen' | 'alcoholic_drink',
+              name: item.product_name,
+              quantity: item.quantity || 1
+            };
+          }
         });
         setInvoiceMapping(mapping);
         toast.success("Mapimi i faturave u ngarkua!");
@@ -177,11 +179,14 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
       if (savedMappingsData && savedMappingsData.length > 0) {
         savedMapping = {};
         savedMappingsData.forEach(item => {
-          savedMapping![item.invoice_name] = {
-            type: item.product_type as 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink',
-            name: item.product_name,
-            quantity: item.quantity || 1
-          };
+          // Injoro mappings të kafesë (duhet të jenë vetëm për shitje)
+          if (item.product_type !== 'coffee') {
+            savedMapping![item.invoice_name] = {
+              type: item.product_type as 'product' | 'kitchen' | 'alcoholic_drink',
+              name: item.product_name,
+              quantity: item.quantity || 1
+            };
+          }
         });
       }
       
@@ -220,7 +225,7 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
     }
   };
 
-  const handleMappingChange = (invoiceProduct: string, type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink', name: string) => {
+  const handleMappingChange = (invoiceProduct: string, type: 'product' | 'kitchen' | 'alcoholic_drink', name: string) => {
     const newMapping = {
       ...invoiceMapping,
       [invoiceProduct]: { type, name, quantity: invoiceMapping[invoiceProduct]?.quantity || 1 }
@@ -485,7 +490,7 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
                             onChange={(e) => {
                               const [type, name] = e.target.value.split(':');
                               if (type && name) {
-                                handleMappingChange(product.name, type as 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink', name);
+                                handleMappingChange(product.name, type as 'product' | 'kitchen' | 'alcoholic_drink', name);
                               }
                             }}
                             className="text-sm border rounded p-2 flex-1"
@@ -496,13 +501,6 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
                               {products.map(p => (
                                 <option key={p} value={`product:${p}`}>
                                   {p}
-                                </option>
-                              ))}
-                            </optgroup>
-                            <optgroup label="☕ Kafe">
-                              {coffeeTypes.map(c => (
-                                <option key={c} value={`coffee:${c}`}>
-                                  {c}
                                 </option>
                               ))}
                             </optgroup>
@@ -535,7 +533,7 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
                                 />
                               </div>
                               <span className="text-xs text-green-600 whitespace-nowrap">
-                                ✓ {mapping.type === 'product' ? '📦' : mapping.type === 'coffee' ? '☕' : mapping.type === 'kitchen' ? '🍳' : '🍸'} {mapping.name}
+                                ✓ {mapping.type === 'product' ? '📦' : mapping.type === 'kitchen' ? '🍳' : '🍸'} {mapping.name}
                               </span>
                             </div>
                           )}

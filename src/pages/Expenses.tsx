@@ -262,7 +262,6 @@ const Expenses = () => {
             <h1 className="text-3xl font-bold mb-2">Furnizime & Shpenzime</h1>
             <InvoiceMappingManager 
               products={products}
-              coffeeTypes={coffeeTypes}
               kitchenProducts={kitchenProducts}
               alcoholicDrinks={alcoholicDrinks}
             />
