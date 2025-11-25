@@ -11,6 +11,7 @@ interface InvoiceMapping {
   invoice_name: string;
   product_type: string;
   product_name: string;
+  quantity: number | null;
 }
 
 const getTypeBadge = (type: string) => {
@@ -108,6 +109,7 @@ export const InvoiceMappingsTable = () => {
                   <TableHead>Emërtimi në Faturë</TableHead>
                   <TableHead>Lloji</TableHead>
                   <TableHead>Produkti në Sistem</TableHead>
+                  <TableHead className="w-[100px]">Sasia</TableHead>
                   <TableHead className="w-[100px]">Veprime</TableHead>
                 </TableRow>
               </TableHeader>
@@ -119,6 +121,9 @@ export const InvoiceMappingsTable = () => {
                       <span className="text-sm">{getTypeBadge(mapping.product_type)}</span>
                     </TableCell>
                     <TableCell className="font-medium">{mapping.product_name}</TableCell>
+                    <TableCell className="text-center">
+                      <span className="text-sm font-semibold">{mapping.quantity || 1}</span>
+                    </TableCell>
                     <TableCell>
                       <Button
                         variant="ghost"

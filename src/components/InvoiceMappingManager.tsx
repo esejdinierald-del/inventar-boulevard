@@ -71,7 +71,7 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [detectedProducts, setDetectedProducts] = useState<InvoiceProduct[]>([]);
-  const [invoiceMapping, setInvoiceMapping] = useState<{ [key: string]: { type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink'; name: string } }>({});
+  const [invoiceMapping, setInvoiceMapping] = useState<{ [key: string]: { type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink'; name: string; quantity: number } }>({});
   const [step, setStep] = useState<'upload' | 'mapping'>('upload');
 
   const loadSavedMapping = async () => {
@@ -87,7 +87,8 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
         data.forEach(item => {
           mapping[item.invoice_name] = {
             type: item.product_type as 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink',
-            name: item.product_name
+            name: item.product_name,
+            quantity: item.quantity || 1
           };
         });
         setInvoiceMapping(mapping);
@@ -178,7 +179,8 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
         savedMappingsData.forEach(item => {
           savedMapping![item.invoice_name] = {
             type: item.product_type as 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink',
-            name: item.product_name
+            name: item.product_name,
+            quantity: item.quantity || 1
           };
         });
       }
@@ -221,11 +223,20 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
   const handleMappingChange = (invoiceProduct: string, type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink', name: string) => {
     const newMapping = {
       ...invoiceMapping,
-      [invoiceProduct]: { type, name }
+      [invoiceProduct]: { type, name, quantity: invoiceMapping[invoiceProduct]?.quantity || 1 }
     };
     console.log('Mapping changed:', { invoiceProduct, type, name });
     console.log('New mapping state:', newMapping);
     setInvoiceMapping(newMapping);
+  };
+
+  const handleQuantityChange = (invoiceProduct: string, quantity: number) => {
+    if (invoiceMapping[invoiceProduct]) {
+      setInvoiceMapping({
+        ...invoiceMapping,
+        [invoiceProduct]: { ...invoiceMapping[invoiceProduct], quantity: quantity || 1 }
+      });
+    }
   };
 
   const saveMapping = async () => {
@@ -251,7 +262,8 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
       const mappingsToInsert = Object.entries(invoiceMapping).map(([invoiceName, mapping]) => ({
         invoice_name: invoiceName,
         product_type: mapping.type,
-        product_name: mapping.name
+        product_name: mapping.name,
+        quantity: mapping.quantity || 1
       }));
       
       console.log("Inserting mappings:", mappingsToInsert);
@@ -292,9 +304,10 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
     }
 
     toast.success(`${mappedProducts.length} produkte u aplikuan në stok!`, {
-      description: mappedProducts.map(p => 
-        `${invoiceMapping[p.name].name}`
-      ).join(", ")
+      description: mappedProducts.map(p => {
+        const mapping = invoiceMapping[p.name];
+        return `${mapping.name} (${mapping.quantity})`;
+      }).join(", ")
     });
     setIsOpen(false);
     resetState();
@@ -466,7 +479,7 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
                           <p className="text-xs text-muted-foreground">Nga fatura</p>
                         </div>
                         <div className="text-muted-foreground">→</div>
-                        <div className="flex gap-2 items-center">
+                        <div className="flex gap-2 items-center flex-1">
                           <select
                             value={currentValue}
                             onChange={(e) => {
@@ -475,7 +488,7 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
                                 handleMappingChange(product.name, type as 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink', name);
                               }
                             }}
-                            className="text-sm border rounded p-2 min-w-[200px]"
+                            className="text-sm border rounded p-2 flex-1"
                             disabled={!isAdmin}
                           >
                             <option value="">-- Zgjidh --</option>
@@ -508,10 +521,23 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
                               ))}
                             </optgroup>
                           </select>
+                          
                           {mapping && (
-                            <span className="text-xs text-green-600 whitespace-nowrap">
-                              ✓ {mapping.type === 'product' ? '📦' : mapping.type === 'coffee' ? '☕' : mapping.type === 'kitchen' ? '🍳' : '🍸'} {mapping.name}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                <Label className="text-xs whitespace-nowrap">Sasia:</Label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={mapping.quantity}
+                                  onChange={(e) => handleQuantityChange(product.name, parseInt(e.target.value) || 1)}
+                                  className="w-20 h-8 text-sm"
+                                />
+                              </div>
+                              <span className="text-xs text-green-600 whitespace-nowrap">
+                                ✓ {mapping.type === 'product' ? '📦' : mapping.type === 'coffee' ? '☕' : mapping.type === 'kitchen' ? '🍳' : '🍸'} {mapping.name}
+                              </span>
+                            </div>
                           )}
                         </div>
                       </div>

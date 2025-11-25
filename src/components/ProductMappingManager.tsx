@@ -30,7 +30,7 @@ export const ProductMappingManager = ({ products, coffeeTypes, kitchenProducts, 
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [detectedProducts, setDetectedProducts] = useState<ReceiptProduct[]>([]);
-  const [productMapping, setProductMapping] = useState<{ [key: string]: { type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink'; name: string; quantity?: number } }>({});
+  const [productMapping, setProductMapping] = useState<{ [key: string]: { type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink'; name: string; quantity: number } }>({});
   const [step, setStep] = useState<'upload' | 'mapping'>('upload');
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
@@ -364,7 +364,7 @@ export const ProductMappingManager = ({ products, coffeeTypes, kitchenProducts, 
                                 type="number"
                                 step="0.1"
                                 min="0"
-                                value={mapping.quantity || 1}
+                                value={mapping.quantity}
                                 onChange={(e) => {
                                   const quantity = parseFloat(e.target.value) || 1;
                                   handleMappingChange(product.name, mapping.type, mapping.name, quantity);
