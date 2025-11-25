@@ -71,13 +71,25 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [detectedProducts, setDetectedProducts] = useState<InvoiceProduct[]>([]);
-  const [invoiceMapping, setInvoiceMapping] = useState<{ [key: string]: { type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink'; name: string; quantity: number } }>({});
+  const [invoiceMapping, setInvoiceMapping] = useState<{ [key: string]: { type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink'; name: string } }>({});
   const [step, setStep] = useState<'upload' | 'mapping'>('upload');
 
   const loadSavedMapping = async () => {
     try {
-      const mapping = await StorageService.getInvoiceMapping();
-      if (mapping) {
+      const { data, error } = await supabase
+        .from('invoice_mappings')
+        .select('*');
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        const mapping: typeof invoiceMapping = {};
+        data.forEach(item => {
+          mapping[item.invoice_name] = {
+            type: item.product_type as 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink',
+            name: item.product_name
+          };
+        });
         setInvoiceMapping(mapping);
         toast.success("Mapimi i faturave u ngarkua!");
       }
@@ -155,8 +167,22 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
 
       setDetectedProducts(uniqueProducts);
       
-      // Ngarko mappings e ruajtura dhe apliko automatikisht me fuzzy matching
-      const savedMapping = await StorageService.getInvoiceMapping();
+      // Ngarko mappings e ruajtura nga databaza dhe apliko automatikisht me fuzzy matching
+      const { data: savedMappingsData } = await supabase
+        .from('invoice_mappings')
+        .select('*');
+      
+      let savedMapping: typeof invoiceMapping | null = null;
+      if (savedMappingsData && savedMappingsData.length > 0) {
+        savedMapping = {};
+        savedMappingsData.forEach(item => {
+          savedMapping![item.invoice_name] = {
+            type: item.product_type as 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink',
+            name: item.product_name
+          };
+        });
+      }
+      
       if (savedMapping) {
         const autoMapped: typeof invoiceMapping = {};
         const matchedProducts: string[] = [];
@@ -192,12 +218,12 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
     }
   };
 
-  const handleMappingChange = (invoiceProduct: string, type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink', name: string, quantity: number) => {
+  const handleMappingChange = (invoiceProduct: string, type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink', name: string) => {
     const newMapping = {
       ...invoiceMapping,
-      [invoiceProduct]: { type, name, quantity }
+      [invoiceProduct]: { type, name }
     };
-    console.log('Mapping changed:', { invoiceProduct, type, name, quantity });
+    console.log('Mapping changed:', { invoiceProduct, type, name });
     console.log('New mapping state:', newMapping);
     setInvoiceMapping(newMapping);
   };
@@ -221,8 +247,29 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
     }
     
     try {
-      console.log("Calling StorageService.setInvoiceMapping...");
-      await StorageService.setInvoiceMapping(invoiceMapping);
+      // Konverto mapping object në array për insert
+      const mappingsToInsert = Object.entries(invoiceMapping).map(([invoiceName, mapping]) => ({
+        invoice_name: invoiceName,
+        product_type: mapping.type,
+        product_name: mapping.name
+      }));
+      
+      console.log("Inserting mappings:", mappingsToInsert);
+      
+      // Fshij mappings ekzistuese dhe shto të rejat
+      const { error: deleteError } = await supabase
+        .from('invoice_mappings')
+        .delete()
+        .in('invoice_name', Object.keys(invoiceMapping));
+      
+      if (deleteError) throw deleteError;
+      
+      const { error: insertError } = await supabase
+        .from('invoice_mappings')
+        .insert(mappingsToInsert);
+      
+      if (insertError) throw insertError;
+      
       console.log("Successfully saved mapping!");
       toast.success("Mapimi i faturave u ruajt me sukses!");
       setIsOpen(false);
@@ -246,7 +293,7 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
 
     toast.success(`${mappedProducts.length} produkte u aplikuan në stok!`, {
       description: mappedProducts.map(p => 
-        `${invoiceMapping[p.name].name} (+${invoiceMapping[p.name].quantity})`
+        `${invoiceMapping[p.name].name}`
       ).join(", ")
     });
     setIsOpen(false);
@@ -271,9 +318,15 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
       return;
     }
     try {
-      await StorageService.removeInvoiceMapping();
+      const { error } = await supabase
+        .from('invoice_mappings')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Fshij të gjitha
+      
+      if (error) throw error;
+      
       setInvoiceMapping({});
-      toast.success("Mapimi u fshi!");
+      toast.success("Të gjitha mapingjet u fshinë!");
     } catch (error) {
       console.error("Error deleting invoice mapping:", error);
       toast.error("Gabim gjatë fshirjes së mapimit");
@@ -419,8 +472,7 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
                             onChange={(e) => {
                               const [type, name] = e.target.value.split(':');
                               if (type && name) {
-                                const currentQuantity = mapping?.quantity || 1;
-                                handleMappingChange(product.name, type as 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink', name, currentQuantity);
+                                handleMappingChange(product.name, type as 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink', name);
                               }
                             }}
                             className="text-sm border rounded p-2 min-w-[200px]"
@@ -457,24 +509,9 @@ export const InvoiceMappingManager = ({ products, coffeeTypes, kitchenProducts, 
                             </optgroup>
                           </select>
                           {mapping && (
-                            <div className="flex items-center gap-2">
-                              <Input
-                                type="number"
-                                step="0.1"
-                                min="0"
-                                value={mapping.quantity || 1}
-                                onChange={(e) => {
-                                  const quantity = parseFloat(e.target.value) || 1;
-                                  handleMappingChange(product.name, mapping.type, mapping.name, quantity);
-                                }}
-                                className="w-20 text-sm"
-                                placeholder="Sasi"
-                                disabled={!isAdmin}
-                              />
-                              <span className="text-xs text-green-600 whitespace-nowrap">
-                                ✓ {mapping.type === 'product' ? '📦' : mapping.type === 'coffee' ? '☕' : mapping.type === 'kitchen' ? '🍳' : '🍸'} x{mapping.quantity}
-                              </span>
-                            </div>
+                            <span className="text-xs text-green-600 whitespace-nowrap">
+                              ✓ {mapping.type === 'product' ? '📦' : mapping.type === 'coffee' ? '☕' : mapping.type === 'kitchen' ? '🍳' : '🍸'} {mapping.name}
+                            </span>
                           )}
                         </div>
                       </div>
