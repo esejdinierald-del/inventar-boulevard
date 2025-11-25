@@ -39,8 +39,11 @@ export const TurnExtras = ({
           step="any"
           value={turnData.xhiro || ""}
           onChange={(e) => onUpdate('xhiro', Number(e.target.value))}
-          disabled={isFieldDisabled}
+          disabled={true}
+          className="bg-muted/50"
+          title="Xhiro ngarkohet vetëm nga skaneri i shiritit"
         />
+        <p className="text-xs text-muted-foreground">📸 Ngarkohet automatikisht nga skaneri i shiritit</p>
       </div>
 
       <div className="space-y-2">
