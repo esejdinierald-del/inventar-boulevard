@@ -189,6 +189,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     if (isInitialLoad.current) return;
     
     const timeoutId = setTimeout(() => {
+      console.log('🔄 Syncing T1 → T2');
       setTurn2(prev => ({
         ...prev,
         products: Object.fromEntries(
@@ -196,6 +197,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
             const t1Data = turn1.products[key];
             if (t1Data) {
               const calculatedStock = CalculationService.calculateNewStock(t1Data);
+              console.log(`  ${key}: ${t1Data.stokFillim} + ${t1Data.furnizime} - ${t1Data.shiriti} = ${calculatedStock}`);
               return [key, { ...data, stokFillim: calculatedStock }];
             }
             return [key, data];
@@ -203,6 +205,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
         ),
         mulliriFillim: turn1.mulliriPerfund
       }));
+      console.log('✅ T1 → T2 sync complete');
     }, 800); // Run after main save
 
     return () => clearTimeout(timeoutId);
@@ -214,9 +217,11 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     
     const saveNextDay = async () => {
       try {
+        console.log('💾 Saving T2 stock for next day...');
         const nextDayStock = Object.fromEntries(
           Object.entries(turn2.products).map(([key, data]) => {
             const calculatedStock = CalculationService.calculateNewStock(data);
+            console.log(`  ${key}: ${data.stokFillim} + ${data.furnizime} - ${data.shiriti} = ${calculatedStock}`);
             return [key, calculatedStock];
           })
         );
@@ -225,14 +230,16 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
         nextDay.setDate(nextDay.getDate() + 1);
         const nextDayDate = nextDay.toISOString().split('T')[0];
 
+        console.log(`💾 Saving to ${nextDayDate}:`, nextDayStock);
         await StorageService.setStockForDate(nextDayDate, nextDayStock);
         await StorageService.setMulliriForDate(nextDayDate, turn2.mulliriPerfund);
+        console.log(`✅ Next day stock saved for ${nextDayDate}`);
       } catch (error) {
         console.error('Error saving next day stock:', error);
       }
     };
     
-    const timeoutId = setTimeout(saveNextDay, 1000); // Run after T1->T2 sync
+    const timeoutId = setTimeout(saveNextDay, 1200); // Run after T1->T2 sync
     return () => clearTimeout(timeoutId);
   }, [turn2, selectedDate]);
 
