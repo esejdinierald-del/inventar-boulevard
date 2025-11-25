@@ -47,6 +47,27 @@ export type Database = {
         }
         Relationships: []
       }
+      coffee_types: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
       daily_entries: {
         Row: {
           created_at: string | null

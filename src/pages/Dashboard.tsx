@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { KitchenProductsManager } from "@/components/Dashboard/KitchenProductsManager";
 import { AlcoholicDrinksManager } from "@/components/Dashboard/AlcoholicDrinksManager";
 import { InvoiceMappingsTable } from "@/components/Dashboard/InvoiceMappingsTable";
+import { CoffeeTypesManager } from "@/components/Dashboard/CoffeeTypesManager";
 import { supabase } from "@/integrations/supabase/client";
 import { TurnData } from "@/types/turn.types";
 
@@ -179,6 +180,9 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Coffee Types Manager */}
+        <CoffeeTypesManager />
 
         {/* Kitchen Products Manager */}
         <KitchenProductsManager />

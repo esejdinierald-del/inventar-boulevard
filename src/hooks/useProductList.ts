@@ -36,28 +36,36 @@ export const useProductList = () => {
   const [products, setProducts] = useState<string[]>(DEFAULT_PRODUCTS);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load products nga Supabase
+  const [coffeeTypes, setCoffeeTypes] = useState<string[]>(DEFAULT_COFFEE_TYPES);
+
+  // Load products dhe coffee types nga Supabase
   useEffect(() => {
-    const loadProducts = async () => {
+    const loadData = async () => {
       try {
-        const saved = await StorageService.getProducts();
-        if (saved && saved.length > 0) {
+        const [savedProducts, savedCoffeeTypes] = await Promise.all([
+          StorageService.getProducts(),
+          StorageService.getCoffeeTypes()
+        ]);
+        
+        if (savedProducts && savedProducts.length > 0) {
           // Migro emrat e vjetër në të rinj
-          const normalized = saved.map(p => normalizeProductName(p));
+          const normalized = savedProducts.map(p => normalizeProductName(p));
           setProducts(normalized);
           // Ruaj emrat e normalizuar
           await StorageService.setProducts(normalized);
         }
+        
+        if (savedCoffeeTypes && savedCoffeeTypes.length > 0) {
+          setCoffeeTypes(savedCoffeeTypes);
+        }
       } catch (error) {
-        console.error('Error loading products:', error);
+        console.error('Error loading data:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    loadProducts();
+    loadData();
   }, []);
-
-  const [coffeeTypes] = useState<string[]>(DEFAULT_COFFEE_TYPES);
 
   const addProduct = useCallback(async (productName: string) => {
     const trimmed = productName.trim();
@@ -123,12 +131,79 @@ export const useProductList = () => {
     return true;
   }, [products]);
 
+  const addCoffeeType = useCallback(async (coffeeTypeName: string) => {
+    const trimmed = coffeeTypeName.trim();
+    
+    if (!trimmed) {
+      toast.error("Shkruaj emrin e kafes!");
+      return false;
+    }
+
+    if (coffeeTypes.includes(trimmed)) {
+      toast.error("Kjo kafë ekziston tashmë!");
+      return false;
+    }
+
+    const updatedCoffeeTypes = [...coffeeTypes, trimmed];
+    setCoffeeTypes(updatedCoffeeTypes);
+    await StorageService.setCoffeeTypes(updatedCoffeeTypes);
+    toast.success("Lloji i kafes u shtua!");
+    return true;
+  }, [coffeeTypes]);
+
+  const deleteCoffeeType = useCallback(async (coffeeTypeName: string) => {
+    const updatedCoffeeTypes = coffeeTypes.filter(c => c !== coffeeTypeName);
+    setCoffeeTypes(updatedCoffeeTypes);
+    await StorageService.setCoffeeTypes(updatedCoffeeTypes);
+    toast.success("Lloji i kafes u fshi!");
+  }, [coffeeTypes]);
+
+  const updateCoffeeType = useCallback(async (oldName: string, newName: string) => {
+    const trimmed = newName.trim();
+
+    if (!trimmed) {
+      toast.error("Emri i kafes nuk mund të jetë bosh!");
+      return false;
+    }
+
+    if (trimmed === oldName) {
+      return true;
+    }
+
+    if (coffeeTypes.includes(trimmed)) {
+      toast.error("Kjo kafë ekziston tashmë!");
+      return false;
+    }
+
+    const updatedCoffeeTypes = coffeeTypes.map(c => c === oldName ? trimmed : c);
+    setCoffeeTypes(updatedCoffeeTypes);
+    await StorageService.setCoffeeTypes(updatedCoffeeTypes);
+
+    // Update coffee mapping as well
+    const mapping = await StorageService.getProductMapping();
+    if (mapping) {
+      const updatedMapping = { ...mapping };
+      Object.entries(mapping).forEach(([key, value]) => {
+        if (value.type === 'coffee' && value.name === oldName) {
+          updatedMapping[key] = { type: 'coffee', name: trimmed, quantity: value.quantity || 1 };
+        }
+      });
+      await StorageService.setProductMapping(updatedMapping);
+    }
+
+    toast.success("Emri i kafes dhe mapimet u përditësuan!");
+    return true;
+  }, [coffeeTypes]);
+
   return {
     products,
     coffeeTypes,
     addProduct,
     deleteProduct,
     updateProduct,
+    addCoffeeType,
+    deleteCoffeeType,
+    updateCoffeeType,
     isLoading,
   };
 };
