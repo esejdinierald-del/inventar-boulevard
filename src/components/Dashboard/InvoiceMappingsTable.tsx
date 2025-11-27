@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 import { Trash2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -52,6 +53,23 @@ export const InvoiceMappingsTable = () => {
       toast.error('Gabim në ngarkimin e mapimeve');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const updateQuantity = async (id: string, newQuantity: number) => {
+    try {
+      const { error } = await supabase
+        .from('invoice_mappings')
+        .update({ quantity: newQuantity })
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      toast.success('Sasia u përditësua!');
+      await loadMappings();
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+      toast.error('Gabim gjatë përditësimit të sasisë');
     }
   };
 
@@ -122,7 +140,18 @@ export const InvoiceMappingsTable = () => {
                     </TableCell>
                     <TableCell className="font-medium">{mapping.product_name}</TableCell>
                     <TableCell className="text-center">
-                      <span className="text-sm font-semibold">{mapping.quantity || 1}</span>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={mapping.quantity || 1}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          if (value > 0) {
+                            updateQuantity(mapping.id, value);
+                          }
+                        }}
+                        className="w-16 text-center"
+                      />
                     </TableCell>
                     <TableCell>
                       <Button
