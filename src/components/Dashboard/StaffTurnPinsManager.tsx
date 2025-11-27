@@ -10,6 +10,8 @@ import { Trash2, Loader2, Plus, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { validateField, pinSchema, staffNameSchema } from "@/lib/validation";
 
 interface StaffPin {
   id: string;
@@ -30,6 +32,7 @@ export const StaffTurnPinsManager = () => {
     turn_number: 1,
     is_active: true
   });
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     loadPins();
@@ -47,8 +50,9 @@ export const StaffTurnPinsManager = () => {
       if (error) throw error;
       setPins(data || []);
     } catch (error) {
-      console.error('Error loading staff pins:', error);
-      toast.error('Gabim në ngarkimin e PIN-eve');
+      toast.error('Gabim në ngarkimin e PIN-eve', {
+        description: 'Të dhënat nuk u ngarkuan. Provo përsëri.'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -82,13 +86,17 @@ export const StaffTurnPinsManager = () => {
   };
 
   const handleSave = async () => {
-    if (!formData.staff_name.trim() || !formData.pin.trim()) {
-      toast.error('Plotëso të gjitha fushat');
+    // Validate staff name
+    const nameValidation = validateField(staffNameSchema, formData.staff_name);
+    if (!nameValidation.valid) {
+      toast.error(nameValidation.error);
       return;
     }
 
-    if (!/^\d{4}$/.test(formData.pin)) {
-      toast.error('PIN duhet të jetë 4 shifra');
+    // Validate PIN
+    const pinValidation = validateField(pinSchema, formData.pin);
+    if (!pinValidation.valid) {
+      toast.error(pinValidation.error);
       return;
     }
 
@@ -123,30 +131,40 @@ export const StaffTurnPinsManager = () => {
       closeDialog();
       await loadPins();
     } catch (error: any) {
-      console.error('Error saving PIN:', error);
       if (error.code === '23505') {
-        toast.error('Ky staf tashmë ka një PIN për këtë turn');
+        toast.error('Duplikat!', {
+          description: 'Ky staf tashmë ka një PIN për këtë turn'
+        });
       } else {
-        toast.error('Gabim gjatë ruajtjes së PIN-it');
+        toast.error('Gabim gjatë ruajtjes', {
+          description: 'PIN-i nuk u ruajt. Provo përsëri.'
+        });
       }
     }
   };
 
-  const deletePin = async (id: string, staffName: string) => {
-    if (!confirm(`Fshi PIN-in e ${staffName}?`)) return;
+  const confirmDelete = (id: string, staffName: string) => {
+    setDeleteConfirm({ id, name: staffName });
+  };
+
+  const deletePin = async () => {
+    if (!deleteConfirm) return;
 
     try {
       const { error } = await supabase
         .from('staff_turn_pins')
         .delete()
-        .eq('id', id);
+        .eq('id', deleteConfirm.id);
 
       if (error) throw error;
-      toast.success('PIN u fshi!');
+      toast.success('PIN u fshi!', {
+        description: `PIN-i i ${deleteConfirm.name} u hoq`
+      });
       await loadPins();
     } catch (error) {
-      console.error('Error deleting PIN:', error);
-      toast.error('Gabim gjatë fshirjes së PIN-it');
+      toast.error('Gabim gjatë fshirjes', {
+        description: 'PIN-i nuk u fshi. Provo përsëri.'
+      });
     }
   };
 
@@ -161,8 +179,9 @@ export const StaffTurnPinsManager = () => {
       toast.success(currentState ? 'PIN u çaktivizua' : 'PIN u aktivizua');
       await loadPins();
     } catch (error) {
-      console.error('Error toggling PIN:', error);
-      toast.error('Gabim gjatë ndryshimit të statusit');
+      toast.error('Gabim gjatë ndryshimit', {
+        description: 'Statusi nuk u ndryshua. Provo përsëri.'
+      });
     }
   };
 
@@ -241,7 +260,7 @@ export const StaffTurnPinsManager = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => deletePin(pin.id, pin.staff_name)}
+                            onClick={() => confirmDelete(pin.id, pin.staff_name)}
                             className="text-destructive hover:text-destructive"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -317,6 +336,17 @@ export const StaffTurnPinsManager = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        onOpenChange={(open) => !open && setDeleteConfirm(null)}
+        title="Fshi PIN"
+        description={`Je i sigurt që dëshiron të fshish PIN-in e "${deleteConfirm?.name}"? Ky veprim nuk mund të zhbëhet.`}
+        onConfirm={deletePin}
+        confirmText="Fshi"
+        cancelText="Anulo"
+        variant="destructive"
+      />
     </>
   );
 };
