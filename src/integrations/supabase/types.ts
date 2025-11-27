@@ -284,6 +284,36 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_turn_pins: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean
+          pin: string
+          staff_name: string
+          turn_number: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          pin: string
+          staff_name: string
+          turn_number: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          pin?: string
+          staff_name?: string
+          turn_number?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null

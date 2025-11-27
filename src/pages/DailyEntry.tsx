@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { ProductMappingManager } from "@/components/ProductMappingManager";
 import { InvoiceMappingManager } from "@/components/InvoiceMappingManager";
 import { AdminPasswordDialog } from "@/components/DailyEntry/AdminPasswordDialog";
+import { StaffPinVerifyDialog } from "@/components/DailyEntry/StaffPinVerifyDialog";
 import { TurnSection } from "@/components/DailyEntry/TurnSection";
 import { useAuth } from "@/hooks/useAuth";
 import { useProductList } from "@/hooks/useProductList";
@@ -23,6 +24,10 @@ const DailyEntry = () => {
   const [editingProduct, setEditingProduct] = useState<string | null>(null);
   const [editedProductName, setEditedProductName] = useState("");
   const [activeTurn, setActiveTurn] = useState<"turn1" | "turn2">("turn1");
+  const [showPinDialog, setShowPinDialog] = useState(false);
+  const [pendingTurn, setPendingTurn] = useState<1 | 2 | null>(null);
+  const [turn1Staff, setTurn1Staff] = useState<string | null>(null);
+  const [turn2Staff, setTurn2Staff] = useState<string | null>(null);
 
   // Custom hooks
   const { isAdminUnlocked, showPasswordDialog, validatePassword, toggleAdminMode, closePasswordDialog, isWithinStaffEditWindow } = useAuth();
@@ -45,6 +50,60 @@ const DailyEntry = () => {
     totalXhiro,
     saveStatus,
   } = useTurnData({ products, coffeeTypes, selectedDate });
+
+  // Reset staff verification when date changes
+  useEffect(() => {
+    setTurn1Staff(null);
+    setTurn2Staff(null);
+    // Require verification for turn 1 on initial load
+    setPendingTurn(1);
+    setShowPinDialog(true);
+  }, [selectedDate]);
+
+  // Check staff verification when switching turns
+  const handleTurnChange = (turnValue: string) => {
+    const turnNum = turnValue === "turn1" ? 1 : 2;
+    const staffVerified = turnNum === 1 ? turn1Staff : turn2Staff;
+    
+    if (!staffVerified) {
+      setPendingTurn(turnNum);
+      setShowPinDialog(true);
+    } else {
+      setActiveTurn(turnValue as "turn1" | "turn2");
+    }
+  };
+
+  const handlePinVerified = (staffName: string) => {
+    if (pendingTurn === 1) {
+      setTurn1Staff(staffName);
+      setActiveTurn("turn1");
+    } else if (pendingTurn === 2) {
+      setTurn2Staff(staffName);
+      setActiveTurn("turn2");
+    }
+    setPendingTurn(null);
+  };
+
+  const handlePinDialogClose = (open: boolean) => {
+    if (!open) {
+      // If dialog is closed without verification, stay on current verified turn
+      if (activeTurn === "turn1" && !turn1Staff) {
+        // No verified turn, prevent closing
+        return;
+      }
+      if (activeTurn === "turn2" && !turn2Staff) {
+        // Go back to turn1 if it's verified
+        if (turn1Staff) {
+          setActiveTurn("turn1");
+        } else {
+          // No verified turns, prevent closing
+          return;
+        }
+      }
+      setPendingTurn(null);
+    }
+    setShowPinDialog(open);
+  };
 
   // Date validation
   const isPastDate = useCallback(() => {
@@ -245,10 +304,14 @@ const DailyEntry = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="turn1" className="w-full" onValueChange={(value) => setActiveTurn(value as "turn1" | "turn2")}>
+        <Tabs defaultValue="turn1" className="w-full" value={activeTurn} onValueChange={handleTurnChange}>
           <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="turn1">Turni 1</TabsTrigger>
-            <TabsTrigger value="turn2">Turni 2</TabsTrigger>
+            <TabsTrigger value="turn1">
+              Turni 1 {turn1Staff && <span className="text-xs ml-1">({turn1Staff})</span>}
+            </TabsTrigger>
+            <TabsTrigger value="turn2">
+              Turni 2 {turn2Staff && <span className="text-xs ml-1">({turn2Staff})</span>}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="turn1" className="space-y-4">
@@ -360,6 +423,14 @@ const DailyEntry = () => {
           isOpen={showPasswordDialog}
           onClose={closePasswordDialog}
           onSubmit={validatePassword}
+        />
+
+        {/* Staff PIN Verification Dialog */}
+        <StaffPinVerifyDialog
+          open={showPinDialog}
+          onOpenChange={handlePinDialogClose}
+          turnNumber={pendingTurn || 1}
+          onVerified={handlePinVerified}
         />
       </div>
     </Layout>

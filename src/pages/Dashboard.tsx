@@ -11,6 +11,7 @@ import { AlcoholicDrinksManager } from "@/components/Dashboard/AlcoholicDrinksMa
 import { InvoiceMappingsTable } from "@/components/Dashboard/InvoiceMappingsTable";
 import { ProductMappingsTable } from "@/components/Dashboard/ProductMappingsTable";
 import { CoffeeTypesManager } from "@/components/Dashboard/CoffeeTypesManager";
+import { StaffTurnPinsManager } from "@/components/Dashboard/StaffTurnPinsManager";
 import { supabase } from "@/integrations/supabase/client";
 import { TurnData } from "@/types/turn.types";
 
@@ -190,6 +191,9 @@ const Dashboard = () => {
 
         {/* Alcoholic Drinks Manager */}
         <AlcoholicDrinksManager />
+
+        {/* Staff Turn PINs Manager */}
+        <StaffTurnPinsManager />
 
         {/* Invoice Mappings Table */}
         <InvoiceMappingsTable />
