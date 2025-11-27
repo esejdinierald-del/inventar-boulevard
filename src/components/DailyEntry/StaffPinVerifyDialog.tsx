@@ -36,14 +36,13 @@ export const StaffPinVerifyDialog = ({
         .from('staff_turn_pins')
         .select('*')
         .eq('pin', pin)
-        .eq('turn_number', turnNumber)
         .eq('is_active', true)
         .maybeSingle();
 
       if (error) throw error;
 
       if (!data) {
-        toast.error("PIN i gabuar ose jo aktiv për këtë turn");
+        toast.error("PIN i gabuar ose jo aktiv");
         setPin("");
         return;
       }
@@ -76,7 +75,7 @@ export const StaffPinVerifyDialog = ({
         </DialogHeader>
         <div className="space-y-4 pt-4">
           <p className="text-sm text-muted-foreground">
-            Fut PIN-in tënd 4-shifror për të identifikuar kush është në këtë turn
+            Fut PIN-in tënd 4-shifror për të filluar turnin {turnNumber}
           </p>
           <div className="space-y-2">
             <Label htmlFor="pin">PIN (4 shifra)</Label>

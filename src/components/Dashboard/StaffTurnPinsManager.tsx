@@ -17,7 +17,7 @@ interface StaffPin {
   id: string;
   staff_name: string;
   pin: string;
-  turn_number: number;
+  turn_number: number | null;
   is_active: boolean;
 }
 
@@ -29,7 +29,6 @@ export const StaffTurnPinsManager = () => {
   const [formData, setFormData] = useState({
     staff_name: '',
     pin: '',
-    turn_number: 1,
     is_active: true
   });
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
@@ -63,7 +62,6 @@ export const StaffTurnPinsManager = () => {
     setFormData({
       staff_name: '',
       pin: '',
-      turn_number: 1,
       is_active: true
     });
     setIsDialogOpen(true);
@@ -74,7 +72,6 @@ export const StaffTurnPinsManager = () => {
     setFormData({
       staff_name: pin.staff_name,
       pin: pin.pin,
-      turn_number: pin.turn_number,
       is_active: pin.is_active
     });
     setIsDialogOpen(true);
@@ -107,7 +104,6 @@ export const StaffTurnPinsManager = () => {
           .update({
             staff_name: formData.staff_name,
             pin: formData.pin,
-            turn_number: formData.turn_number,
             is_active: formData.is_active
           })
           .eq('id', editingPin.id);
@@ -120,7 +116,6 @@ export const StaffTurnPinsManager = () => {
           .insert({
             staff_name: formData.staff_name,
             pin: formData.pin,
-            turn_number: formData.turn_number,
             is_active: formData.is_active
           });
 
@@ -133,7 +128,7 @@ export const StaffTurnPinsManager = () => {
     } catch (error: any) {
       if (error.code === '23505') {
         toast.error('Duplikat!', {
-          description: 'Ky staf tashmë ka një PIN për këtë turn'
+          description: 'Ky PIN ose emër stafi tashmë ekziston'
         });
       } else {
         toast.error('Gabim gjatë ruajtjes', {
@@ -208,7 +203,7 @@ export const StaffTurnPinsManager = () => {
             <div>
               <CardTitle>PIN e Stafit për Turne</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Menaxho PIN-et 4-shifrore për identifikimin e stafit në T1 dhe T2
+                Menaxho PIN-et 4-shifrore për identifikimin e stafit. Çdo staf mund të punojë në të dy turnet.
               </p>
             </div>
             <Button onClick={openAddDialog}>
@@ -230,7 +225,6 @@ export const StaffTurnPinsManager = () => {
                   <TableRow>
                     <TableHead>Emri i Stafit</TableHead>
                     <TableHead>PIN</TableHead>
-                    <TableHead>Turni</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="w-[120px]">Veprime</TableHead>
                   </TableRow>
@@ -240,7 +234,6 @@ export const StaffTurnPinsManager = () => {
                     <TableRow key={pin.id}>
                       <TableCell className="font-medium">{pin.staff_name}</TableCell>
                       <TableCell className="font-mono">****</TableCell>
-                      <TableCell>T{pin.turn_number}</TableCell>
                       <TableCell>
                         <Switch
                           checked={pin.is_active}
@@ -302,21 +295,9 @@ export const StaffTurnPinsManager = () => {
                 }}
                 placeholder="1234"
               />
-            </div>
-            <div className="space-y-2">
-              <Label>Turni</Label>
-              <Select
-                value={formData.turn_number.toString()}
-                onValueChange={(value) => setFormData({ ...formData, turn_number: parseInt(value) })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Turni 1</SelectItem>
-                  <SelectItem value="2">Turni 2</SelectItem>
-                </SelectContent>
-              </Select>
+              <p className="text-xs text-muted-foreground">
+                PIN-i mund të përdoret për të dy turnet (T1 dhe T2)
+              </p>
             </div>
             <div className="flex items-center space-x-2">
               <Switch
