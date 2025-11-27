@@ -249,15 +249,16 @@ export const InvoiceMappingsTable = () => {
                     <TableCell className="text-center">
                       <Input
                         type="number"
-                        min="1"
+                        min="0.01"
+                        step="0.01"
                         value={mapping.quantity || 1}
                         onChange={(e) => {
-                          const value = parseInt(e.target.value);
-                          if (value > 0) {
+                          const value = parseFloat(e.target.value);
+                          if (value > 0 && !isNaN(value)) {
                             updateQuantity(mapping.id, value);
                           }
                         }}
-                        className="w-16 text-center"
+                        className="w-20 text-center"
                       />
                     </TableCell>
                     <TableCell>
@@ -328,12 +329,16 @@ export const InvoiceMappingsTable = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label>Sasia për Paketë</Label>
+              <Label>Sasia për Paketë (mund të jetë decimale, p.sh. 0.05)</Label>
               <Input
                 type="number"
-                min="1"
+                min="0.01"
+                step="0.01"
                 value={editForm.quantity}
-                onChange={(e) => setEditForm({ ...editForm, quantity: parseInt(e.target.value) || 1 })}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value);
+                  setEditForm({ ...editForm, quantity: isNaN(value) ? 1 : value });
+                }}
               />
             </div>
             <div className="flex gap-2 justify-end">
