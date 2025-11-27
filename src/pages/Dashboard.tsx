@@ -12,6 +12,7 @@ import { InvoiceMappingsTable } from "@/components/Dashboard/InvoiceMappingsTabl
 import { ProductMappingsTable } from "@/components/Dashboard/ProductMappingsTable";
 import { CoffeeTypesManager } from "@/components/Dashboard/CoffeeTypesManager";
 import { StaffTurnPinsManager } from "@/components/Dashboard/StaffTurnPinsManager";
+import { AdminSettingsCard } from "@/components/Dashboard/AdminSettingsCard";
 import { supabase } from "@/integrations/supabase/client";
 import { TurnData } from "@/types/turn.types";
 
@@ -22,7 +23,10 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const handleUnlock = () => {
-    if (password === "1983") {
+    // Get password from localStorage, fallback to default
+    const storedPassword = localStorage.getItem('admin_password') || "1983";
+    
+    if (password === storedPassword) {
       setIsUnlocked(true);
       toast.success("Dashboard u zhbllokua");
     } else {
@@ -194,6 +198,9 @@ const Dashboard = () => {
 
         {/* Staff Turn PINs Manager */}
         <StaffTurnPinsManager />
+
+        {/* Admin Settings */}
+        <AdminSettingsCard />
 
         {/* Invoice Mappings Table */}
         <InvoiceMappingsTable />

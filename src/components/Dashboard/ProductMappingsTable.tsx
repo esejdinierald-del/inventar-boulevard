@@ -9,6 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Trash2, Loader2, Upload, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { debounce } from "lodash";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { validateField, quantitySchema, productNameSchema } from "@/lib/validation";
 
 interface ProductMapping {
   id: string;
@@ -43,6 +46,7 @@ export const ProductMappingsTable = () => {
     product_name: '',
     quantity: 1
   });
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     loadMappings();
@@ -59,28 +63,50 @@ export const ProductMappingsTable = () => {
       if (error) throw error;
       setMappings(data || []);
     } catch (error) {
-      console.error('Error loading product mappings:', error);
-      toast.error('Gabim në ngarkimin e mapimeve');
+      toast.error('Gabim në ngarkimin e mapimeve', {
+        description: 'Të dhënat nuk u ngarkuan. Provo përsëri.'
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const updateQuantity = async (id: string, newQuantity: number) => {
-    try {
-      const { error } = await supabase
-        .from('product_mappings')
-        .update({ quantity: newQuantity })
-        .eq('id', id);
+  // Debounced update function
+  const debouncedUpdate = useRef(
+    debounce(async (id: string, newQuantity: number) => {
+      try {
+        const { error } = await supabase
+          .from('product_mappings')
+          .update({ quantity: newQuantity })
+          .eq('id', id);
 
-      if (error) throw error;
-      
-      toast.success('Sasia u përditësua!');
-      await loadMappings();
-    } catch (error) {
-      console.error('Error updating quantity:', error);
-      toast.error('Gabim gjatë përditësimit të sasisë');
+        if (error) throw error;
+        
+        toast.success('Sasia u përditësua!');
+      } catch (error) {
+        toast.error('Gabim gjatë përditësimit', {
+          description: 'Sasia nuk u ruajt. Provo përsëri.'
+        });
+        await loadMappings(); // Reload to revert
+      }
+    }, 500)
+  ).current;
+
+  const updateQuantity = (id: string, newQuantity: number) => {
+    // Validate
+    const validation = validateField(quantitySchema, newQuantity);
+    if (!validation.valid) {
+      toast.error(validation.error);
+      return;
     }
+
+    // Update locally immediately
+    setMappings(prev => prev.map(m => 
+      m.id === id ? { ...m, quantity: newQuantity } : m
+    ));
+    
+    // Debounced save to DB
+    debouncedUpdate(id, newQuantity);
   };
 
   const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,13 +118,26 @@ export const ProductMappingsTable = () => {
       const data = JSON.parse(text);
 
       if (!Array.isArray(data)) {
-        toast.error('Formati i JSON duhet të jetë array');
+        toast.error('Format i gabuar', {
+          description: 'Formati i JSON duhet të jetë një array'
+        });
         return;
       }
 
+      // Validate all items
       for (const item of data) {
         if (!item.receipt_name || !item.product_type || !item.product_name) {
-          toast.error('Të dhënat në JSON janë jo të plota');
+          toast.error('Të dhëna jo të plota', {
+            description: 'Çdo mapim duhet të ketë receipt_name, product_type dhe product_name'
+          });
+          return;
+        }
+        
+        const qtyValidation = validateField(quantitySchema, item.quantity || 1);
+        if (!qtyValidation.valid) {
+          toast.error(`Sasi e pavlefshme për ${item.receipt_name}`, {
+            description: qtyValidation.error
+          });
           return;
         }
       }
@@ -114,11 +153,14 @@ export const ProductMappingsTable = () => {
 
       if (error) throw error;
 
-      toast.success(`${data.length} mapime u importuan me sukses!`);
+      toast.success('Importuar me sukses!', {
+        description: `${data.length} mapime u shtuan`
+      });
       await loadMappings();
     } catch (error) {
-      console.error('Error importing mappings:', error);
-      toast.error('Gabim gjatë importimit të mapimeve');
+      toast.error('Gabim gjatë importimit', {
+        description: error instanceof Error ? error.message : 'Kontrollo formatin e skedarit'
+      });
     }
 
     if (fileInputRef.current) {
@@ -142,6 +184,19 @@ export const ProductMappingsTable = () => {
   const saveEdit = async () => {
     if (!editingMapping) return;
 
+    // Validate
+    const nameValidation = validateField(productNameSchema, editForm.product_name);
+    if (!nameValidation.valid) {
+      toast.error(nameValidation.error);
+      return;
+    }
+
+    const qtyValidation = validateField(quantitySchema, editForm.quantity);
+    if (!qtyValidation.valid) {
+      toast.error(qtyValidation.error);
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('product_mappings')
@@ -158,25 +213,35 @@ export const ProductMappingsTable = () => {
       closeEditDialog();
       await loadMappings();
     } catch (error) {
-      console.error('Error updating mapping:', error);
-      toast.error('Gabim gjatë përditësimit të mapimit');
+      toast.error('Gabim gjatë përditësimit', {
+        description: 'Ndryshimet nuk u ruajtën. Provo përsëri.'
+      });
     }
   };
 
-  const deleteMapping = async (id: string, receiptName: string) => {
+  const confirmDelete = (id: string, receiptName: string) => {
+    setDeleteConfirm({ id, name: receiptName });
+  };
+
+  const deleteMapping = async () => {
+    if (!deleteConfirm) return;
+
     try {
       const { error } = await supabase
         .from('product_mappings')
         .delete()
-        .eq('id', id);
+        .eq('id', deleteConfirm.id);
 
       if (error) throw error;
       
-      toast.success(`Mapimi për "${receiptName}" u fshi!`);
+      toast.success('Mapimi u fshi!', {
+        description: `"${deleteConfirm.name}" u hoq nga lista`
+      });
       await loadMappings();
     } catch (error) {
-      console.error('Error deleting mapping:', error);
-      toast.error('Gabim gjatë fshirjes së mapimit');
+      toast.error('Gabim gjatë fshirjes', {
+        description: 'Mapimi nuk u fshi. Provo përsëri.'
+      });
     }
   };
 
@@ -271,14 +336,14 @@ export const ProductMappingsTable = () => {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteMapping(mapping.id, mapping.receipt_name)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => confirmDelete(mapping.id, mapping.receipt_name)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -352,6 +417,17 @@ export const ProductMappingsTable = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        onOpenChange={(open) => !open && setDeleteConfirm(null)}
+        title="Fshi Mapimin"
+        description={`Je i sigurt që dëshiron të fshish mapimin për "${deleteConfirm?.name}"? Ky veprim nuk mund të zhbëhet.`}
+        onConfirm={deleteMapping}
+        confirmText="Fshi"
+        cancelText="Anulo"
+        variant="destructive"
+      />
     </Card>
   );
 };
