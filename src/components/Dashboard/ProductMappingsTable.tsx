@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Trash2, Loader2 } from "lucide-react";
+import { Trash2, Loader2, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -33,6 +33,7 @@ const getTypeBadge = (type: string) => {
 export const ProductMappingsTable = () => {
   const [mappings, setMappings] = useState<ProductMapping[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadMappings();
@@ -73,6 +74,49 @@ export const ProductMappingsTable = () => {
     }
   };
 
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      if (!Array.isArray(data)) {
+        toast.error('Formati i JSON duhet të jetë array');
+        return;
+      }
+
+      for (const item of data) {
+        if (!item.receipt_name || !item.product_type || !item.product_name) {
+          toast.error('Të dhënat në JSON janë jo të plota');
+          return;
+        }
+      }
+
+      const { error } = await supabase
+        .from('product_mappings')
+        .insert(data.map(item => ({
+          receipt_name: item.receipt_name,
+          product_type: item.product_type,
+          product_name: item.product_name,
+          quantity: item.quantity || 1
+        })));
+
+      if (error) throw error;
+
+      toast.success(`${data.length} mapime u importuan me sukses!`);
+      await loadMappings();
+    } catch (error) {
+      console.error('Error importing mappings:', error);
+      toast.error('Gabim gjatë importimit të mapimeve');
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const deleteMapping = async (id: string, receiptName: string) => {
     try {
       const { error } = await supabase
@@ -108,10 +152,27 @@ export const ProductMappingsTable = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Mapimi i Shiritave të Shitjes</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Lista e produkteve nga shiritat e shitjes që janë të mapuara me produktet në sistem
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Mapimi i Shiritave të Shitjes</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Lista e produkteve nga shiritat e shitjes që janë të mapuara me produktet në sistem
+            </p>
+          </div>
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleImport}
+              className="hidden"
+            />
+            <Button onClick={() => fileInputRef.current?.click()} variant="outline">
+              <Upload className="h-4 w-4 mr-2" />
+              Importo
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         {mappings.length === 0 ? (
