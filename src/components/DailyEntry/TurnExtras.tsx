@@ -77,9 +77,11 @@ export const TurnExtras = ({
           value={turnData.mulliriPerfund || ""}
           onChange={(e) => {
             const value = Number(e.target.value);
-            onUpdate('mulliriPerfund', value);
+            // Use onMulliriPerfundUpdate if available (Turn 1), otherwise use onUpdate (Turn 2)
             if (onMulliriPerfundUpdate) {
               onMulliriPerfundUpdate(value);
+            } else {
+              onUpdate('mulliriPerfund', value);
             }
           }}
           disabled={turnData.mulliriPerfund > 0 && !isAdminUnlocked}
