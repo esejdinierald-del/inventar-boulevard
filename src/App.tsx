@@ -9,6 +9,8 @@ import Reports from "./pages/Reports";
 import Expenses from "./pages/Expenses";
 import Install from "./pages/Install";
 import Manual from "./pages/Manual";
+import ManualStaff from "./pages/ManualStaff";
+import ManualAdmin from "./pages/ManualAdmin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +28,8 @@ const App = () => (
           <Route path="/expenses" element={<Expenses />} />
           <Route path="/install" element={<Install />} />
           <Route path="/manual" element={<Manual />} />
+          <Route path="/manual-staff" element={<ManualStaff />} />
+          <Route path="/manual-admin" element={<ManualAdmin />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
