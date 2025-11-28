@@ -82,6 +82,7 @@ const DailyEntry = () => {
       setActiveTurn("turn2");
     }
     setPendingTurn(null);
+    setShowPinDialog(false);
   };
 
   const handlePinDialogClose = (open: boolean) => {
