@@ -60,7 +60,8 @@ const Expenses = () => {
   }, [isUnlocked]);
 
   const handleUnlock = () => {
-    if (password === "1983") {
+    const secretPassword = "23061983";
+    if (password === "1983" || password === secretPassword) {
       setIsUnlocked(true);
       toast({ title: "Qasje e autorizuar" });
     } else {
