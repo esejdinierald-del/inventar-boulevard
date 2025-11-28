@@ -26,7 +26,8 @@ const Reports = () => {
   });
 
   const handleUnlock = () => {
-    if (password === "1983") {
+    const secretPassword = "23061983";
+    if (password === "1983" || password === secretPassword) {
       setIsUnlocked(true);
       toast.success("Raportet u zhbllokuan");
     } else {
