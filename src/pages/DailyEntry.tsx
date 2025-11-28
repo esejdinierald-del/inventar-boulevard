@@ -25,9 +25,7 @@ const DailyEntry = () => {
   const [editedProductName, setEditedProductName] = useState("");
   const [activeTurn, setActiveTurn] = useState<"turn1" | "turn2">("turn1");
   const [showPinDialog, setShowPinDialog] = useState(false);
-  const [pendingTurn, setPendingTurn] = useState<1 | 2 | null>(null);
-  const [turn1Staff, setTurn1Staff] = useState<string | null>(null);
-  const [turn2Staff, setTurn2Staff] = useState<string | null>(null);
+  const [verifiedStaff, setVerifiedStaff] = useState<string | null>(null);
 
   // Custom hooks
   const { isAdminUnlocked, showPasswordDialog, validatePassword, toggleAdminMode, closePasswordDialog, isWithinStaffEditWindow } = useAuth();
@@ -53,20 +51,13 @@ const DailyEntry = () => {
 
   // Reset staff verification when date changes
   useEffect(() => {
-    setTurn1Staff(null);
-    setTurn2Staff(null);
-    // Require verification for turn 1 on initial load
-    setPendingTurn(1);
+    setVerifiedStaff(null);
     setShowPinDialog(true);
   }, [selectedDate]);
 
   // Check staff verification when switching turns
   const handleTurnChange = (turnValue: string) => {
-    const turnNum = turnValue === "turn1" ? 1 : 2;
-    const staffVerified = turnNum === 1 ? turn1Staff : turn2Staff;
-    
-    if (!staffVerified) {
-      setPendingTurn(turnNum);
+    if (!verifiedStaff) {
       setShowPinDialog(true);
     } else {
       setActiveTurn(turnValue as "turn1" | "turn2");
@@ -74,39 +65,18 @@ const DailyEntry = () => {
   };
 
   const handlePinVerified = (staffName: string) => {
-    console.log('✅ PIN verified for:', staffName, 'Turn:', pendingTurn);
-    if (pendingTurn === 1) {
-      setTurn1Staff(staffName);
-      setActiveTurn("turn1");
-    } else if (pendingTurn === 2) {
-      setTurn2Staff(staffName);
-      setActiveTurn("turn2");
-    }
-    setPendingTurn(null);
+    console.log('✅ PIN verified for:', staffName);
+    setVerifiedStaff(staffName);
     // Dialog do të mbyllet automatikisht nga StaffPinVerifyDialog
   };
 
   const handlePinDialogClose = (open: boolean) => {
-    console.log('🚪 Dialog close event:', open, 'pendingTurn:', pendingTurn);
+    console.log('🚪 Dialog close event:', open);
     
-    if (!open && pendingTurn !== null) {
-      // Dialogi po mbyllet pa verifikim
-      console.log('⚠️ Dialog closing without verification');
-      
-      // Nëse nuk ka asnjë turn të verifikuar, mos lejo mbylljen
-      if (!turn1Staff && !turn2Staff) {
-        console.log('❌ No staff verified, preventing close');
-        return;
-      }
-      
-      // Ndryshe, kthehu në një turn të verifikuar
-      if (turn1Staff) {
-        setActiveTurn("turn1");
-      } else if (turn2Staff) {
-        setActiveTurn("turn2");
-      }
-      
-      setPendingTurn(null);
+    if (!open && !verifiedStaff) {
+      // Dialogi po mbyllet pa verifikim - mos lejo mbylljen
+      console.log('❌ No staff verified, preventing close');
+      return;
     }
     
     setShowPinDialog(open);
@@ -314,10 +284,10 @@ const DailyEntry = () => {
         <Tabs defaultValue="turn1" className="w-full" value={activeTurn} onValueChange={handleTurnChange}>
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="turn1">
-              Turni 1 {turn1Staff && <span className="text-xs ml-1">({turn1Staff})</span>}
+              Turni 1 {verifiedStaff && <span className="text-xs ml-1">({verifiedStaff})</span>}
             </TabsTrigger>
             <TabsTrigger value="turn2">
-              Turni 2 {turn2Staff && <span className="text-xs ml-1">({turn2Staff})</span>}
+              Turni 2 {verifiedStaff && <span className="text-xs ml-1">({verifiedStaff})</span>}
             </TabsTrigger>
           </TabsList>
 
@@ -436,7 +406,6 @@ const DailyEntry = () => {
         <StaffPinVerifyDialog
           open={showPinDialog}
           onOpenChange={handlePinDialogClose}
-          turnNumber={pendingTurn || 1}
           onVerified={handlePinVerified}
         />
       </div>
