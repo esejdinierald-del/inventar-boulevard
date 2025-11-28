@@ -93,7 +93,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
           
           // KRITIKE: Nëse ka next_day_stock, mbishkruaj stokFillim në T1
           if (savedStock || savedMulliri) {
-            console.log('📦 Found next_day_stock - overriding T1 stokFillim');
+            console.log('📦 Found next_day_stock - overriding T1 stokFillim & mulliriFillim');
             if (savedStock) {
               const migratedStock: { [key: string]: number } = {};
               Object.entries(savedStock).forEach(([oldName, value]) => {
@@ -101,6 +101,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
                 migratedStock[newName] = value;
               });
               
+              console.log('🔄 Loading stock from previous day T2:', migratedStock);
               migratedT1 = {
                 ...migratedT1,
                 products: Object.fromEntries(
@@ -145,6 +146,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
                 migratedStock[newName] = value;
               });
               
+              console.log('🔄 Initializing T1 stock from previous day T2:', migratedStock);
               newT1.products = Object.fromEntries(
                 Object.entries(newT1.products).map(([key, data]) => [
                   key,
@@ -246,11 +248,11 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     
     const saveNextDay = async () => {
       try {
-        console.log('💾 Saving T2 stock for next day...');
+        console.log('💾 Saving T2 stock for next day (T2 → Next Day T1)...');
         const nextDayStock = Object.fromEntries(
           Object.entries(turn2.products).map(([key, data]) => {
             const calculatedStock = CalculationService.calculateNewStock(data);
-            console.log(`  ${key}: ${data.stokFillim} + ${data.furnizime} - ${data.shiriti} = ${calculatedStock}`);
+            console.log(`  📦 ${key}: ${data.stokFillim} + ${data.furnizime} - ${data.shiriti} = ${calculatedStock}`);
             return [key, calculatedStock];
           })
         );
