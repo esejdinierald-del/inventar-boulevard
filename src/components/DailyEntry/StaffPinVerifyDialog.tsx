@@ -48,7 +48,7 @@ export const StaffPinVerifyDialog = ({
       toast.success(`Mirë se erdhe, ${data.staff_name}!`);
       onVerified(data.staff_name);
       setPin("");
-      onOpenChange(false);
+      // Parent do ta mbyllë dialogun automatikisht
     } catch (error) {
       console.error('Error verifying PIN:', error);
       toast.error('Gabim gjatë verifikimit të PIN-it');
