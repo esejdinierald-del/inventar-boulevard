@@ -80,7 +80,8 @@ const Dashboard = () => {
     <Layout>
       <div className="space-y-6">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h2>
+          <h1 className="text-4xl font-bold tracking-tight text-primary mb-2">Bulevard Cafe</h1>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h2>
           <p className="text-muted-foreground">Pasqyra e përgjithshme e aktivitetit të kafesë</p>
         </div>
 
