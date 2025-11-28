@@ -84,7 +84,9 @@ export const TurnExtras = ({
               onUpdate('mulliriPerfund', value);
             }
           }}
-          disabled={turnData.mulliriPerfund > 0 && !isAdminUnlocked}
+          disabled={!isAdminUnlocked}
+          className={!isAdminUnlocked ? "bg-muted/50" : ""}
+          title={!isAdminUnlocked ? "Vetëm admin mund ta ndryshojë këtë fushë" : ""}
         />
       </div>
 
