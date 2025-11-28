@@ -82,7 +82,30 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       try {
         // GJITHMONË kontrollo për next_day_stock fillimisht
         const savedStock = await StorageService.getStockForDate(selectedDate);
-        const savedMulliri = await StorageService.getMulliriForDate(selectedDate);
+        let savedMulliri = await StorageService.getMulliriForDate(selectedDate);
+        
+        // KRITIKE: Nëse mulliri është 0, kontrollo ditën e mëparshme
+        if (savedMulliri === 0 || savedMulliri === null) {
+          console.log('⚠️ Mulliri është 0 ose null, duke kontrolluar ditën e mëparshme...');
+          const previousDay = new Date(selectedDate);
+          previousDay.setDate(previousDay.getDate() - 1);
+          const previousDayDate = previousDay.toISOString().split('T')[0];
+          
+          const previousDayData = await StorageService.getDailyEntryData(previousDayDate);
+          if (previousDayData) {
+            // Përdor T2 mulliriPerfund nëse > 0, përndryshe T1 mulliriPerfund
+            const previousMulliri = previousDayData.turn2.mulliriPerfund > 0 
+              ? previousDayData.turn2.mulliriPerfund 
+              : previousDayData.turn1.mulliriPerfund;
+            
+            if (previousMulliri > 0) {
+              console.log(`✅ Gjetur mulliri nga dita e mëparshme (${previousDayDate}): ${previousMulliri}`);
+              savedMulliri = previousMulliri;
+              // Ruaj për herë të ardhshme
+              await StorageService.setMulliriForDate(selectedDate, previousMulliri);
+            }
+          }
+        }
         
         const savedData = await StorageService.getDailyEntryData(selectedDate);
         if (savedData) {
