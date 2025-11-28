@@ -55,6 +55,14 @@ const DailyEntry = () => {
     setShowPinDialog(true);
   }, [selectedDate]);
 
+  // Mbyll dialogun automatikisht pas verifikimit
+  useEffect(() => {
+    if (verifiedStaff && showPinDialog) {
+      console.log('✅ Staff verified, closing dialog');
+      setShowPinDialog(false);
+    }
+  }, [verifiedStaff, showPinDialog]);
+
   // Check staff verification when switching turns
   const handleTurnChange = (turnValue: string) => {
     if (!verifiedStaff) {
@@ -71,11 +79,12 @@ const DailyEntry = () => {
   };
 
   const handlePinDialogClose = (open: boolean) => {
-    console.log('🚪 Dialog close event:', open);
+    console.log('🚪 Dialog close event:', open, 'verifiedStaff:', verifiedStaff);
     
     if (!open && !verifiedStaff) {
       // Dialogi po mbyllet pa verifikim - mos lejo mbylljen
       console.log('❌ No staff verified, preventing close');
+      toast.warning('Duhet të verifikohesh me PIN për të vazhduar');
       return;
     }
     
