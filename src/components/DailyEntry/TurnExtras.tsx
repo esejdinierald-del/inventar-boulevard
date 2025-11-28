@@ -57,6 +57,9 @@ export const TurnExtras = ({
           className={mulliriFillimDisabled ? "bg-muted/50" : ""}
           title={mulliriFillimDisabled ? "Automatikisht nga Mulliri Perfund T1" : ""}
         />
+        {mulliriFillimDisabled && turnData.mulliriFillim > 0 && (
+          <p className="text-xs text-muted-foreground">📊 Ngarkuar nga Mulliri Perfund T1: {turnData.mulliriFillim} kg</p>
+        )}
       </div>
 
       <div className="space-y-2">
