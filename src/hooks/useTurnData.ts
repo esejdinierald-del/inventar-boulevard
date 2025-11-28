@@ -122,8 +122,15 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
             }
           }
           
+          // Siguro që T2 mulliriFillim është sinkronizuar me T1 mulliriPerfund
+          const syncedT2 = {
+            ...migratedT2,
+            mulliriFillim: migratedT1.mulliriPerfund
+          };
+          console.log(`🔄 Syncing T1 mulliriPerfund (${migratedT1.mulliriPerfund}) to T2 mulliriFillim`);
+          
           setTurn1(migratedT1);
-          setTurn2(migratedT2);
+          setTurn2(syncedT2);
           
           // Ruaj të dhënat e përditësuara
           await StorageService.setDailyEntryData(selectedDate, {
@@ -160,6 +167,10 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
               newT1.mulliriFillim = savedMulliri;
             }
           }
+          
+          // Siguro që T2 mulliriFillim është sinkronizuar me T1 mulliriPerfund
+          newT2.mulliriFillim = newT1.mulliriPerfund;
+          console.log(`🔄 Syncing new T1 mulliriPerfund (${newT1.mulliriPerfund}) to T2 mulliriFillim`);
           
           setTurn1(newT1);
           setTurn2(newT2);
