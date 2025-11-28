@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Coffee, Home, FileText, BarChart3, Download, DollarSign } from "lucide-react";
+import { Coffee, Home, FileText, BarChart3, Download, DollarSign, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -29,6 +29,7 @@ const Layout = ({ children }: LayoutProps) => {
     { to: "/daily", icon: FileText, label: "Regjistrimi Ditor" },
     { to: "/reports", icon: BarChart3, label: "Raporte" },
     { to: "/expenses", icon: DollarSign, label: "Furnizime" },
+    { to: "/manual", icon: BookOpen, label: "Manuali" },
   ];
 
   return (
@@ -80,7 +81,7 @@ const Layout = ({ children }: LayoutProps) => {
 
       {/* Mobile Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card">
-        <div className="grid grid-cols-4 gap-1 p-2">
+        <div className="grid grid-cols-5 gap-1 p-2">
           {navItems.map((item) => (
             <Link
               key={item.to}

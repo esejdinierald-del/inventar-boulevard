@@ -8,6 +8,7 @@ import DailyEntry from "./pages/DailyEntry";
 import Reports from "./pages/Reports";
 import Expenses from "./pages/Expenses";
 import Install from "./pages/Install";
+import Manual from "./pages/Manual";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/reports" element={<Reports />} />
           <Route path="/expenses" element={<Expenses />} />
           <Route path="/install" element={<Install />} />
+          <Route path="/manual" element={<Manual />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
