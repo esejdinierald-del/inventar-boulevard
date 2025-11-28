@@ -128,6 +128,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
             mulliriFillim: migratedT1.mulliriPerfund
           };
           console.log(`🔄 Syncing T1 mulliriPerfund (${migratedT1.mulliriPerfund}) to T2 mulliriFillim`);
+          console.log('📊 T1 data:', { mulliriFillim: migratedT1.mulliriFillim, mulliriPerfund: migratedT1.mulliriPerfund });
+          console.log('📊 T2 data:', { mulliriFillim: syncedT2.mulliriFillim, mulliriPerfund: syncedT2.mulliriPerfund });
           
           setTurn1(migratedT1);
           setTurn2(syncedT2);
@@ -135,7 +137,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
           // Ruaj të dhënat e përditësuara
           await StorageService.setDailyEntryData(selectedDate, {
             turn1: migratedT1,
-            turn2: migratedT2,
+            turn2: syncedT2,
             date: selectedDate
           });
         } else {
@@ -171,6 +173,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
           // Siguro që T2 mulliriFillim është sinkronizuar me T1 mulliriPerfund
           newT2.mulliriFillim = newT1.mulliriPerfund;
           console.log(`🔄 Syncing new T1 mulliriPerfund (${newT1.mulliriPerfund}) to T2 mulliriFillim`);
+          console.log('📊 New T1 data:', { mulliriFillim: newT1.mulliriFillim, mulliriPerfund: newT1.mulliriPerfund });
+          console.log('📊 New T2 data:', { mulliriFillim: newT2.mulliriFillim, mulliriPerfund: newT2.mulliriPerfund });
           
           setTurn1(newT1);
           setTurn2(newT2);
@@ -232,22 +236,26 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     
     const timeoutId = setTimeout(() => {
       console.log('🔄 Syncing T1 → T2');
-      setTurn2(prev => ({
-        ...prev,
-        products: Object.fromEntries(
-          Object.entries(prev.products).map(([key, data]) => {
-            const t1Data = turn1.products[key];
-            if (t1Data) {
-              const calculatedStock = CalculationService.calculateNewStock(t1Data);
-              console.log(`  ${key}: ${t1Data.stokFillim} + ${t1Data.furnizime} - ${t1Data.shiriti} = ${calculatedStock}`);
-              return [key, { ...data, stokFillim: calculatedStock }];
-            }
-            return [key, data];
-          })
-        ),
-        mulliriFillim: turn1.mulliriPerfund
-      }));
-      console.log('✅ T1 → T2 sync complete');
+      setTurn2(prev => {
+        const newT2 = {
+          ...prev,
+          products: Object.fromEntries(
+            Object.entries(prev.products).map(([key, data]) => {
+              const t1Data = turn1.products[key];
+              if (t1Data) {
+                const calculatedStock = CalculationService.calculateNewStock(t1Data);
+                console.log(`  ${key}: ${t1Data.stokFillim} + ${t1Data.furnizime} - ${t1Data.shiriti} = ${calculatedStock}`);
+                return [key, { ...data, stokFillim: calculatedStock }];
+              }
+              return [key, data];
+            })
+          ),
+          mulliriFillim: turn1.mulliriPerfund
+        };
+        console.log(`📊 Auto-sync T2 mulliriFillim = T1 mulliriPerfund (${turn1.mulliriPerfund})`);
+        console.log('✅ T1 → T2 sync complete');
+        return newT2;
+      });
     }, 800); // Run after main save
 
     return () => clearTimeout(timeoutId);

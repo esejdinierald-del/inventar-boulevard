@@ -57,8 +57,12 @@ export const TurnExtras = ({
           className={mulliriFillimDisabled ? "bg-muted/50" : ""}
           title={mulliriFillimDisabled ? "Automatikisht nga Mulliri Perfund T1" : ""}
         />
-        {mulliriFillimDisabled && turnData.mulliriFillim > 0 && (
-          <p className="text-xs text-muted-foreground">📊 Ngarkuar nga Mulliri Perfund T1: {turnData.mulliriFillim} kg</p>
+        {mulliriFillimDisabled && (
+          <p className="text-xs text-muted-foreground">
+            📊 {turnData.mulliriFillim > 0 
+              ? `Ngarkuar nga Mulliri Perfund T1: ${turnData.mulliriFillim} kg` 
+              : 'Në pritje të Mulliri Perfund nga T1'}
+          </p>
         )}
       </div>
 
