@@ -10,14 +10,12 @@ import { Lock } from "lucide-react";
 interface StaffPinVerifyDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  turnNumber: 1 | 2;
   onVerified: (staffName: string) => void;
 }
 
 export const StaffPinVerifyDialog = ({
   open,
   onOpenChange,
-  turnNumber,
   onVerified,
 }: StaffPinVerifyDialogProps) => {
   const [pin, setPin] = useState("");
@@ -70,12 +68,12 @@ export const StaffPinVerifyDialog = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Lock className="h-5 w-5 text-primary" />
-            Verifikim Stafi - Turni {turnNumber}
+            Verifikim Stafi
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 pt-4">
           <p className="text-sm text-muted-foreground">
-            Fut PIN-in tënd 4-shifror për të filluar turnin {turnNumber}
+            Fut PIN-in tënd 4-shifror për të filluar punën
           </p>
           <div className="space-y-2">
             <Label htmlFor="pin">PIN (4 shifra)</Label>
