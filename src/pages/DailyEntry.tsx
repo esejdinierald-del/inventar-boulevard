@@ -98,6 +98,9 @@ const DailyEntry = () => {
     // Nëse është admin, nuk ka kufizime
     if (isAdminUnlocked) return false;
     
+    // Nëse stafi nuk ka bërë verifikimin me PIN, blloko të gjitha field-et
+    if (!verifiedStaff) return true;
+    
     // Nëse është dita e djeshme dhe jemi brenda 10 minutave pas mesnatës, lejo modifikimin
     if (isYesterday() && isWithinStaffEditWindow()) {
       return false;
@@ -105,7 +108,7 @@ const DailyEntry = () => {
     
     // Përndryshe, blloko nëse është datë e kaluar
     return isPastDate();
-  }, [isPastDate, isYesterday, isAdminUnlocked, isWithinStaffEditWindow]);
+  }, [isPastDate, isYesterday, isAdminUnlocked, isWithinStaffEditWindow, verifiedStaff]);
 
   // Product editing
   const startEditingProduct = useCallback((productName: string) => {
