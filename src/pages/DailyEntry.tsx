@@ -55,14 +55,6 @@ const DailyEntry = () => {
     setShowPinDialog(true);
   }, [selectedDate]);
 
-  // Mbyll dialogun automatikisht pas verifikimit
-  useEffect(() => {
-    if (verifiedStaff && showPinDialog) {
-      console.log('✅ Staff verified, closing dialog');
-      setShowPinDialog(false);
-    }
-  }, [verifiedStaff, showPinDialog]);
-
   // Check staff verification when switching turns
   const handleTurnChange = (turnValue: string) => {
     if (!verifiedStaff) {
