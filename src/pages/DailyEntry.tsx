@@ -81,14 +81,12 @@ const DailyEntry = () => {
   const handlePinDialogClose = (open: boolean) => {
     console.log('🚪 Dialog close event:', open, 'verifiedStaff:', verifiedStaff);
     
-    if (!open && !verifiedStaff) {
-      // Dialogi po mbyllet pa verifikim - mos lejo mbylljen
-      console.log('❌ No staff verified, preventing close');
-      toast.warning('Duhet të verifikohesh me PIN për të vazhduar');
-      return;
-    }
-    
     setShowPinDialog(open);
+    
+    if (!open && !verifiedStaff) {
+      // Dialogi u mbyll pa verifikim - useri anuloi
+      console.log('⚠️ Dialog closed without verification');
+    }
   };
 
   // Date validation
