@@ -113,6 +113,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
             }
             
             if (savedMulliri !== null) {
+              console.log(`📦 Setting T1 mulliriFillim from previous day T2: ${savedMulliri}`);
               migratedT1 = {
                 ...migratedT1,
                 mulliriFillim: savedMulliri
@@ -153,6 +154,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
             }
             
             if (savedMulliri !== null) {
+              console.log(`📦 Setting new T1 mulliriFillim from previous day T2: ${savedMulliri}`);
               newT1.mulliriFillim = savedMulliri;
             }
           }
@@ -259,6 +261,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
 
         console.log(`💾 Saving to ${nextDayDate}:`, nextDayStock);
         await StorageService.setStockForDate(nextDayDate, nextDayStock);
+        console.log(`🔄 Saving T2 mulliriPerfund (${turn2.mulliriPerfund}) as next day T1 mulliriFillim`);
         await StorageService.setMulliriForDate(nextDayDate, turn2.mulliriPerfund);
         console.log(`✅ Next day stock saved for ${nextDayDate}`);
       } catch (error) {
