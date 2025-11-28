@@ -74,6 +74,7 @@ const DailyEntry = () => {
   };
 
   const handlePinVerified = (staffName: string) => {
+    console.log('✅ PIN verified for:', staffName, 'Turn:', pendingTurn);
     if (pendingTurn === 1) {
       setTurn1Staff(staffName);
       setActiveTurn("turn1");
@@ -82,27 +83,32 @@ const DailyEntry = () => {
       setActiveTurn("turn2");
     }
     setPendingTurn(null);
-    setShowPinDialog(false);
+    // Dialog do të mbyllet automatikisht nga StaffPinVerifyDialog
   };
 
   const handlePinDialogClose = (open: boolean) => {
-    if (!open) {
-      // If dialog is closed without verification, stay on current verified turn
-      if (activeTurn === "turn1" && !turn1Staff) {
-        // No verified turn, prevent closing
+    console.log('🚪 Dialog close event:', open, 'pendingTurn:', pendingTurn);
+    
+    if (!open && pendingTurn !== null) {
+      // Dialogi po mbyllet pa verifikim
+      console.log('⚠️ Dialog closing without verification');
+      
+      // Nëse nuk ka asnjë turn të verifikuar, mos lejo mbylljen
+      if (!turn1Staff && !turn2Staff) {
+        console.log('❌ No staff verified, preventing close');
         return;
       }
-      if (activeTurn === "turn2" && !turn2Staff) {
-        // Go back to turn1 if it's verified
-        if (turn1Staff) {
-          setActiveTurn("turn1");
-        } else {
-          // No verified turns, prevent closing
-          return;
-        }
+      
+      // Ndryshe, kthehu në një turn të verifikuar
+      if (turn1Staff) {
+        setActiveTurn("turn1");
+      } else if (turn2Staff) {
+        setActiveTurn("turn2");
       }
+      
       setPendingTurn(null);
     }
+    
     setShowPinDialog(open);
   };
 
