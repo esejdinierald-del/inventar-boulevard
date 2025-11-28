@@ -40,7 +40,7 @@ export const CoffeeTable = ({
                   value={coffeeData[coffee] || ""}
                   onChange={(e) => onCoffeeUpdate(coffee, Number(e.target.value))}
                   className="w-24"
-                  disabled={!isAdminUnlocked}
+                  disabled={isFieldDisabled}
                 />
               </TableCell>
             </TableRow>
