@@ -91,9 +91,9 @@ export const TurnExtras = ({
               onUpdate('mulliriPerfund', value);
             }
           }}
-          disabled={!isAdminUnlocked}
-          className={!isAdminUnlocked ? "bg-muted/50" : ""}
-          title={!isAdminUnlocked ? "Vetëm admin mund ta ndryshojë këtë fushë" : ""}
+          disabled={isFieldDisabled}
+          className={isFieldDisabled ? "bg-muted/50" : ""}
+          title={isFieldDisabled ? "Duhet të verifikohesh me PIN për të modifikuar" : ""}
         />
       </div>
 
