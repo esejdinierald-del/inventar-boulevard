@@ -282,8 +282,11 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
 
         console.log(`💾 Saving to ${nextDayDate}:`, nextDayStock);
         await StorageService.setStockForDate(nextDayDate, nextDayStock);
-        console.log(`🔄 Saving T2 mulliriPerfund (${turn2.mulliriPerfund}) as next day T1 mulliriFillim`);
-        await StorageService.setMulliriForDate(nextDayDate, turn2.mulliriPerfund);
+        
+        // KRITIKE: Nëse T2 mulliriPerfund është 0, përdor T1 mulliriPerfund
+        const mulliriForNextDay = turn2.mulliriPerfund > 0 ? turn2.mulliriPerfund : turn1.mulliriPerfund;
+        console.log(`🔄 Saving mulliri for next day: T2 mulliriPerfund = ${turn2.mulliriPerfund}, T1 mulliriPerfund = ${turn1.mulliriPerfund}, using: ${mulliriForNextDay}`);
+        await StorageService.setMulliriForDate(nextDayDate, mulliriForNextDay);
         console.log(`✅ Next day stock saved for ${nextDayDate}`);
       } catch (error) {
         console.error('Error saving next day stock:', error);
@@ -292,7 +295,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     
     const timeoutId = setTimeout(saveNextDay, 1200); // Run after T1->T2 sync
     return () => clearTimeout(timeoutId);
-  }, [turn2, selectedDate]);
+  }, [turn2, turn1.mulliriPerfund, selectedDate]);
 
   // Update product in turn
   const updateTurn1Product = useCallback((product: string, field: keyof ProductData, value: number) => {
