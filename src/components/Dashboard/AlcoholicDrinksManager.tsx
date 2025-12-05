@@ -17,6 +17,69 @@ interface AlcoholicDrink {
   updated_at: string;
 }
 
+interface DrinkRowProps {
+  drink: AlcoholicDrink;
+  onUpdate: (id: string, field: 'furnizime' | 'shitje' | 'gjendje', value: number) => void;
+  onDelete: (id: string) => void;
+}
+
+const DrinkRow = ({ drink, onUpdate, onDelete }: DrinkRowProps) => {
+  const [furnizime, setFurnizime] = useState(drink.furnizime);
+  const [shitje, setShitje] = useState(drink.shitje);
+  const [gjendje, setGjendje] = useState(drink.gjendje);
+
+  useEffect(() => {
+    setFurnizime(drink.furnizime);
+    setShitje(drink.shitje);
+    setGjendje(drink.gjendje);
+  }, [drink.furnizime, drink.shitje, drink.gjendje]);
+
+  return (
+    <tr className="border-b">
+      <td className="p-3 font-medium">{drink.drink_name}</td>
+      <td className="p-3">
+        <Input
+          type="number"
+          value={furnizime}
+          onChange={(e) => setFurnizime(parseInt(e.target.value) || 0)}
+          onBlur={() => furnizime !== drink.furnizime && onUpdate(drink.id, 'furnizime', furnizime)}
+          className="w-24"
+        />
+      </td>
+      <td className="p-3">
+        <Input
+          type="number"
+          value={shitje}
+          onChange={(e) => setShitje(parseInt(e.target.value) || 0)}
+          onBlur={() => shitje !== drink.shitje && onUpdate(drink.id, 'shitje', shitje)}
+          className="w-24"
+        />
+      </td>
+      <td className="p-3">
+        <Input
+          type="number"
+          value={gjendje}
+          onChange={(e) => setGjendje(parseInt(e.target.value) || 0)}
+          onBlur={() => gjendje !== drink.gjendje && onUpdate(drink.id, 'gjendje', gjendje)}
+          className={`w-24 ${gjendje < 0 ? 'text-destructive' : ''}`}
+        />
+      </td>
+      <td className="p-3 text-sm text-muted-foreground">
+        {format(new Date(drink.updated_at), 'dd/MM/yyyy HH:mm')}
+      </td>
+      <td className="p-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onDelete(drink.id)}
+        >
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
+      </td>
+    </tr>
+  );
+};
+
 export const AlcoholicDrinksManager = () => {
   const [drinks, setDrinks] = useState<AlcoholicDrink[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -142,45 +205,12 @@ export const AlcoholicDrinksManager = () => {
               </thead>
               <tbody>
                 {drinks.map((drink) => (
-                  <tr key={drink.id} className="border-b">
-                    <td className="p-3 font-medium">{drink.drink_name}</td>
-                    <td className="p-3">
-                      <Input
-                        type="number"
-                        value={drink.furnizime}
-                        onChange={(e) => updateDrink(drink.id, 'furnizime', parseInt(e.target.value) || 0)}
-                        className="w-24"
-                      />
-                    </td>
-                    <td className="p-3">
-                      <Input
-                        type="number"
-                        value={drink.shitje}
-                        onChange={(e) => updateDrink(drink.id, 'shitje', parseInt(e.target.value) || 0)}
-                        className="w-24"
-                      />
-                    </td>
-                    <td className="p-3">
-                      <Input
-                        type="number"
-                        value={drink.gjendje}
-                        onChange={(e) => updateDrink(drink.id, 'gjendje', parseInt(e.target.value) || 0)}
-                        className={`w-24 ${drink.gjendje < 0 ? 'text-destructive' : ''}`}
-                      />
-                    </td>
-                    <td className="p-3 text-sm text-muted-foreground">
-                      {format(new Date(drink.updated_at), 'dd/MM/yyyy HH:mm')}
-                    </td>
-                    <td className="p-3">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteDrink(drink.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </td>
-                  </tr>
+                  <DrinkRow 
+                    key={drink.id} 
+                    drink={drink} 
+                    onUpdate={updateDrink} 
+                    onDelete={deleteDrink} 
+                  />
                 ))}
               </tbody>
             </table>
