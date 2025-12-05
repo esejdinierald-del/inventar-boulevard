@@ -39,14 +39,16 @@ const DrinkRow = ({ drink, onUpdate, onDelete }: DrinkRowProps) => {
   }, [drink.furnizime, drink.shitje, drink.gjendje]);
 
   const handleChange = (field: 'furnizime' | 'shitje' | 'gjendje', value: string) => {
-    // Allow only numbers
-    if (value === '' || /^-?\d*$/.test(value)) {
+    // Allow numbers with decimal (both . and ,)
+    if (value === '' || /^-?\d*[.,]?\d*$/.test(value)) {
       setValues(prev => ({ ...prev, [field]: value }));
     }
   };
 
   const handleBlur = (field: 'furnizime' | 'shitje' | 'gjendje') => {
-    const numValue = parseInt(values[field]) || 0;
+    // Convert comma to dot for parsing
+    const normalizedValue = values[field].replace(',', '.');
+    const numValue = parseFloat(normalizedValue) || 0;
     if (numValue !== drink[field]) {
       onUpdate(drink.id, field, numValue);
     }
