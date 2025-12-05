@@ -7,20 +7,18 @@ export class AlcoholicDrinksService {
    */
   static async applyAlcoholicDrinksSales(selectedDate: string): Promise<void> {
     try {
-      // Ngarko shitjet e turn1 dhe turn2
-      const t1Key = `alcoholic_sales_t1_${selectedDate}`;
-      const t2Key = `alcoholic_sales_t2_${selectedDate}`;
+      // Ngarko shitjet e turn1 dhe turn2 - UNIFIKUAR me useAlcoholicDrinks hook
+      const key = `alcoholic_drinks_${selectedDate}`;
+      const savedData = localStorage.getItem(key);
       
-      const t1Data = localStorage.getItem(t1Key);
-      const t2Data = localStorage.getItem(t2Key);
-      
-      if (!t1Data && !t2Data) {
+      if (!savedData) {
         console.log('Nuk ka të dhëna për pijet alkoolike për këtë ditë');
         return;
       }
 
-      const t1Sales: { [key: string]: number } = t1Data ? JSON.parse(t1Data) : {};
-      const t2Sales: { [key: string]: number } = t2Data ? JSON.parse(t2Data) : {};
+      const parsed = JSON.parse(savedData);
+      const t1Sales: { [key: string]: number } = parsed.turn1 || {};
+      const t2Sales: { [key: string]: number } = parsed.turn2 || {};
 
       // Kombinoj shitjet e të dy turneve
       const totalSales: { [key: string]: number } = {};
@@ -72,9 +70,8 @@ export class AlcoholicDrinksService {
         }
       }
 
-      // Fshi të dhënat e shitjeve pas aplikimit
-      localStorage.removeItem(t1Key);
-      localStorage.removeItem(t2Key);
+      // Fshi të dhënat e shitjeve pas aplikimit - UNIFIKUAR
+      localStorage.removeItem(key);
 
       toast.success('Pijet alkoolike u përditësuan në inventar');
     } catch (error) {
