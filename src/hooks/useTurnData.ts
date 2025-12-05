@@ -255,11 +255,11 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     return () => clearTimeout(timeoutId);
   }, [turn1, turn2, selectedDate, setSaveStatus]);
 
-  // Auto-sync T1 stock to T2 when T1 changes
+  // Auto-sync T1 stock to T2 when T1 changes AND propagate if past date
   useEffect(() => {
     if (isInitialLoad.current) return;
     
-    const timeoutId = setTimeout(() => {
+    const syncAndPropagate = async () => {
       console.log('🔄 Syncing T1 → T2');
       setTurn2(prev => {
         const newT2 = {
@@ -281,10 +281,12 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
         console.log('✅ T1 → T2 sync complete');
         return newT2;
       });
-    }, 800); // Run after main save
+    };
+    
+    const timeoutId = setTimeout(syncAndPropagate, 800);
 
     return () => clearTimeout(timeoutId);
-  }, [turn1]);
+  }, [turn1, selectedDate]);
 
   // Auto-save T2 stock to next day when T2 changes AND propagate to future dates if past date
   useEffect(() => {
