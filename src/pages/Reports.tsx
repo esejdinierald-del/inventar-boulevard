@@ -117,6 +117,7 @@ const Reports = () => {
 
   const calculateTopProducts = (entries: any[]) => {
     const productTotals = new Map();
+    let totalCoffee = 0;
 
     entries?.forEach((entry: any) => {
       [entry.turn1_data, entry.turn2_data].forEach((turnData: any) => {
@@ -129,16 +130,20 @@ const Reports = () => {
           });
         }
         
-        // Count coffee types
+        // Sum all coffee types into one total
         if (turnData?.coffeeTypes) {
-          Object.entries(turnData.coffeeTypes).forEach(([coffeeName, coffeeData]: [string, any]) => {
+          Object.entries(turnData.coffeeTypes).forEach(([_, coffeeData]: [string, any]) => {
             const shiriti = coffeeData.shiriti || 0;
-            const current = productTotals.get(coffeeName) || 0;
-            productTotals.set(coffeeName, current + shiriti);
+            totalCoffee += shiriti;
           });
         }
       });
     });
+
+    // Add combined coffee total
+    if (totalCoffee > 0) {
+      productTotals.set("Kafe (Total)", totalCoffee);
+    }
 
     const sorted = Array.from(productTotals.entries())
       .map(([name, quantity]) => ({ name, quantity }))
