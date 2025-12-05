@@ -3,6 +3,7 @@ import { TurnData, ProductData } from '@/types/turn.types';
 import { StorageService } from '@/services/storage.service';
 import { CalculationService } from '@/services/calculations';
 import { StockPropagationService } from '@/services/stock-propagation.service';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface UseTurnDataProps {
@@ -471,6 +472,55 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     }
   }, [selectedDate]);
 
+  // Funksion për të zbritur menjëherë pijet alkoolike nga inventari
+  const applyAlcoholicDrinksImmediately = useCallback(async (alcoholicDrinksData: { [key: string]: number }) => {
+    try {
+      for (const [drinkName, soldQuantity] of Object.entries(alcoholicDrinksData)) {
+        if (soldQuantity > 0) {
+          // Merr gjendjen aktuale
+          const { data: drink, error: fetchError } = await supabase
+            .from('alcoholic_drinks_inventory')
+            .select('*')
+            .eq('drink_name', drinkName)
+            .single();
+
+          if (fetchError) {
+            console.error(`Error fetching ${drinkName}:`, fetchError);
+            continue;
+          }
+
+          if (!drink) {
+            console.warn(`Drink not found: ${drinkName}`);
+            continue;
+          }
+
+          // Përditëso shitjet dhe gjendjen
+          const newShitje = drink.shitje + soldQuantity;
+          const newGjendje = drink.furnizime - newShitje;
+
+          const { error: updateError } = await supabase
+            .from('alcoholic_drinks_inventory')
+            .update({
+              shitje: newShitje,
+              gjendje: newGjendje
+            })
+            .eq('drink_name', drinkName);
+
+          if (updateError) {
+            console.error(`Error updating ${drinkName}:`, updateError);
+            toast.error(`Gabim në përditësimin e ${drinkName}`);
+          } else {
+            console.log(`✅ Zbritur ${drinkName}: shitje +${soldQuantity}, gjendje: ${newGjendje}`);
+          }
+        }
+      }
+      toast.success('Pijet alkoolike u zbritën automatikisht!');
+    } catch (error) {
+      console.error('Error applying alcoholic drinks:', error);
+      toast.error('Gabim në zbritjen e pijeve alkoolike');
+    }
+  }, []);
+
   // Handle receipt data
   const handleReceiptDataT1 = useCallback((
     productData: { [key: string]: number },
@@ -491,21 +541,11 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       xhiro: total !== undefined ? total : prev.xhiro
     }));
     
-    // Ruaj shitjet e pijeve alkoolike në localStorage - UNIFIKUAR me useAlcoholicDrinks
+    // Zbrit menjëherë pijet alkoolike nga inventari
     if (alcoholicDrinksData && Object.keys(alcoholicDrinksData).length > 0) {
-      const key = `alcoholic_drinks_${selectedDate}`;
-      const existing = localStorage.getItem(key);
-      const parsed = existing ? JSON.parse(existing) : { turn1: {}, turn2: {} };
-      
-      // Shto vlerat e reja te T1
-      Object.entries(alcoholicDrinksData).forEach(([drinkName, qty]) => {
-        parsed.turn1[drinkName] = (parsed.turn1[drinkName] || 0) + qty;
-      });
-      
-      localStorage.setItem(key, JSON.stringify(parsed));
-      console.log('💾 Saved alcoholic drinks for T1:', parsed);
+      applyAlcoholicDrinksImmediately(alcoholicDrinksData);
     }
-  }, [selectedDate]);
+  }, [applyAlcoholicDrinksImmediately]);
 
   const handleReceiptDataT2 = useCallback((
     productData: { [key: string]: number },
@@ -526,21 +566,11 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       xhiro: total !== undefined ? total : prev.xhiro
     }));
     
-    // Ruaj shitjet e pijeve alkoolike në localStorage - UNIFIKUAR me useAlcoholicDrinks
+    // Zbrit menjëherë pijet alkoolike nga inventari
     if (alcoholicDrinksData && Object.keys(alcoholicDrinksData).length > 0) {
-      const key = `alcoholic_drinks_${selectedDate}`;
-      const existing = localStorage.getItem(key);
-      const parsed = existing ? JSON.parse(existing) : { turn1: {}, turn2: {} };
-      
-      // Shto vlerat e reja te T2
-      Object.entries(alcoholicDrinksData).forEach(([drinkName, qty]) => {
-        parsed.turn2[drinkName] = (parsed.turn2[drinkName] || 0) + qty;
-      });
-      
-      localStorage.setItem(key, JSON.stringify(parsed));
-      console.log('💾 Saved alcoholic drinks for T2:', parsed);
+      applyAlcoholicDrinksImmediately(alcoholicDrinksData);
     }
-  }, [selectedDate]);
+  }, [applyAlcoholicDrinksImmediately]);
 
   // Memoized calculations
   const totalXhiro = useMemo(
