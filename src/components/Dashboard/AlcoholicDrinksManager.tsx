@@ -73,23 +73,11 @@ export const AlcoholicDrinksManager = () => {
     }
   };
 
-  const updateDrink = async (id: string, field: 'furnizime' | 'shitje', value: number) => {
+  const updateDrink = async (id: string, field: 'furnizime' | 'shitje' | 'gjendje', value: number) => {
     try {
-      const drink = drinks.find(d => d.id === id);
-      if (!drink) return;
-
-      const updates: any = { [field]: value };
-      
-      // Llogarit gjendjen: Furnizime - Shitje
-      if (field === 'furnizime') {
-        updates.gjendje = value - drink.shitje;
-      } else if (field === 'shitje') {
-        updates.gjendje = drink.furnizime - value;
-      }
-
       const { error } = await supabase
         .from('alcoholic_drinks_inventory')
-        .update(updates)
+        .update({ [field]: value })
         .eq('id', id);
 
       if (error) throw error;
@@ -173,9 +161,12 @@ export const AlcoholicDrinksManager = () => {
                       />
                     </td>
                     <td className="p-3">
-                      <span className={`font-medium ${drink.gjendje < 0 ? 'text-destructive' : 'text-success'}`}>
-                        {drink.gjendje}
-                      </span>
+                      <Input
+                        type="number"
+                        value={drink.gjendje}
+                        onChange={(e) => updateDrink(drink.id, 'gjendje', parseInt(e.target.value) || 0)}
+                        className={`w-24 ${drink.gjendje < 0 ? 'text-destructive' : ''}`}
+                      />
                     </td>
                     <td className="p-3 text-sm text-muted-foreground">
                       {format(new Date(drink.updated_at), 'dd/MM/yyyy HH:mm')}
