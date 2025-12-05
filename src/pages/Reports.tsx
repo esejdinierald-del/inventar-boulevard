@@ -130,11 +130,10 @@ const Reports = () => {
           });
         }
         
-        // Sum all coffee types into one total
-        if (turnData?.coffeeTypes) {
-          Object.entries(turnData.coffeeTypes).forEach(([_, coffeeData]: [string, any]) => {
-            const shiriti = coffeeData.shiriti || 0;
-            totalCoffee += shiriti;
+        // Sum all coffee types into one total (coffee values are direct numbers)
+        if (turnData?.coffee) {
+          Object.entries(turnData.coffee).forEach(([_, quantity]: [string, any]) => {
+            totalCoffee += (typeof quantity === 'number' ? quantity : 0);
           });
         }
       });
