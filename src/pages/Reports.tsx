@@ -106,7 +106,7 @@ const Reports = () => {
       });
 
       // Calculate top products
-      calculateTopProducts(data);
+      calculateTopProducts(data, activeDays);
     } catch (error) {
       console.error("Error loading monthly data:", error);
       toast.error("Gabim në ngarkimin e të dhënave");
@@ -115,7 +115,7 @@ const Reports = () => {
     }
   };
 
-  const calculateTopProducts = (entries: any[]) => {
+  const calculateTopProducts = (entries: any[], activeDays: number) => {
     const productTotals = new Map();
     let totalCoffee = 0;
 
@@ -146,7 +146,11 @@ const Reports = () => {
     }
 
     const sorted = Array.from(productTotals.entries())
-      .map(([name, quantity]) => ({ name, quantity }))
+      .map(([name, quantity]) => ({ 
+        name, 
+        quantity,
+        avgDaily: activeDays > 0 ? quantity / activeDays : 0
+      }))
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, 10);
 
@@ -325,6 +329,7 @@ const Reports = () => {
                   <TableRow>
                     <TableHead>Produkti</TableHead>
                     <TableHead>Sasia (Shiriti)</TableHead>
+                    <TableHead>Mesatarja Ditore</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -333,11 +338,12 @@ const Reports = () => {
                       <TableRow key={idx}>
                         <TableCell className="font-medium">{product.name}</TableCell>
                         <TableCell>{product.quantity} copë</TableCell>
+                        <TableCell>{product.avgDaily.toFixed(1)} copë/ditë</TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={2} className="text-center text-muted-foreground">
+                      <TableCell colSpan={3} className="text-center text-muted-foreground">
                         Nuk ka të dhëna
                       </TableCell>
                     </TableRow>
