@@ -120,13 +120,23 @@ const Reports = () => {
 
     entries?.forEach((entry: any) => {
       [entry.turn1_data, entry.turn2_data].forEach((turnData: any) => {
-        if (!turnData?.products) return;
+        // Count regular products
+        if (turnData?.products) {
+          Object.entries(turnData.products).forEach(([productName, productData]: [string, any]) => {
+            const shiriti = productData.shiriti || 0;
+            const current = productTotals.get(productName) || 0;
+            productTotals.set(productName, current + shiriti);
+          });
+        }
         
-        Object.entries(turnData.products).forEach(([productName, productData]: [string, any]) => {
-          const shiriti = productData.shiriti || 0;
-          const current = productTotals.get(productName) || 0;
-          productTotals.set(productName, current + shiriti);
-        });
+        // Count coffee types
+        if (turnData?.coffeeTypes) {
+          Object.entries(turnData.coffeeTypes).forEach(([coffeeName, coffeeData]: [string, any]) => {
+            const shiriti = coffeeData.shiriti || 0;
+            const current = productTotals.get(coffeeName) || 0;
+            productTotals.set(coffeeName, current + shiriti);
+          });
+        }
       });
     });
 
