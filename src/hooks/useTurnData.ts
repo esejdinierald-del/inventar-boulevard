@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { TurnData, ProductData } from '@/types/turn.types';
 import { StorageService } from '@/services/storage.service';
 import { CalculationService } from '@/services/calculations';
+import { StockPropagationService } from '@/services/stock-propagation.service';
 import { toast } from 'sonner';
 
 interface UseTurnDataProps {
@@ -284,12 +285,15 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     return () => clearTimeout(timeoutId);
   }, [turn1]);
 
-  // Auto-save T2 stock to next day when T2 changes
+  // Auto-save T2 stock to next day when T2 changes AND propagate to future dates if past date
   useEffect(() => {
     if (isInitialLoad.current) return;
     
-    const saveNextDay = async () => {
+    const saveNextDayAndPropagate = async () => {
       try {
+        const today = new Date().toISOString().split('T')[0];
+        const isPastDate = selectedDate < today;
+        
         console.log('💾 Saving T2 stock for next day (T2 → Next Day T1)...');
         const nextDayStock = Object.fromEntries(
           Object.entries(turn2.products).map(([key, data]) => {
@@ -306,24 +310,30 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
         console.log(`💾 Saving to ${nextDayDate}:`, nextDayStock);
         await StorageService.setStockForDate(nextDayDate, nextDayStock);
         
-      // KRITIKE: Nëse T2 mulliriPerfund është 0, përdor T1 mulliriPerfund
-      const mulliriForNextDay = turn2.mulliriPerfund > 0 ? turn2.mulliriPerfund : turn1.mulliriPerfund;
-      console.log(`🔄 Saving mulliri for next day: T2 mulliriPerfund = ${turn2.mulliriPerfund}, T1 mulliriPerfund = ${turn1.mulliriPerfund}, using: ${mulliriForNextDay}`);
-      
-      // Vetëm ruaj nëse vlera është > 0, përndryshe lëre null që të kontrollohet dita e mëparshme
-      if (mulliriForNextDay > 0) {
-        await StorageService.setMulliriForDate(nextDayDate, mulliriForNextDay);
-        console.log(`✅ Next day mulliri saved for ${nextDayDate}: ${mulliriForNextDay}`);
-      } else {
-        console.log(`⏭️ Skipping mulliri save for ${nextDayDate} (value is 0)`);
-      }
-      console.log(`✅ Next day stock saved for ${nextDayDate}`);
+        // KRITIKE: Nëse T2 mulliriPerfund është 0, përdor T1 mulliriPerfund
+        const mulliriForNextDay = turn2.mulliriPerfund > 0 ? turn2.mulliriPerfund : turn1.mulliriPerfund;
+        console.log(`🔄 Saving mulliri for next day: T2 mulliriPerfund = ${turn2.mulliriPerfund}, T1 mulliriPerfund = ${turn1.mulliriPerfund}, using: ${mulliriForNextDay}`);
+        
+        // Vetëm ruaj nëse vlera është > 0, përndryshe lëre null që të kontrollohet dita e mëparshme
+        if (mulliriForNextDay > 0) {
+          await StorageService.setMulliriForDate(nextDayDate, mulliriForNextDay);
+          console.log(`✅ Next day mulliri saved for ${nextDayDate}: ${mulliriForNextDay}`);
+        } else {
+          console.log(`⏭️ Skipping mulliri save for ${nextDayDate} (value is 0)`);
+        }
+        console.log(`✅ Next day stock saved for ${nextDayDate}`);
+
+        // KRITIKE: Nëse është datë e kaluar, propago ndryshimet në të gjitha datat pasardhëse
+        if (isPastDate) {
+          console.log('🔄 Data e kaluar detektuar - filloj propagimin...');
+          await StockPropagationService.propagateFromDate(selectedDate);
+        }
       } catch (error) {
         console.error('Error saving next day stock:', error);
       }
     };
     
-    const timeoutId = setTimeout(saveNextDay, 1200); // Run after T1->T2 sync
+    const timeoutId = setTimeout(saveNextDayAndPropagate, 1200); // Run after T1->T2 sync
     return () => clearTimeout(timeoutId);
   }, [turn2, turn1.mulliriPerfund, selectedDate]);
 
