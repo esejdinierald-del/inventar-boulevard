@@ -24,44 +24,65 @@ interface DrinkRowProps {
 }
 
 const DrinkRow = ({ drink, onUpdate, onDelete }: DrinkRowProps) => {
-  const [furnizime, setFurnizime] = useState(drink.furnizime);
-  const [shitje, setShitje] = useState(drink.shitje);
-  const [gjendje, setGjendje] = useState(drink.gjendje);
+  const [values, setValues] = useState({
+    furnizime: String(drink.furnizime),
+    shitje: String(drink.shitje),
+    gjendje: String(drink.gjendje)
+  });
 
   useEffect(() => {
-    setFurnizime(drink.furnizime);
-    setShitje(drink.shitje);
-    setGjendje(drink.gjendje);
+    setValues({
+      furnizime: String(drink.furnizime),
+      shitje: String(drink.shitje),
+      gjendje: String(drink.gjendje)
+    });
   }, [drink.furnizime, drink.shitje, drink.gjendje]);
+
+  const handleChange = (field: 'furnizime' | 'shitje' | 'gjendje', value: string) => {
+    // Allow only numbers
+    if (value === '' || /^-?\d*$/.test(value)) {
+      setValues(prev => ({ ...prev, [field]: value }));
+    }
+  };
+
+  const handleBlur = (field: 'furnizime' | 'shitje' | 'gjendje') => {
+    const numValue = parseInt(values[field]) || 0;
+    if (numValue !== drink[field]) {
+      onUpdate(drink.id, field, numValue);
+    }
+  };
 
   return (
     <tr className="border-b">
       <td className="p-3 font-medium">{drink.drink_name}</td>
       <td className="p-3">
         <Input
-          type="number"
-          value={furnizime}
-          onChange={(e) => setFurnizime(parseInt(e.target.value) || 0)}
-          onBlur={() => furnizime !== drink.furnizime && onUpdate(drink.id, 'furnizime', furnizime)}
+          type="text"
+          inputMode="numeric"
+          value={values.furnizime}
+          onChange={(e) => handleChange('furnizime', e.target.value)}
+          onBlur={() => handleBlur('furnizime')}
           className="w-24"
         />
       </td>
       <td className="p-3">
         <Input
-          type="number"
-          value={shitje}
-          onChange={(e) => setShitje(parseInt(e.target.value) || 0)}
-          onBlur={() => shitje !== drink.shitje && onUpdate(drink.id, 'shitje', shitje)}
+          type="text"
+          inputMode="numeric"
+          value={values.shitje}
+          onChange={(e) => handleChange('shitje', e.target.value)}
+          onBlur={() => handleBlur('shitje')}
           className="w-24"
         />
       </td>
       <td className="p-3">
         <Input
-          type="number"
-          value={gjendje}
-          onChange={(e) => setGjendje(parseInt(e.target.value) || 0)}
-          onBlur={() => gjendje !== drink.gjendje && onUpdate(drink.id, 'gjendje', gjendje)}
-          className={`w-24 ${gjendje < 0 ? 'text-destructive' : ''}`}
+          type="text"
+          inputMode="numeric"
+          value={values.gjendje}
+          onChange={(e) => handleChange('gjendje', e.target.value)}
+          onBlur={() => handleBlur('gjendje')}
+          className={`w-24 ${parseInt(values.gjendje) < 0 ? 'text-destructive' : ''}`}
         />
       </td>
       <td className="p-3 text-sm text-muted-foreground">
