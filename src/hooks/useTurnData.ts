@@ -491,10 +491,19 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       xhiro: total !== undefined ? total : prev.xhiro
     }));
     
-    // Ruaj shitjet e pijeve alkoolike në localStorage per tu zbritur me vone
+    // Ruaj shitjet e pijeve alkoolike në localStorage - UNIFIKUAR me useAlcoholicDrinks
     if (alcoholicDrinksData && Object.keys(alcoholicDrinksData).length > 0) {
-      const key = `alcoholic_sales_t1_${selectedDate}`;
-      localStorage.setItem(key, JSON.stringify(alcoholicDrinksData));
+      const key = `alcoholic_drinks_${selectedDate}`;
+      const existing = localStorage.getItem(key);
+      const parsed = existing ? JSON.parse(existing) : { turn1: {}, turn2: {} };
+      
+      // Shto vlerat e reja te T1
+      Object.entries(alcoholicDrinksData).forEach(([drinkName, qty]) => {
+        parsed.turn1[drinkName] = (parsed.turn1[drinkName] || 0) + qty;
+      });
+      
+      localStorage.setItem(key, JSON.stringify(parsed));
+      console.log('💾 Saved alcoholic drinks for T1:', parsed);
     }
   }, [selectedDate]);
 
@@ -517,10 +526,19 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       xhiro: total !== undefined ? total : prev.xhiro
     }));
     
-    // Ruaj shitjet e pijeve alkoolike në localStorage per tu zbritur me vone
+    // Ruaj shitjet e pijeve alkoolike në localStorage - UNIFIKUAR me useAlcoholicDrinks
     if (alcoholicDrinksData && Object.keys(alcoholicDrinksData).length > 0) {
-      const key = `alcoholic_sales_t2_${selectedDate}`;
-      localStorage.setItem(key, JSON.stringify(alcoholicDrinksData));
+      const key = `alcoholic_drinks_${selectedDate}`;
+      const existing = localStorage.getItem(key);
+      const parsed = existing ? JSON.parse(existing) : { turn1: {}, turn2: {} };
+      
+      // Shto vlerat e reja te T2
+      Object.entries(alcoholicDrinksData).forEach(([drinkName, qty]) => {
+        parsed.turn2[drinkName] = (parsed.turn2[drinkName] || 0) + qty;
+      });
+      
+      localStorage.setItem(key, JSON.stringify(parsed));
+      console.log('💾 Saved alcoholic drinks for T2:', parsed);
     }
   }, [selectedDate]);
 
