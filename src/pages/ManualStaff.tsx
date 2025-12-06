@@ -1,7 +1,7 @@
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Printer, Lock, Calendar, Camera, Save, AlertCircle, CheckCircle } from "lucide-react";
+import { Printer, Lock, Calendar, Camera, Save, AlertCircle, CheckCircle, LockKeyhole, UnlockKeyhole } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
@@ -58,7 +58,8 @@ const ManualStaff = () => {
                 <li>6. Përdorimi i Skanerit të Mullirit</li>
                 <li>7. Regjistrimi i Pijeve Alkoolike</li>
                 <li>8. Ruajtja e të Dhënave</li>
-                <li>9. Koha e Lejuar për Modifikim</li>
+                <li>9. Printimi dhe Kyçja e Turnit</li>
+                <li>10. Koha e Lejuar për Modifikim</li>
               </ul>
             </div>
           </CardContent>
@@ -464,10 +465,86 @@ const ManualStaff = () => {
           </CardContent>
         </Card>
 
-        {/* 9. Koha e Lejuar */}
+        {/* 9. Printimi dhe Kyçja e Turnit */}
         <Card className="print-page-break">
           <CardHeader>
-            <CardTitle className="text-xl">9. Koha e Lejuar për Modifikim</CardTitle>
+            <CardTitle className="text-xl">9. Printimi dhe Kyçja e Turnit</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <h4 className="font-semibold flex items-center gap-2">
+                <LockKeyhole className="h-4 w-4" />
+                Çfarë është kyçja e turnit:
+              </h4>
+              <p className="text-sm">Kur mbyll turnin dhe printo raportin, turni bëhet i <strong>KYÇUR</strong>. Kjo do të thotë që nuk mund të ndryshosh më asnjë sasi për atë turn në atë ditë.</p>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="font-semibold">Hapat për të mbyllur turnin:</h4>
+              <ol className="ml-6 space-y-2 list-decimal">
+                <li>Sigurohu që të gjitha të dhënat janë plotësuar saktë</li>
+                <li>Kontrollo diferencat (Dif) për produkte dhe mulliri</li>
+                <li>Skrollo poshtë te seksioni "Përmbledhje"</li>
+                <li>Kliko butonin <strong>"🖨️ Printo & Kyç Turnin"</strong></li>
+                <li>Sistemi do të:
+                  <ul className="ml-6 mt-1 space-y-1 list-disc">
+                    <li>Ruaj automatikisht të dhënat</li>
+                    <li>Kyç turnin tënd</li>
+                    <li>Hap printerin për të printuar raportin</li>
+                  </ul>
+                </li>
+                <li>Do të shfaqet mesazhi "🔒 Turni X u kyç nga [Emri yt]"</li>
+              </ol>
+            </div>
+
+            <div className="p-4 bg-destructive/10 border border-destructive/50 rounded-lg">
+              <p className="font-semibold flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                RËNDËSI - PAS KYÇJES:
+              </p>
+              <ul className="ml-6 mt-2 space-y-1 text-sm">
+                <li>• NUK mund të ndryshosh më asnjë vlerë për atë turn</li>
+                <li>• Të gjitha fushat bëhen vetëm për lexim</li>
+                <li>• Vetëm ADMINI mund ta zhbllokojë turnin nëse ka nevojë</li>
+                <li>• Turni tjetër (T2 nëse kyçe T1) mbetet i hapur</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="font-semibold">Si e shoh nëse turni është i kyçur:</h4>
+              <ul className="ml-6 space-y-1 text-sm list-disc">
+                <li>Në tab-in e turnit do të shfaqet një ikonë <LockKeyhole className="h-3 w-3 inline text-destructive" /> dryna</li>
+                <li>Do të shfaqet mesazhi "🔒 Turni X është i kyçur"</li>
+                <li>Të gjitha fushat do të jenë të blokuara</li>
+              </ul>
+            </div>
+
+            <div className="p-4 bg-info/10 border border-info/50 rounded-lg">
+              <p className="font-semibold">Pse duhet ta kyç turnin:</p>
+              <ul className="ml-6 mt-2 space-y-1 text-sm list-disc">
+                <li>• Parandalon ndryshime aksidentale pas mbylljes së turnit</li>
+                <li>• Krijon një rekord zyrtar të të dhënave</li>
+                <li>• Siguron integritetin e raporteve</li>
+                <li>• Lejon administratorin të shohë kush e kyçi turnin</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="font-semibold">Nëse ke bërë gabim:</h4>
+              <p className="text-sm">Nëse pas kyçjes zbulon një gabim në të dhëna:</p>
+              <ol className="ml-6 space-y-1 text-sm list-decimal">
+                <li>Kontakto administratorin</li>
+                <li>Ai mund të zhbllokojë turnin për korrigjim</li>
+                <li>Pas korrigjimit, kyçe turnin përsëri</li>
+              </ol>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 10. Koha e Lejuar */}
+        <Card className="print-page-break">
+          <CardHeader>
+            <CardTitle className="text-xl">10. Koha e Lejuar për Modifikim</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
