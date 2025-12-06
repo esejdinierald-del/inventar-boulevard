@@ -475,4 +475,97 @@ export class StorageService {
       throw error;
     }
   }
+
+  // Turn lock status (kyçja e turnit pas printimit)
+  static async getTurnLockStatus(date: string): Promise<{ turn1Locked: boolean; turn2Locked: boolean; turn1LockedBy: string | null; turn2LockedBy: string | null }> {
+    try {
+      const { data, error } = await supabase
+        .from('daily_entries')
+        .select('turn1_locked, turn2_locked, turn1_locked_by, turn2_locked_by')
+        .eq('entry_date', date)
+        .maybeSingle();
+      
+      if (error) throw error;
+      
+      return {
+        turn1Locked: data?.turn1_locked || false,
+        turn2Locked: data?.turn2_locked || false,
+        turn1LockedBy: data?.turn1_locked_by || null,
+        turn2LockedBy: data?.turn2_locked_by || null
+      };
+    } catch (error) {
+      console.error('Error fetching turn lock status:', error);
+      return { turn1Locked: false, turn2Locked: false, turn1LockedBy: null, turn2LockedBy: null };
+    }
+  }
+
+  static async lockTurn(date: string, turnNumber: 1 | 2, lockedBy: string): Promise<boolean> {
+    try {
+      const lockColumn = turnNumber === 1 ? 'turn1_locked' : 'turn2_locked';
+      const lockAtColumn = turnNumber === 1 ? 'turn1_locked_at' : 'turn2_locked_at';
+      const lockByColumn = turnNumber === 1 ? 'turn1_locked_by' : 'turn2_locked_by';
+      
+      // Provo të update fillimisht
+      const { data: existing } = await supabase
+        .from('daily_entries')
+        .select('id')
+        .eq('entry_date', date)
+        .maybeSingle();
+      
+      if (existing) {
+        const { error } = await supabase
+          .from('daily_entries')
+          .update({
+            [lockColumn]: true,
+            [lockAtColumn]: new Date().toISOString(),
+            [lockByColumn]: lockedBy,
+            updated_at: new Date().toISOString()
+          })
+          .eq('entry_date', date);
+        
+        if (error) throw error;
+      } else {
+        // Krijo entry të ri me turn të kyçur
+        const { error } = await supabase
+          .from('daily_entries')
+          .insert({
+            entry_date: date,
+            [lockColumn]: true,
+            [lockAtColumn]: new Date().toISOString(),
+            [lockByColumn]: lockedBy
+          });
+        
+        if (error) throw error;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error locking turn:', error);
+      return false;
+    }
+  }
+
+  static async unlockTurn(date: string, turnNumber: 1 | 2): Promise<boolean> {
+    try {
+      const lockColumn = turnNumber === 1 ? 'turn1_locked' : 'turn2_locked';
+      const lockAtColumn = turnNumber === 1 ? 'turn1_locked_at' : 'turn2_locked_at';
+      const lockByColumn = turnNumber === 1 ? 'turn1_locked_by' : 'turn2_locked_by';
+      
+      const { error } = await supabase
+        .from('daily_entries')
+        .update({
+          [lockColumn]: false,
+          [lockAtColumn]: null,
+          [lockByColumn]: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('entry_date', date);
+      
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error unlocking turn:', error);
+      return false;
+    }
+  }
 }

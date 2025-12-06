@@ -74,7 +74,13 @@ export type Database = {
           entry_date: string
           id: string
           turn1_data: Json
+          turn1_locked: boolean
+          turn1_locked_at: string | null
+          turn1_locked_by: string | null
           turn2_data: Json
+          turn2_locked: boolean
+          turn2_locked_at: string | null
+          turn2_locked_by: string | null
           updated_at: string | null
         }
         Insert: {
@@ -82,7 +88,13 @@ export type Database = {
           entry_date: string
           id?: string
           turn1_data?: Json
+          turn1_locked?: boolean
+          turn1_locked_at?: string | null
+          turn1_locked_by?: string | null
           turn2_data?: Json
+          turn2_locked?: boolean
+          turn2_locked_at?: string | null
+          turn2_locked_by?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -90,7 +102,13 @@ export type Database = {
           entry_date?: string
           id?: string
           turn1_data?: Json
+          turn1_locked?: boolean
+          turn1_locked_at?: string | null
+          turn1_locked_by?: string | null
           turn2_data?: Json
+          turn2_locked?: boolean
+          turn2_locked_at?: string | null
+          turn2_locked_by?: string | null
           updated_at?: string | null
         }
         Relationships: []
