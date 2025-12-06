@@ -126,16 +126,21 @@ All colors MUST be HSL.
   }
 }
 
-/* Print styles - fsheh navigimin dhe elementet e panevojshme gjatë printimit */
+/* Print styles - shfaq vetëm tabelat e produkteve dhe kafesë */
 @media print {
-  /* Fsheh navigimin, butonat, dhe input-et */
+  /* Fsheh të gjitha elementet bazë */
   nav,
   header,
-  .print\\:hidden,
   button,
   input,
+  footer {
+    display: none !important;
+  }
+
+  /* Fsheh dialogët */
   [data-radix-dialog-overlay],
-  [data-radix-dialog-content] {
+  [data-radix-dialog-content],
+  [data-radix-tabs-list] {
     display: none !important;
   }
 
@@ -148,20 +153,70 @@ All colors MUST be HSL.
     pointer-events: auto !important;
   }
 
-  /* Siguro që përmbajtja të shfaqet siç duhet */
+  /* Stilet bazë për printim */
   body {
     background: white !important;
     color: black !important;
-    font-size: 12pt !important;
+    font-size: 11pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Shfaq tabelat me bordura të qarta */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    margin-bottom: 20px !important;
+  }
+
+  th, td {
+    border: 1px solid #333 !important;
+    padding: 6px 8px !important;
+    text-align: left !important;
+  }
+
+  th {
+    background-color: #f0f0f0 !important;
+    font-weight: bold !important;
+  }
+
+  /* Titujt e seksioneve */
+  h2, h3 {
+    margin-top: 15px !important;
+    margin-bottom: 10px !important;
+    font-weight: bold !important;
+    page-break-after: avoid !important;
+  }
+
+  /* Karta të printueshme */
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    margin-bottom: 15px !important;
+    page-break-inside: avoid !important;
   }
 
   /* Forco page breaks të mira */
   .page-break-before {
-    page-break-before: always;
+    page-break-before: always !important;
+  }
+
+  /* Mos prish tabelat në mes */
+  tr {
+    page-break-inside: avoid !important;
   }
 
   /* Shfaq të gjithë përmbajtjen */
   * {
     overflow: visible !important;
+  }
+
+  /* Ngjyrat për Dif negativ/pozitiv */
+  .text-destructive {
+    color: #dc2626 !important;
+  }
+
+  .text-success {
+    color: #16a34a !important;
   }
 }
