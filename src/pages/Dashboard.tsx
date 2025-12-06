@@ -1,7 +1,7 @@
 import Layout from "@/components/Layout";
 import StatsCard from "@/components/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, DollarSign, Package, ShoppingCart, Lock, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { TrendingUp, DollarSign, Package, ShoppingCart, Lock, Download, ChevronLeft, ChevronRight, Printer } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -167,6 +167,10 @@ const Dashboard = () => {
     toast.success('Raporti u eksportua me sukses');
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -213,10 +217,16 @@ const Dashboard = () => {
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
-              <Button onClick={exportMonthlyData} disabled={isLoading}>
-                <Download className="h-4 w-4 mr-2" />
-                Eksporto CSV
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handlePrint} variant="outline" disabled={isLoading}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Printo
+                </Button>
+                <Button onClick={exportMonthlyData} disabled={isLoading}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Eksporto CSV
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

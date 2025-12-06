@@ -125,3 +125,43 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Print styles - fsheh navigimin dhe elementet e panevojshme gjatë printimit */
+@media print {
+  /* Fsheh navigimin, butonat, dhe input-et */
+  nav,
+  header,
+  .print\\:hidden,
+  button,
+  input,
+  [data-radix-dialog-overlay],
+  [data-radix-dialog-content] {
+    display: none !important;
+  }
+
+  /* Hiq blur dhe pointer-events */
+  .blur-sm {
+    filter: none !important;
+  }
+  
+  .pointer-events-none {
+    pointer-events: auto !important;
+  }
+
+  /* Siguro që përmbajtja të shfaqet siç duhet */
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt !important;
+  }
+
+  /* Forco page breaks të mira */
+  .page-break-before {
+    page-break-before: always;
+  }
+
+  /* Shfaq të gjithë përmbajtjen */
+  * {
+    overflow: visible !important;
+  }
+}
