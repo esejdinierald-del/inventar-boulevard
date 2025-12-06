@@ -1,16 +1,82 @@
+import { useState } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Printer, Unlock, AlertCircle, XCircle, Lock } from "lucide-react";
+import { Printer, Unlock, AlertCircle, XCircle, Lock, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+
+const ADMIN_PASSWORD = "1983";
+const SECRET_PASSWORD = "23061983";
 
 const ManualAdmin = () => {
   const navigate = useNavigate();
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [password, setPassword] = useState("");
   
   const handlePrint = () => {
     window.print();
   };
+
+  const handleUnlock = () => {
+    if (password === ADMIN_PASSWORD || password === SECRET_PASSWORD) {
+      setIsUnlocked(true);
+      toast.success("Manuali u hap me sukses!");
+    } else {
+      toast.error("Fjalëkalimi është gabim!");
+    }
+    setPassword("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleUnlock();
+    }
+  };
+
+  if (!isUnlocked) {
+    return (
+      <Layout>
+        <div className="max-w-md mx-auto mt-20">
+          <Card>
+            <CardHeader className="text-center">
+              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <ShieldCheck className="h-8 w-8 text-primary" />
+              </div>
+              <CardTitle className="text-2xl">Manual për Administratorët</CardTitle>
+              <p className="text-muted-foreground mt-2">
+                Ky manual është i mbrojtur. Fut fjalëkalimin e administratorit për të vazhduar.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Input
+                  type="password"
+                  placeholder="Fut fjalëkalimin..."
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => navigate('/manual')}>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Mbrapa
+                </Button>
+                <Button className="flex-1" onClick={handleUnlock}>
+                  <Lock className="mr-2 h-4 w-4" />
+                  Hap Manualin
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
