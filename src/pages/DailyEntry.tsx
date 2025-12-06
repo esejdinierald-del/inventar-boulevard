@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Lock, Unlock, Printer } from "lucide-react";
+import { Calendar, Lock, Unlock, Printer, LockKeyhole, UnlockKeyhole } from "lucide-react";
 import { toast } from "sonner";
 import { ProductMappingManager } from "@/components/ProductMappingManager";
 import { InvoiceMappingManager } from "@/components/InvoiceMappingManager";
@@ -15,6 +15,7 @@ import { PrintableTurnReport } from "@/components/DailyEntry/PrintableTurnReport
 import { useAuth } from "@/hooks/useAuth";
 import { useProductList } from "@/hooks/useProductList";
 import { useTurnData } from "@/hooks/useTurnData";
+import { useTurnLock } from "@/hooks/useTurnLock";
 import { useKitchenProducts } from "@/hooks/useKitchenProducts";
 import { useAlcoholicDrinksList } from "@/hooks/useAlcoholicDrinksList";
 import { AlcoholicDrinksService } from "@/services/alcoholic-drinks.service";
@@ -33,6 +34,7 @@ const DailyEntry = () => {
   const { products, coffeeTypes, addProduct: originalAddProduct, deleteProduct: originalDeleteProduct, updateProduct, addCoffeeType: originalAddCoffeeType, deleteCoffeeType: originalDeleteCoffeeType } = useProductList();
   const { kitchenProducts } = useKitchenProducts();
   const { alcoholicDrinks } = useAlcoholicDrinksList();
+  const { lockState, lockTurn, unlockTurn, isTurnLocked, getLockedBy } = useTurnLock(selectedDate);
   const {
     turn1,
     turn2,
@@ -172,6 +174,12 @@ const DailyEntry = () => {
     // Nëse stafi nuk ka bërë verifikimin me PIN, blloko të gjitha field-et
     if (!verifiedStaff) return true;
     
+    // Kontrollo nëse turni aktiv është i kyçur
+    const currentTurnNumber = activeTurn === 'turn1' ? 1 : 2;
+    if (isTurnLocked(currentTurnNumber as 1 | 2)) {
+      return true;
+    }
+    
     // Nëse është dita e djeshme dhe jemi brenda 10 minutave pas mesnatës, lejo modifikimin
     if (isYesterday() && isWithinStaffEditWindow()) {
       return false;
@@ -179,7 +187,7 @@ const DailyEntry = () => {
     
     // Përndryshe, blloko nëse është datë e kaluar
     return isPastDate();
-  }, [isPastDate, isYesterday, isAdminUnlocked, isWithinStaffEditWindow, verifiedStaff]);
+  }, [isPastDate, isYesterday, isAdminUnlocked, isWithinStaffEditWindow, verifiedStaff, activeTurn, isTurnLocked]);
 
   // Product editing
   const startEditingProduct = useCallback((productName: string) => {
@@ -304,6 +312,31 @@ const DailyEntry = () => {
     toast.success(`Të dhënat u ruajtën! Xhiro totale: ${totalXhiro.toLocaleString()} ALL`);
   }, [saveForNextDay, totalXhiro, selectedDate]);
 
+  // Print and lock handler
+  const handlePrintAndLock = useCallback(async () => {
+    const currentTurnNumber = activeTurn === 'turn1' ? 1 : 2;
+    
+    // Ruaj të dhënat para printimit
+    await handleSave();
+    
+    // Kyç turnin
+    if (verifiedStaff) {
+      await lockTurn(currentTurnNumber as 1 | 2, verifiedStaff);
+    }
+    
+    // Printo
+    window.print();
+  }, [activeTurn, verifiedStaff, handleSave, lockTurn]);
+
+  // Unlock handler (admin only)
+  const handleUnlockTurn = useCallback(async (turnNumber: 1 | 2) => {
+    if (!isAdminUnlocked) {
+      toast.error('Vetëm admini mund të zhbllokojë turnin');
+      return;
+    }
+    await unlockTurn(turnNumber);
+  }, [isAdminUnlocked, unlockTurn]);
+
   // Format date for display
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -376,13 +409,45 @@ const DailyEntry = () => {
         {/* Tabs */}
         <Tabs defaultValue="turn1" className="w-full" value={activeTurn} onValueChange={handleTurnChange}>
           <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="turn1">
+            <TabsTrigger value="turn1" className="flex items-center gap-1">
+              {isTurnLocked(1) && <LockKeyhole className="h-3 w-3 text-destructive" />}
               Turni 1 {verifiedStaff && <span className="text-xs ml-1">({verifiedStaff})</span>}
             </TabsTrigger>
-            <TabsTrigger value="turn2">
+            <TabsTrigger value="turn2" className="flex items-center gap-1">
+              {isTurnLocked(2) && <LockKeyhole className="h-3 w-3 text-destructive" />}
               Turni 2 {verifiedStaff && <span className="text-xs ml-1">({verifiedStaff})</span>}
             </TabsTrigger>
           </TabsList>
+
+          {/* Turn Lock Warning */}
+          {isTurnLocked(activeTurn === 'turn1' ? 1 : 2) && (
+            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 mt-4 print:hidden">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <LockKeyhole className="h-5 w-5 text-destructive" />
+                  <div>
+                    <p className="text-sm font-medium text-destructive">
+                      🔒 Turni {activeTurn === 'turn1' ? '1' : '2'} është i kyçur
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Kyçur nga: {getLockedBy(activeTurn === 'turn1' ? 1 : 2)} - Nuk mund të modifikohen sasitë
+                    </p>
+                  </div>
+                </div>
+                {isAdminUnlocked && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleUnlockTurn(activeTurn === 'turn1' ? 1 : 2)}
+                    className="text-xs"
+                  >
+                    <UnlockKeyhole className="h-3 w-3 mr-1" />
+                    Zhblloko
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
 
           <TabsContent value="turn1" className="space-y-4">
             <TurnSection
@@ -480,10 +545,20 @@ const DailyEntry = () => {
               <Button onClick={handleSave} className="flex-1 md:flex-initial">
                 💾 Ruaj të Dhënat
               </Button>
-              <Button onClick={() => window.print()} variant="outline" className="flex-1 md:flex-initial">
-                <Printer className="h-4 w-4 mr-2" />
-                Printo
-              </Button>
+              
+              {/* Print button - kyç turnin kur printo */}
+              {!isTurnLocked(activeTurn === 'turn1' ? 1 : 2) ? (
+                <Button onClick={handlePrintAndLock} variant="default" className="flex-1 md:flex-initial bg-primary">
+                  <Printer className="h-4 w-4 mr-2" />
+                  Printo & Kyç Turnin
+                </Button>
+              ) : (
+                <Button onClick={() => window.print()} variant="outline" className="flex-1 md:flex-initial">
+                  <Printer className="h-4 w-4 mr-2" />
+                  Riprinto
+                </Button>
+              )}
+              
               <Button onClick={testLocalStorage} variant="outline" className="flex-1 md:flex-initial">
                 🔍 Test Storage
               </Button>
