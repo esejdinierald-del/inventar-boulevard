@@ -41,37 +41,33 @@ export const PrintableTurnReport = ({
       <div className="print-header">
         <h1>Bulevard Cafe</h1>
         <div className="print-date">{formatDate(selectedDate)}</div>
-        <div className="print-turn">
-          Turni {turnName} - Mbyllja
-          {verifiedStaff && ` | Stafi: ${verifiedStaff}`}
-        </div>
+        <div className="print-turn">Turni {turnName} - Mbyllja</div>
+        {verifiedStaff && (
+          <div className="print-staff">Kamarier: <strong>{verifiedStaff}</strong></div>
+        )}
       </div>
 
-      {/* Mulliri Perfund */}
-      <div className="print-section mulliri-section">
-        <h3>Mulliri</h3>
-        <table>
-          <tbody>
-            <tr>
-              <td className="label-cell">Mulliri Fillim</td>
-              <td className="value-cell">{turnData.mulliriFillim} kg</td>
-            </tr>
-            <tr>
-              <td className="label-cell">Mulliri Perfund</td>
-              <td className="value-cell font-bold">{turnData.mulliriPerfund} kg</td>
-            </tr>
-            <tr>
-              <td className="label-cell">Total Kafe</td>
-              <td className="value-cell">{totalCoffee}</td>
-            </tr>
-            <tr>
-              <td className="label-cell">Diferenca Mulliri</td>
-              <td className={`value-cell font-bold ${mulliriDif < 0 ? 'dif-negative' : mulliriDif > 0 ? 'dif-positive' : ''}`}>
-                {mulliriDif}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      {/* Mulliri Info - më e dukshme */}
+      <div className="print-section mulliri-highlight">
+        <h3>Mulliri - Turni {turnName}</h3>
+        <div className="mulliri-grid">
+          <div className="mulliri-item">
+            <span className="mulliri-label">Fillim</span>
+            <span className="mulliri-value">{turnData.mulliriFillim} kg</span>
+          </div>
+          <div className="mulliri-item mulliri-main">
+            <span className="mulliri-label">Përfundim</span>
+            <span className="mulliri-value">{turnData.mulliriPerfund} kg</span>
+          </div>
+          <div className="mulliri-item">
+            <span className="mulliri-label">Total Kafe</span>
+            <span className="mulliri-value">{totalCoffee}</span>
+          </div>
+          <div className={`mulliri-item ${mulliriDif < 0 ? 'mulliri-negative' : mulliriDif > 0 ? 'mulliri-positive' : ''}`}>
+            <span className="mulliri-label">Diferenca</span>
+            <span className="mulliri-value">{mulliriDif}</span>
+          </div>
+        </div>
       </div>
 
       {/* Produktet */}
