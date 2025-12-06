@@ -11,6 +11,7 @@ import { InvoiceMappingManager } from "@/components/InvoiceMappingManager";
 import { AdminPasswordDialog } from "@/components/DailyEntry/AdminPasswordDialog";
 import { StaffPinVerifyDialog } from "@/components/DailyEntry/StaffPinVerifyDialog";
 import { TurnSection } from "@/components/DailyEntry/TurnSection";
+import { PrintableTurnReport } from "@/components/DailyEntry/PrintableTurnReport";
 import { useAuth } from "@/hooks/useAuth";
 import { useProductList } from "@/hooks/useProductList";
 import { useTurnData } from "@/hooks/useTurnData";
@@ -317,15 +318,15 @@ const DailyEntry = () => {
   return (
     <Layout>
       <div className="space-y-6 pb-20 md:pb-6">
-        {/* Print Header - shfaqet vetëm kur printohet */}
-        <div className="print-header hidden print:block">
-          <h1>Bulevard Cafe</h1>
-          <div className="print-date">{formatDate(selectedDate)}</div>
-          <div className="print-turn">
-            {activeTurn === 'turn1' ? 'Turni 1' : 'Turni 2'}
-            {verifiedStaff && ` - ${verifiedStaff}`}
-          </div>
-        </div>
+        {/* Printable Turn Report - shfaqet vetëm kur printohet */}
+        <PrintableTurnReport
+          turnName={activeTurn === 'turn1' ? '1' : '2'}
+          turnData={activeTurn === 'turn1' ? turn1 : turn2}
+          products={products}
+          coffeeTypes={coffeeTypes}
+          selectedDate={selectedDate}
+          verifiedStaff={verifiedStaff}
+        />
         {/* Past date warning */}
         {isPastDate() && !isAdminUnlocked && !isFieldDisabled() && (
           <div className="rounded-lg border border-success/50 bg-success/10 p-4 print:hidden">
@@ -496,10 +497,6 @@ const DailyEntry = () => {
           </CardContent>
         </Card>
 
-        {/* Print Footer */}
-        <div className="print-footer hidden print:block">
-          <p>Printuar më: {new Date().toLocaleDateString('sq-AL')} në {new Date().toLocaleTimeString('sq-AL')}</p>
-        </div>
 
         {/* Admin Password Dialog */}
         <AdminPasswordDialog

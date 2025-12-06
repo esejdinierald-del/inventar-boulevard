@@ -128,45 +128,43 @@ All colors MUST be HSL.
 
 /* Print styles - profesionale për faqen /daily */
 @media print {
-  /* Fsheh elementet UI që nuk nevojiten */
+  /* Fsheh të gjitha elementet kryesore përveç raportit të printimit */
+  body > * {
+    visibility: hidden;
+  }
+  
+  .print-report,
+  .print-report * {
+    visibility: visible !important;
+  }
+
+  .print-report {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+  }
+
   nav,
   header,
   footer,
   button,
-  input[type="date"],
-  input[type="text"],
-  input[type="number"],
+  input,
+  select,
+  textarea,
   .print-hide,
   [data-radix-dialog-overlay],
   [data-radix-dialog-content],
   [data-radix-tabs-list],
+  [data-radix-tabs-trigger],
   [data-radix-popover-content] {
     display: none !important;
-  }
-
-  /* Shfaq inputet me vlerë si tekst */
-  input[type="number"],
-  input[type="text"] {
-    display: inline !important;
-    border: none !important;
-    background: transparent !important;
-    padding: 0 !important;
-    font-weight: 600 !important;
   }
 
   /* Reset page */
   @page {
     size: A4;
     margin: 15mm 10mm;
-  }
-
-  /* Hiq blur dhe pointer-events */
-  .blur-sm {
-    filter: none !important;
-  }
-  
-  .pointer-events-none {
-    pointer-events: auto !important;
   }
 
   /* Stilet bazë për printim */
@@ -179,7 +177,7 @@ All colors MUST be HSL.
     print-color-adjust: exact !important;
   }
 
-  /* Print header - shfaqet automatikisht */
+  /* Print header */
   .print-header {
     display: block !important;
     text-align: center;
@@ -189,9 +187,9 @@ All colors MUST be HSL.
   }
 
   .print-header h1 {
-    font-size: 18pt !important;
+    font-size: 20pt !important;
     font-weight: bold !important;
-    margin: 0 0 5px 0 !important;
+    margin: 0 0 8px 0 !important;
     color: #1a1a1a !important;
   }
 
@@ -204,20 +202,50 @@ All colors MUST be HSL.
     font-size: 11pt !important;
     font-weight: 600 !important;
     color: #2563eb !important;
-    margin-top: 5px !important;
+    margin-top: 8px !important;
+  }
+
+  /* Seksionet e raportit */
+  .print-section {
+    margin-bottom: 20px !important;
+    page-break-inside: avoid !important;
+  }
+
+  .print-section h3 {
+    font-size: 12pt !important;
+    font-weight: 700 !important;
+    margin: 0 0 10px 0 !important;
+    padding-bottom: 5px !important;
+    border-bottom: 1px solid #ddd !important;
+    color: #1a1a1a !important;
+  }
+
+  /* Mulliri section */
+  .mulliri-section table {
+    width: auto !important;
+    margin: 0 auto !important;
+  }
+
+  .mulliri-section .label-cell {
+    font-weight: 600 !important;
+    padding-right: 20px !important;
+  }
+
+  .mulliri-section .value-cell {
+    text-align: right !important;
+    min-width: 80px !important;
   }
 
   /* Tabelat profesionale */
   table {
     border-collapse: collapse !important;
     width: 100% !important;
-    margin-bottom: 15px !important;
     font-size: 9pt !important;
   }
 
   th, td {
     border: 1px solid #555 !important;
-    padding: 5px 8px !important;
+    padding: 6px 10px !important;
     text-align: left !important;
   }
 
@@ -234,99 +262,44 @@ All colors MUST be HSL.
     background-color: #f9fafb !important;
   }
 
-  /* Titujt e seksioneve */
-  h2, h3 {
-    margin-top: 20px !important;
-    margin-bottom: 8px !important;
+  /* Total row */
+  .total-row {
+    background-color: #e5e7eb !important;
+  }
+
+  /* Text alignment */
+  .text-center {
+    text-align: center !important;
+  }
+
+  /* Font bold */
+  .font-bold {
     font-weight: 700 !important;
-    page-break-after: avoid !important;
-    color: #1a1a1a !important;
-    font-size: 12pt !important;
-    border-bottom: 1px solid #ddd !important;
-    padding-bottom: 5px !important;
   }
 
-  h3 {
-    font-size: 11pt !important;
-  }
-
-  /* Karta të printueshme */
-  .card {
-    box-shadow: none !important;
-    border: 1px solid #ccc !important;
-    margin-bottom: 15px !important;
-    page-break-inside: avoid !important;
-    border-radius: 0 !important;
-  }
-
-  .card-header {
-    background-color: #f3f4f6 !important;
-    padding: 8px 12px !important;
-    border-bottom: 1px solid #ddd !important;
-  }
-
-  .card-content {
-    padding: 10px 12px !important;
-  }
-
-  /* Forco page breaks të mira */
-  .page-break-before {
-    page-break-before: always !important;
-  }
-
-  .page-break-after {
-    page-break-after: always !important;
-  }
-
-  /* Mos prish tabelat në mes */
-  tr {
-    page-break-inside: avoid !important;
-  }
-
-  /* Shfaq të gjithë përmbajtjen */
-  * {
-    overflow: visible !important;
-  }
-
-  /* Ngjyrat për Dif - me kontrast të lartë */
-  .text-destructive {
+  /* Dif colors */
+  .dif-negative {
     color: #b91c1c !important;
     font-weight: 700 !important;
   }
 
-  .text-success {
+  .dif-positive {
     color: #15803d !important;
     font-weight: 700 !important;
   }
 
-  /* Përmbledhja e xhiros */
-  .print-summary {
-    display: block !important;
-    margin-top: 20px !important;
+  /* Xhiro section */
+  .xhiro-section {
+    text-align: center !important;
     padding: 15px !important;
     border: 2px solid #333 !important;
     background-color: #f9fafb !important;
   }
 
-  .print-summary h4 {
-    font-size: 12pt !important;
+  .xhiro-value {
+    font-size: 18pt !important;
     font-weight: 700 !important;
-    margin-bottom: 10px !important;
-  }
-
-  .print-summary .summary-row {
-    display: flex !important;
-    justify-content: space-between !important;
-    padding: 5px 0 !important;
-    border-bottom: 1px solid #ddd !important;
-  }
-
-  .print-summary .summary-total {
-    font-size: 14pt !important;
-    font-weight: 700 !important;
-    margin-top: 10px !important;
-    padding-top: 10px !important;
-    border-top: 2px solid #333 !important;
+    color: #1a1a1a !important;
   }
 
   /* Footer me datën e printimit */
@@ -341,5 +314,15 @@ All colors MUST be HSL.
     color: #666 !important;
     padding: 10px 0 !important;
     border-top: 1px solid #ddd !important;
+  }
+
+  /* Forco page breaks të mira */
+  tr {
+    page-break-inside: avoid !important;
+  }
+
+  /* Shfaq të gjithë përmbajtjen */
+  * {
+    overflow: visible !important;
   }
 }
