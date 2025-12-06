@@ -12,8 +12,38 @@ import Manual from "./pages/Manual";
 import ManualStaff from "./pages/ManualStaff";
 import ManualAdmin from "./pages/ManualAdmin";
 import NotFound from "./pages/NotFound";
+import { useAnonymousAuth } from "./hooks/useAnonymousAuth";
 
 const queryClient = new QueryClient();
+
+const AppContent = () => {
+  const { isLoading } = useAnonymousAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Duke u lidhur...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route path="/" element={<Dashboard />} />
+      <Route path="/daily" element={<DailyEntry />} />
+      <Route path="/reports" element={<Reports />} />
+      <Route path="/expenses" element={<Expenses />} />
+      <Route path="/install" element={<Install />} />
+      <Route path="/manual" element={<Manual />} />
+      <Route path="/manual-staff" element={<ManualStaff />} />
+      <Route path="/manual-admin" element={<ManualAdmin />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -21,17 +51,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/daily" element={<DailyEntry />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/expenses" element={<Expenses />} />
-          <Route path="/install" element={<Install />} />
-          <Route path="/manual" element={<Manual />} />
-          <Route path="/manual-staff" element={<ManualStaff />} />
-          <Route path="/manual-admin" element={<ManualAdmin />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AppContent />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
