@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 const DEFAULT_PRODUCTS = [
   "Kanace", "Uje .vit", "Heineken shishe", "Korona", "Paulaner", 
   "Rose", "Red.bull", "B 52", "Crodino", "Biter", 
-  "Bustina", "Uje", "Caj", "Caj bio"
+  "Bustina", "Uje", "Caj", "Caj bio", "Paulaner Kristal"
 ];
 
 const DEFAULT_COFFEE_TYPES = [
