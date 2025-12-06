@@ -29,7 +29,7 @@ const DailyEntry = () => {
 
   // Custom hooks
   const { isAdminUnlocked, showPasswordDialog, validatePassword, toggleAdminMode, closePasswordDialog, isWithinStaffEditWindow } = useAuth();
-  const { products, coffeeTypes, addProduct, deleteProduct, updateProduct } = useProductList();
+  const { products, coffeeTypes, addProduct: originalAddProduct, deleteProduct: originalDeleteProduct, updateProduct } = useProductList();
   const { kitchenProducts } = useKitchenProducts();
   const { alcoholicDrinks } = useAlcoholicDrinksList();
   const {
@@ -48,6 +48,44 @@ const DailyEntry = () => {
     totalXhiro,
     saveStatus,
   } = useTurnData({ products, coffeeTypes, selectedDate });
+
+  // Wrapper për addProduct që përditëson edhe turn data
+  const addProduct = useCallback(async (productName: string) => {
+    const success = await originalAddProduct(productName);
+    if (success) {
+      // Shto produktin e ri në turn1 dhe turn2 me vlera 0
+      const newProductData = {
+        stokFillim: 0,
+        gjendje: 0,
+        shiriti: 0,
+        furnizime: 0
+      };
+      setTurn1(prev => ({
+        ...prev,
+        products: { ...prev.products, [productName.trim()]: newProductData }
+      }));
+      setTurn2(prev => ({
+        ...prev,
+        products: { ...prev.products, [productName.trim()]: newProductData }
+      }));
+    }
+    return success;
+  }, [originalAddProduct, setTurn1, setTurn2]);
+
+  // Wrapper për deleteProduct që përditëson edhe turn data
+  const deleteProduct = useCallback(async (productName: string) => {
+    await originalDeleteProduct(productName);
+    setTurn1(prev => {
+      const newProducts = { ...prev.products };
+      delete newProducts[productName];
+      return { ...prev, products: newProducts };
+    });
+    setTurn2(prev => {
+      const newProducts = { ...prev.products };
+      delete newProducts[productName];
+      return { ...prev, products: newProducts };
+    });
+  }, [originalDeleteProduct, setTurn1, setTurn2]);
 
   // Reset staff verification when date changes
   useEffect(() => {
