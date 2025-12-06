@@ -2,7 +2,7 @@ import { useState } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Printer, Unlock, AlertCircle, XCircle, Lock, ShieldCheck } from "lucide-react";
+import { Printer, Unlock, AlertCircle, XCircle, Lock, ShieldCheck, LockKeyhole, UnlockKeyhole } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -122,9 +122,10 @@ const ManualAdmin = () => {
                 <li>4. Menaxhimi i Llojeve të Kafesë</li>
                 <li>5. Menaxhimi i Pijeve Alkoolike</li>
                 <li>6. Modifikimi i të Dhënave të Kaluara</li>
-                <li>7. Raportet dhe Analizat</li>
-                <li>8. Menaxhimi i Shpenzimeve</li>
-                <li>9. Mapping i Produkteve</li>
+                <li>7. Zhbllokimi i Turneve të Kyçura</li>
+                <li>8. Raportet dhe Analizat</li>
+                <li>9. Menaxhimi i Shpenzimeve</li>
+                <li>10. Mapping i Produkteve</li>
               </ul>
             </div>
           </CardContent>
@@ -475,10 +476,83 @@ const ManualAdmin = () => {
           </CardContent>
         </Card>
 
-        {/* 7. Raportet dhe Analizat */}
+        {/* 7. Zhbllokimi i Turneve të Kyçura */}
+        <Card className="print-page-break">
+          <CardHeader>
+            <CardTitle className="text-xl">7. Zhbllokimi i Turneve të Kyçura</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <h4 className="font-semibold flex items-center gap-2">
+                <LockKeyhole className="h-4 w-4" />
+                Çfarë është kyçja e turnit:
+              </h4>
+              <p className="text-sm">Kur stafi printo raportin e turnit të tij, turni bëhet automatikisht i <strong>KYÇUR</strong>. Kjo parandalon ndryshime aksidentale pas mbylljes zyrtare të turnit.</p>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="font-semibold">Si ta njoh një turn të kyçur:</h4>
+              <ul className="ml-6 space-y-1 text-sm list-disc">
+                <li>Në tab-in e turnit shfaqet ikona <LockKeyhole className="h-3 w-3 inline text-destructive" /> (dryna e kuqe)</li>
+                <li>Poshtë tab-it shfaqet mesazhi: "🔒 Turni X është i kyçur"</li>
+                <li>Tregohet kush e kyçi turnin dhe kur</li>
+                <li>Të gjitha fushat e atij turni janë të blokuara</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="font-semibold flex items-center gap-2">
+                <UnlockKeyhole className="h-4 w-4" />
+                Si të zhbllokosh një turn:
+              </h4>
+              <ol className="ml-6 space-y-2 list-decimal">
+                <li>Hyr si Admin në "Regjistrimi Ditor"</li>
+                <li>Zgjidh datën e turnit që dëshiron të zhbllokosh</li>
+                <li>Kliko tab-in e turnit të kyçur (T1 ose T2)</li>
+                <li>Do të shfaqet mesazhi i kyçjes me butonin <strong>"🔓 Zhblloko"</strong></li>
+                <li>Kliko butonin "Zhblloko"</li>
+                <li>Do të shfaqet mesazhi "🔓 Turni X u zhbllokua"</li>
+                <li>Tani të gjitha fushat janë të hapura për modifikim</li>
+              </ol>
+            </div>
+
+            <div className="p-4 bg-warning/10 border border-warning/50 rounded-lg">
+              <p className="font-semibold flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                KUJDES:
+              </p>
+              <ul className="ml-6 mt-2 space-y-1 text-sm">
+                <li>• Zhbllokimi duhet të bëhet vetëm kur ka nevojë reale për korrigjim</li>
+                <li>• Pas korrigjimit, kërko nga stafi (ose ti) të printo dhe kyç përsëri turnin</li>
+                <li>• Çdo zhbllokim duhet dokumentuar (arsyeja e korrigjimit)</li>
+              </ul>
+            </div>
+
+            <div className="p-4 bg-info/10 border border-info/50 rounded-lg">
+              <p className="font-semibold">Kush mund ta zhbllokojë:</p>
+              <ul className="ml-6 mt-2 space-y-1 text-sm list-disc">
+                <li>• Vetëm <strong>ADMINI</strong> mund të zhbllokojë turnet e kyçura</li>
+                <li>• Stafi NUK ka opsion zhbllokimi - duhet të kontaktojë administratorin</li>
+                <li>• Butoni "Zhblloko" shfaqet vetëm kur je loguar si Admin</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="font-semibold">Raste tipike për zhbllokim:</h4>
+              <ul className="ml-6 space-y-1 text-sm list-disc">
+                <li>Stafi bëri gabim në numërim dhe e zbuloi pas printimit</li>
+                <li>U harrua të shtohej një furnizim</li>
+                <li>Xhiro u fut gabim</li>
+                <li>Diferenca e madhe në mulliri që kërkon korrigjim</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 8. Raportet dhe Analizat */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-xl">7. Raportet dhe Analizat</CardTitle>
+            <CardTitle className="text-xl">8. Raportet dhe Analizat</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -517,10 +591,10 @@ const ManualAdmin = () => {
           </CardContent>
         </Card>
 
-        {/* 8. Menaxhimi i Shpenzimeve */}
+        {/* 9. Menaxhimi i Shpenzimeve */}
         <Card className="print-page-break">
           <CardHeader>
-            <CardTitle className="text-xl">8. Menaxhimi i Shpenzimeve</CardTitle>
+            <CardTitle className="text-xl">9. Menaxhimi i Shpenzimeve</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -570,10 +644,10 @@ const ManualAdmin = () => {
           </CardContent>
         </Card>
 
-        {/* 9. Mapping i Produkteve */}
+        {/* 10. Mapping i Produkteve */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-xl">9. Mapping i Produkteve</CardTitle>
+            <CardTitle className="text-xl">10. Mapping i Produkteve</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
