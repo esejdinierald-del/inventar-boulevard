@@ -29,7 +29,7 @@ const DailyEntry = () => {
 
   // Custom hooks
   const { isAdminUnlocked, showPasswordDialog, validatePassword, toggleAdminMode, closePasswordDialog, isWithinStaffEditWindow } = useAuth();
-  const { products, coffeeTypes, addProduct: originalAddProduct, deleteProduct: originalDeleteProduct, updateProduct } = useProductList();
+  const { products, coffeeTypes, addProduct: originalAddProduct, deleteProduct: originalDeleteProduct, updateProduct, addCoffeeType: originalAddCoffeeType, deleteCoffeeType: originalDeleteCoffeeType } = useProductList();
   const { kitchenProducts } = useKitchenProducts();
   const { alcoholicDrinks } = useAlcoholicDrinksList();
   const {
@@ -86,6 +86,38 @@ const DailyEntry = () => {
       return { ...prev, products: newProducts };
     });
   }, [originalDeleteProduct, setTurn1, setTurn2]);
+
+  // Wrapper për addCoffeeType që përditëson edhe turn data
+  const addCoffeeType = useCallback(async (coffeeName: string) => {
+    const success = await originalAddCoffeeType(coffeeName);
+    if (success) {
+      // Shto kafenë e re në turn1 dhe turn2 me vlera 0
+      setTurn1(prev => ({
+        ...prev,
+        coffee: { ...prev.coffee, [coffeeName.trim()]: 0 }
+      }));
+      setTurn2(prev => ({
+        ...prev,
+        coffee: { ...prev.coffee, [coffeeName.trim()]: 0 }
+      }));
+    }
+    return success;
+  }, [originalAddCoffeeType, setTurn1, setTurn2]);
+
+  // Wrapper për deleteCoffeeType që përditëson edhe turn data
+  const deleteCoffeeType = useCallback(async (coffeeName: string) => {
+    await originalDeleteCoffeeType(coffeeName);
+    setTurn1(prev => {
+      const newCoffee = { ...prev.coffee };
+      delete newCoffee[coffeeName];
+      return { ...prev, coffee: newCoffee };
+    });
+    setTurn2(prev => {
+      const newCoffee = { ...prev.coffee };
+      delete newCoffee[coffeeName];
+      return { ...prev, coffee: newCoffee };
+    });
+  }, [originalDeleteCoffeeType, setTurn1, setTurn2]);
 
   // Reset staff verification when date changes
   useEffect(() => {
