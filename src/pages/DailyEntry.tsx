@@ -303,27 +303,47 @@ const DailyEntry = () => {
     toast.success(`Të dhënat u ruajtën! Xhiro totale: ${totalXhiro.toLocaleString()} ALL`);
   }, [saveForNextDay, totalXhiro, selectedDate]);
 
+  // Format date for display
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('sq-AL', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
+
   return (
     <Layout>
       <div className="space-y-6 pb-20 md:pb-6">
+        {/* Print Header - shfaqet vetëm kur printohet */}
+        <div className="print-header hidden print:block">
+          <h1>Bulevard Cafe</h1>
+          <div className="print-date">{formatDate(selectedDate)}</div>
+          <div className="print-turn">
+            {activeTurn === 'turn1' ? 'Turni 1' : 'Turni 2'}
+            {verifiedStaff && ` - ${verifiedStaff}`}
+          </div>
+        </div>
         {/* Past date warning */}
         {isPastDate() && !isAdminUnlocked && !isFieldDisabled() && (
-          <div className="rounded-lg border border-success/50 bg-success/10 p-4">
+          <div className="rounded-lg border border-success/50 bg-success/10 p-4 print:hidden">
             <p className="text-sm font-medium text-success">
               ✅ Jeni brenda 10 minutave pas mesnatës - mund të modifikoni të dhënat e djeshme.
             </p>
           </div>
         )}
         {isPastDate() && !isAdminUnlocked && isFieldDisabled() && (
-          <div className="rounded-lg border border-warning/50 bg-warning/10 p-4">
+          <div className="rounded-lg border border-warning/50 bg-warning/10 p-4 print:hidden">
             <p className="text-sm font-medium text-warning">
               🔒 Po shikon të dhëna nga e kaluara. Vetëm shikimi është i lejuar. Për të modifikuar, hyr si Admin.
             </p>
           </div>
         )}
 
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Header - Hide most controls when printing */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
           <div>
             <h2 className="text-3xl font-bold tracking-tight text-foreground">Regjistrimi Ditor</h2>
             <p className="text-muted-foreground">Regjistro shitjet dhe inventarin për secilin turn</p>
@@ -417,29 +437,34 @@ const DailyEntry = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Summary Card */}
-        <Card>
-          <CardHeader>
+        {/* Summary Card - Printable */}
+        <Card className="print-summary">
+          <CardHeader className="print:hidden">
             <CardTitle>Përmbledhje</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Xhiro Totale</p>
-                <p className="text-2xl font-bold">{totalXhiro.toLocaleString()} ALL</p>
+            {/* Print version of summary */}
+            <div className="hidden print:block">
+              <h4 className="text-lg font-bold mb-4">Përmbledhje e Xhiros</h4>
+            </div>
+            
+            <div className="grid gap-4 md:grid-cols-3 print:grid-cols-3">
+              <div className="space-y-1 print:border-r print:border-gray-300 print:pr-4">
+                <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro Totale</p>
+                <p className="text-2xl font-bold print:text-3xl">{totalXhiro.toLocaleString()} ALL</p>
               </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Xhiro T1</p>
+              <div className="space-y-1 print:border-r print:border-gray-300 print:px-4">
+                <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro T1</p>
                 <p className="text-xl font-semibold">{turn1.xhiro.toLocaleString()} ALL</p>
               </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Xhiro T2</p>
+              <div className="space-y-1 print:pl-4">
+                <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro T2</p>
                 <p className="text-xl font-semibold">{turn2.xhiro.toLocaleString()} ALL</p>
               </div>
             </div>
             
-            {/* Storage Test Alert */}
-            <div className="mt-4 p-3 rounded-lg bg-warning/10 border border-warning/50">
+            {/* Storage Test Alert - Hide when printing */}
+            <div className="mt-4 p-3 rounded-lg bg-warning/10 border border-warning/50 print:hidden">
               <p className="text-sm font-medium text-warning">
                 ⚠️ Nëse të dhënat nuk po ruhen, provo këto:
               </p>
@@ -450,7 +475,7 @@ const DailyEntry = () => {
               </ul>
             </div>
 
-            <div className="mt-4 flex gap-2 flex-wrap items-center">
+            <div className="mt-4 flex gap-2 flex-wrap items-center print:hidden">
               <Button onClick={handleSave} className="flex-1 md:flex-initial">
                 💾 Ruaj të Dhënat
               </Button>
@@ -470,6 +495,11 @@ const DailyEntry = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Print Footer */}
+        <div className="print-footer hidden print:block">
+          <p>Printuar më: {new Date().toLocaleDateString('sq-AL')} në {new Date().toLocaleTimeString('sq-AL')}</p>
+        </div>
 
         {/* Admin Password Dialog */}
         <AdminPasswordDialog
