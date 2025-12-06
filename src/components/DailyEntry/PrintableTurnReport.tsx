@@ -37,50 +37,51 @@ export const PrintableTurnReport = ({
 
   return (
     <div className="hidden print:block print-report">
-      {/* Print Header */}
+      {/* Print Header - kompakt për 80mm */}
       <div className="print-header">
-        <h1>Bulevard Cafe</h1>
-        <div className="print-date">{formatDate(selectedDate)}</div>
-        <div className="print-turn">Turni {turnName} - Mbyllja</div>
-        {verifiedStaff && (
-          <div className="print-staff">Kamarier: <strong>{verifiedStaff}</strong></div>
-        )}
-      </div>
-
-      {/* Mulliri Info - më e dukshme */}
-      <div className="print-section mulliri-highlight">
-        <h3>Mulliri - Turni {turnName}</h3>
-        <div className="mulliri-grid">
-          <div className="mulliri-item">
-            <span className="mulliri-label">Fillim</span>
-            <span className="mulliri-value">{turnData.mulliriFillim} kg</span>
-          </div>
-          <div className="mulliri-item mulliri-main">
-            <span className="mulliri-label">Përfundim</span>
-            <span className="mulliri-value">{turnData.mulliriPerfund} kg</span>
-          </div>
-          <div className="mulliri-item">
-            <span className="mulliri-label">Total Kafe</span>
-            <span className="mulliri-value">{totalCoffee}</span>
-          </div>
-          <div className={`mulliri-item ${mulliriDif < 0 ? 'mulliri-negative' : mulliriDif > 0 ? 'mulliri-positive' : ''}`}>
-            <span className="mulliri-label">Diferenca</span>
-            <span className="mulliri-value">{mulliriDif}</span>
-          </div>
+        <div className="text-center font-bold text-lg">Bulevard Cafe</div>
+        <div className="text-center text-sm">{formatDate(selectedDate)}</div>
+        <div className="print-divider">================================</div>
+        <div className="text-center">
+          <strong>Turni {turnName}</strong>
+          {verifiedStaff && <span> | {verifiedStaff}</span>}
         </div>
+        <div className="print-divider">--------------------------------</div>
       </div>
 
-      {/* Produktet */}
-      <div className="print-section products-section">
-        <h3>Produktet - Turni {turnName}</h3>
-        <table>
+      {/* Mulliri Info - kompakt */}
+      <div className="print-section">
+        <div className="section-title">MULLIRI</div>
+        <div className="print-row">
+          <span>Fillim:</span>
+          <span>{turnData.mulliriFillim} kg</span>
+        </div>
+        <div className="print-row print-row-highlight">
+          <span>Perfundim:</span>
+          <span className="font-bold">{turnData.mulliriPerfund} kg</span>
+        </div>
+        <div className="print-row">
+          <span>Total Kafe:</span>
+          <span>{totalCoffee}</span>
+        </div>
+        <div className={`print-row ${mulliriDif < 0 ? 'text-negative' : mulliriDif > 0 ? 'text-positive' : ''}`}>
+          <span>Diferenca:</span>
+          <span className="font-bold">{mulliriDif}</span>
+        </div>
+        <div className="print-divider">--------------------------------</div>
+      </div>
+
+      {/* Produktet - tabele kompakte */}
+      <div className="print-section">
+        <div className="section-title">PRODUKTET</div>
+        <table className="thermal-table">
           <thead>
             <tr>
-              <th>Produkti</th>
-              <th>Stok Fillim</th>
-              <th>Gjendje</th>
-              <th>Shiriti</th>
-              <th>Furnizime</th>
+              <th className="text-left">Prod</th>
+              <th>SF</th>
+              <th>Gj</th>
+              <th>Sh</th>
+              <th>Fu</th>
               <th>Dif</th>
             </tr>
           </thead>
@@ -88,14 +89,16 @@ export const PrintableTurnReport = ({
             {products.map((product) => {
               const data = turnData.products[product] || { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 };
               const dif = CalculationService.calculateDif(data.stokFillim, data.furnizime, data.gjendje, data.shiriti);
+              // Shkurto emrin e produktit për 80mm
+              const shortName = product.length > 12 ? product.substring(0, 11) + '.' : product;
               return (
                 <tr key={product}>
-                  <td>{product}</td>
-                  <td className="text-center">{data.stokFillim}</td>
-                  <td className="text-center">{data.gjendje}</td>
-                  <td className="text-center">{data.shiriti}</td>
-                  <td className="text-center">{data.furnizime}</td>
-                  <td className={`text-center font-bold ${dif < 0 ? 'dif-negative' : dif > 0 ? 'dif-positive' : ''}`}>
+                  <td className="text-left">{shortName}</td>
+                  <td>{data.stokFillim}</td>
+                  <td>{data.gjendje}</td>
+                  <td>{data.shiriti}</td>
+                  <td>{data.furnizime}</td>
+                  <td className={`font-bold ${dif < 0 ? 'text-negative' : dif > 0 ? 'text-positive' : ''}`}>
                     {dif}
                   </td>
                 </tr>
@@ -103,47 +106,43 @@ export const PrintableTurnReport = ({
             })}
           </tbody>
         </table>
+        <div className="print-divider">--------------------------------</div>
       </div>
 
-      {/* Kafe */}
-      <div className="print-section coffee-section">
-        <h3>Kafe - Turni {turnName}</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Lloji</th>
-              <th>Sasia</th>
-            </tr>
-          </thead>
-          <tbody>
-            {coffeeTypes.map((coffee) => {
-              const quantity = turnData.coffee[coffee] || 0;
-              return (
-                <tr key={coffee}>
-                  <td>{coffee}</td>
-                  <td className="text-center">{quantity}</td>
-                </tr>
-              );
-            })}
-            <tr className="total-row">
-              <td className="font-bold">Total Kafe</td>
-              <td className="text-center font-bold">{totalCoffee}</td>
-            </tr>
-          </tbody>
-        </table>
+      {/* Kafe - kompakt */}
+      <div className="print-section">
+        <div className="section-title">KAFE</div>
+        {coffeeTypes.map((coffee) => {
+          const quantity = turnData.coffee[coffee] || 0;
+          const shortName = coffee.length > 16 ? coffee.substring(0, 15) + '.' : coffee;
+          return (
+            <div className="print-row" key={coffee}>
+              <span>{shortName}</span>
+              <span>{quantity}</span>
+            </div>
+          );
+        })}
+        <div className="print-row print-row-total">
+          <span className="font-bold">TOTAL:</span>
+          <span className="font-bold">{totalCoffee}</span>
+        </div>
+        <div className="print-divider">--------------------------------</div>
       </div>
 
       {/* Xhiro */}
-      <div className="print-section xhiro-section">
-        <h3>Xhiro Turni {turnName}</h3>
-        <div className="xhiro-value">
+      <div className="print-section">
+        <div className="section-title">XHIRO</div>
+        <div className="xhiro-thermal">
           {turnData.xhiro.toLocaleString()} ALL
         </div>
+        <div className="print-divider">================================</div>
       </div>
 
-      {/* Print Footer */}
+      {/* Footer */}
       <div className="print-footer">
-        <p>Printuar më: {new Date().toLocaleDateString('sq-AL')} në {new Date().toLocaleTimeString('sq-AL')}</p>
+        <div className="text-center text-xs">
+          {new Date().toLocaleDateString('sq-AL')} {new Date().toLocaleTimeString('sq-AL', { hour: '2-digit', minute: '2-digit' })}
+        </div>
       </div>
     </div>
   );
