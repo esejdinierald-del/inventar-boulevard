@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Lock, Unlock } from "lucide-react";
+import { Calendar, Lock, Unlock, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { ProductMappingManager } from "@/components/ProductMappingManager";
 import { InvoiceMappingManager } from "@/components/InvoiceMappingManager";
@@ -453,6 +453,10 @@ const DailyEntry = () => {
             <div className="mt-4 flex gap-2 flex-wrap items-center">
               <Button onClick={handleSave} className="flex-1 md:flex-initial">
                 💾 Ruaj të Dhënat
+              </Button>
+              <Button onClick={() => window.print()} variant="outline" className="flex-1 md:flex-initial">
+                <Printer className="h-4 w-4 mr-2" />
+                Printo
               </Button>
               <Button onClick={testLocalStorage} variant="outline" className="flex-1 md:flex-initial">
                 🔍 Test Storage
