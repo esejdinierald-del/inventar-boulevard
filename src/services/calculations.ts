@@ -2,7 +2,9 @@ import { ProductData, TurnData } from '@/types/turn.types';
 
 export class CalculationService {
   /**
-   * Llogarit diferencën: Stok Fillim + Furnizime - Gjendje - Shiriti
+   * Llogarit diferencën: Shiriti + Gjendje - Stok Fillim - Furnizime
+   * Nëse rezultati është negativ = mungesa (pa regjistruar në banakun)
+   * Nëse rezultati është pozitiv = tepricë
    */
   static calculateDif(
     stokFillim: number,
@@ -10,18 +12,22 @@ export class CalculationService {
     gjendje: number,
     shiriti: number
   ): number {
-    return stokFillim + furnizime - gjendje - shiriti;
+    // Invertuar: sasitë e paregjistruara dalin negative
+    return shiriti + gjendje - stokFillim - furnizime;
   }
 
   /**
-   * Llogarit diferencën e mullirit: (Mulliri Perfund - Mulliri Fillim) - Total Kafe
+   * Llogarit diferencën e mullirit: Total Kafe - (Mulliri Perfund - Mulliri Fillim)
+   * Nëse rezultati është negativ = kafe e paregjistruar
+   * Nëse rezultati është pozitiv = tepricë
    */
   static calculateMulliriDif(
     fillim: number,
     perfund: number,
     totalKafe: number
   ): number {
-    return (perfund - fillim) - totalKafe;
+    // Invertuar: kafeja e paregjistruar del negative
+    return totalKafe - (perfund - fillim);
   }
 
   /**
