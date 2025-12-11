@@ -201,10 +201,10 @@ All colors MUST be HSL.
 
   /* Section title */
   .section-title {
-    font-size: 12px !important;
+    font-size: 14px !important;
     font-weight: bold !important;
     text-align: center !important;
-    margin-bottom: 1.5mm !important;
+    margin-bottom: 2mm !important;
     text-decoration: underline !important;
   }
 
@@ -212,8 +212,8 @@ All colors MUST be HSL.
   .print-row {
     display: flex !important;
     justify-content: space-between !important;
-    font-size: 11px !important;
-    padding: 0.5mm 0 !important;
+    font-size: 14px !important;
+    padding: 1mm 0 !important;
   }
 
   .print-row-highlight {
@@ -233,13 +233,13 @@ All colors MUST be HSL.
   .thermal-table {
     width: 100% !important;
     border-collapse: collapse !important;
-    font-size: 12px !important;
+    font-size: 14px !important;
     table-layout: fixed !important;
   }
 
   .thermal-table th,
   .thermal-table td {
-    padding: 2px 2px !important;
+    padding: 3px 2px !important;
     text-align: center !important;
     border-bottom: 1px dotted #aaa !important;
     overflow: hidden !important;
@@ -248,9 +248,9 @@ All colors MUST be HSL.
 
   .thermal-table th {
     font-weight: bold !important;
-    font-size: 11px !important;
+    font-size: 13px !important;
     border-bottom: 1px solid black !important;
-    padding-bottom: 3px !important;
+    padding-bottom: 4px !important;
   }
 
   .thermal-table th:first-child,
@@ -273,7 +273,7 @@ All colors MUST be HSL.
   }
 
   .text-xs {
-    font-size: 11px !important;
+    font-size: 13px !important;
   }
 
   /* Font bold */
@@ -298,11 +298,11 @@ All colors MUST be HSL.
   /* Xhiro thermal - prominente */
   .xhiro-thermal {
     text-align: center !important;
-    font-size: 18px !important;
+    font-size: 22px !important;
     font-weight: bold !important;
-    padding: 2mm 0 !important;
+    padding: 3mm 0 !important;
     border: 1px dashed black !important;
-    margin: 1mm 0 !important;
+    margin: 2mm 0 !important;
   }
 
   /* Footer */
