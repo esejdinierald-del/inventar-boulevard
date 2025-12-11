@@ -458,6 +458,7 @@ const DailyEntry = () => {
               alcoholicDrinks={alcoholicDrinks}
               isAdminUnlocked={isAdminUnlocked}
               isFieldDisabled={isFieldDisabled()}
+              isTurnLocked={isTurnLocked(1)}
               showCopyButton
               onProductUpdate={updateTurn1Product}
               onCoffeeUpdate={updateTurn1Coffee}
@@ -485,6 +486,7 @@ const DailyEntry = () => {
               alcoholicDrinks={alcoholicDrinks}
               isAdminUnlocked={isAdminUnlocked}
               isFieldDisabled={isFieldDisabled()}
+              isTurnLocked={isTurnLocked(2)}
               mulliriFillimDisabled
               onProductUpdate={updateTurn2Product}
               onCoffeeUpdate={updateTurn2Coffee}

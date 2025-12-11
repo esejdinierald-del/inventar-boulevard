@@ -10,6 +10,7 @@ interface TurnExtrasProps {
   isAdminUnlocked: boolean;
   isFieldDisabled: boolean;
   mulliriFillimDisabled?: boolean;
+  mulliriPerfundDisabled?: boolean;
   onUpdate: (field: keyof TurnData, value: number) => void;
   onMulliriPerfundUpdate?: (value: number) => void;
 }
@@ -20,6 +21,7 @@ export const TurnExtras = ({
   isAdminUnlocked,
   isFieldDisabled,
   mulliriFillimDisabled = false,
+  mulliriPerfundDisabled = false,
   onUpdate,
   onMulliriPerfundUpdate,
 }: TurnExtrasProps) => {
@@ -91,9 +93,9 @@ export const TurnExtras = ({
               onUpdate('mulliriPerfund', value);
             }
           }}
-          disabled={isFieldDisabled}
-          className={isFieldDisabled ? "bg-muted/50" : ""}
-          title={isFieldDisabled ? "Duhet të verifikohesh me PIN për të modifikuar" : ""}
+          disabled={mulliriPerfundDisabled}
+          className={mulliriPerfundDisabled ? "bg-muted/50" : ""}
+          title={mulliriPerfundDisabled ? "Turni është i kyçur" : "Fut numrin e mullirit përfund"}
         />
       </div>
 

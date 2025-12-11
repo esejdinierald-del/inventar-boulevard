@@ -17,6 +17,7 @@ interface TurnSectionProps {
   isFieldDisabled: boolean;
   showCopyButton?: boolean;
   mulliriFillimDisabled?: boolean;
+  isTurnLocked?: boolean;
   onProductUpdate: (product: string, field: keyof ProductData, value: number) => void;
   onCoffeeUpdate: (coffee: string, value: number) => void;
   onTurnUpdate: (field: keyof TurnData, value: number) => void;
@@ -43,6 +44,7 @@ export const TurnSection = ({
   isFieldDisabled,
   showCopyButton = false,
   mulliriFillimDisabled = false,
+  isTurnLocked = false,
   onProductUpdate,
   onCoffeeUpdate,
   onTurnUpdate,
@@ -128,6 +130,7 @@ export const TurnSection = ({
             isAdminUnlocked={isAdminUnlocked}
             isFieldDisabled={isFieldDisabled}
             mulliriFillimDisabled={mulliriFillimDisabled}
+            mulliriPerfundDisabled={isTurnLocked}
             onUpdate={onTurnUpdate}
             onMulliriPerfundUpdate={onMulliriPerfundUpdate}
           />
