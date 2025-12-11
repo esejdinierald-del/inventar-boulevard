@@ -233,13 +233,13 @@ All colors MUST be HSL.
   .thermal-table {
     width: 100% !important;
     border-collapse: collapse !important;
-    font-size: 9px !important;
+    font-size: 12px !important;
     table-layout: fixed !important;
   }
 
   .thermal-table th,
   .thermal-table td {
-    padding: 1px 1px !important;
+    padding: 2px 2px !important;
     text-align: center !important;
     border-bottom: 1px dotted #aaa !important;
     overflow: hidden !important;
@@ -248,9 +248,9 @@ All colors MUST be HSL.
 
   .thermal-table th {
     font-weight: bold !important;
-    font-size: 8px !important;
+    font-size: 11px !important;
     border-bottom: 1px solid black !important;
-    padding-bottom: 2px !important;
+    padding-bottom: 3px !important;
   }
 
   .thermal-table th:first-child,
@@ -273,7 +273,7 @@ All colors MUST be HSL.
   }
 
   .text-xs {
-    font-size: 9px !important;
+    font-size: 11px !important;
   }
 
   /* Font bold */
