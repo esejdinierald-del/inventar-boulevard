@@ -71,10 +71,10 @@ export const TurnExtras = ({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label>Mulliri Perfund (kg)</Label>
-          {onMulliriPerfundUpdate && (
+          {!mulliriPerfundDisabled && (
             <GrinderPhotoScanner
               turnName={turnName}
-              onValueExtracted={onMulliriPerfundUpdate}
+              onValueExtracted={onMulliriPerfundUpdate || ((value) => onUpdate('mulliriPerfund', value))}
               isAdminUnlocked={isAdminUnlocked}
               currentValue={turnData.mulliriPerfund}
             />
@@ -85,18 +85,23 @@ export const TurnExtras = ({
           step="any"
           value={turnData.mulliriPerfund || ""}
           onChange={(e) => {
-            const value = Number(e.target.value);
-            // Use onMulliriPerfundUpdate if available (Turn 1), otherwise use onUpdate (Turn 2)
-            if (onMulliriPerfundUpdate) {
-              onMulliriPerfundUpdate(value);
-            } else {
-              onUpdate('mulliriPerfund', value);
+            // Only admin can edit manually
+            if (isAdminUnlocked) {
+              const value = Number(e.target.value);
+              if (onMulliriPerfundUpdate) {
+                onMulliriPerfundUpdate(value);
+              } else {
+                onUpdate('mulliriPerfund', value);
+              }
             }
           }}
-          disabled={mulliriPerfundDisabled}
-          className={mulliriPerfundDisabled ? "bg-muted/50" : ""}
-          title={mulliriPerfundDisabled ? "Turni është i kyçur" : "Fut numrin e mullirit përfund"}
+          disabled={mulliriPerfundDisabled || !isAdminUnlocked}
+          className={mulliriPerfundDisabled || !isAdminUnlocked ? "bg-muted/50" : ""}
+          title={mulliriPerfundDisabled ? "Turni është i kyçur" : "Stafi fut vetëm me foto"}
         />
+        {!isAdminUnlocked && !mulliriPerfundDisabled && (
+          <p className="text-xs text-muted-foreground">📸 Fut numrin vetëm me foto</p>
+        )}
       </div>
 
       <div className="space-y-2">
