@@ -4,6 +4,7 @@ import { TurnData, ProductData } from "@/types/turn.types";
 import { ProductTable } from "./ProductTable";
 import { CoffeeTable } from "./CoffeeTable";
 import { TurnExtras } from "./TurnExtras";
+import { AlcoholicDrinksTable } from "./AlcoholicDrinksTable";
 import { ReceiptScanner } from "@/components/ReceiptScanner";
 import { CalculationService } from "@/services/calculations";
 
@@ -24,6 +25,8 @@ interface TurnSectionProps {
   onMulliriPerfundUpdate?: (value: number) => void;
   onCopyToNextTurn?: () => void;
   onReceiptData: (productData: { [key: string]: number }, coffeeData: { [key: string]: number }, alcoholicDrinksData?: { [key: string]: number }) => void;
+  onAlcoholicDrinksSalesUpdate?: (drinkData: { [key: string]: number }) => void;
+  alcoholicDrinksSales?: { [key: string]: number };
   onProductDelete?: (product: string) => void | Promise<void>;
   onProductAdd?: (productName: string) => boolean | Promise<boolean>;
   onProductEdit?: (product: string) => void;
@@ -51,6 +54,8 @@ export const TurnSection = ({
   onMulliriPerfundUpdate,
   onCopyToNextTurn,
   onReceiptData,
+  onAlcoholicDrinksSalesUpdate,
+  alcoholicDrinksSales = {},
   onProductDelete,
   onProductAdd,
   onProductEdit,
@@ -117,6 +122,16 @@ export const TurnSection = ({
           />
         </CardContent>
       </Card>
+
+      {/* Alcoholic Drinks Table */}
+      {onAlcoholicDrinksSalesUpdate && (
+        <AlcoholicDrinksTable
+          turnName={turnName}
+          onDataExtracted={onAlcoholicDrinksSalesUpdate}
+          isFieldDisabled={isFieldDisabled}
+          savedSales={alcoholicDrinksSales}
+        />
+      )}
 
       {/* Turn Extras */}
       <Card>
