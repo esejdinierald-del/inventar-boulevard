@@ -278,30 +278,6 @@ const DailyEntry = () => {
     }
   }, [updateTurn1Product, updateTurn2Product, activeTurn]);
 
-  // Test localStorage
-  const testLocalStorage = useCallback(() => {
-    try {
-      const testKey = 'test_storage_key';
-      const testValue = { test: 'data', time: new Date().toISOString() };
-      
-      // Try to write
-      localStorage.setItem(testKey, JSON.stringify(testValue));
-      
-      // Try to read
-      const retrieved = localStorage.getItem(testKey);
-      
-      if (retrieved) {
-        const parsed = JSON.parse(retrieved);
-        localStorage.removeItem(testKey);
-        toast.success('✅ localStorage PUNON!');
-      } else {
-        toast.error('❌ localStorage NUK punon - nuk lexon dot!');
-      }
-    } catch (error) {
-      toast.error(`❌ localStorage ERROR: ${error}`);
-    }
-  }, []);
-
   // Save handler
   const handleSave = useCallback(async () => {
     saveForNextDay();
@@ -531,18 +507,6 @@ const DailyEntry = () => {
               </div>
             </div>
             
-            {/* Storage Test Alert - Hide when printing */}
-            <div className="mt-4 p-3 rounded-lg bg-warning/10 border border-warning/50 print:hidden">
-              <p className="text-sm font-medium text-warning">
-                ⚠️ Nëse të dhënat nuk po ruhen, provo këto:
-              </p>
-              <ul className="text-xs text-muted-foreground mt-2 space-y-1 ml-4">
-                <li>• Mbyll tabs të tjera të kësaj faqeje</li>
-                <li>• Rifresko faqen (tërhiq poshtë)</li>
-                <li>• Kontrollo që "Private Browsing" të jetë OFF</li>
-              </ul>
-            </div>
-
             <div className="mt-4 flex gap-2 flex-wrap items-center print:hidden">
               <Button onClick={handleSave} className="flex-1 md:flex-initial">
                 💾 Ruaj të Dhënat
@@ -561,9 +525,6 @@ const DailyEntry = () => {
                 </Button>
               )}
               
-              <Button onClick={testLocalStorage} variant="outline" className="flex-1 md:flex-initial">
-                🔍 Test Storage
-              </Button>
               {saveStatus === 'saving' && (
                 <span className="text-sm text-muted-foreground">💾 Duke ruajtur...</span>
               )}

@@ -54,11 +54,11 @@ export const PrintableTurnReport = ({
         <div className="section-title">MULLIRI</div>
         <div className="print-row">
           <span>Fillim:</span>
-          <span>{turnData.mulliriFillim} kg</span>
+          <span>{turnData.mulliriFillim} copa</span>
         </div>
         <div className="print-row print-row-highlight">
           <span>Perfundim:</span>
-          <span className="font-bold">{turnData.mulliriPerfund} kg</span>
+          <span className="font-bold">{turnData.mulliriPerfund} copa</span>
         </div>
         <div className="print-row">
           <span>Total Kafe:</span>
