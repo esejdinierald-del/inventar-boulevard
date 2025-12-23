@@ -20,7 +20,7 @@ import { useTurnLock } from "@/hooks/useTurnLock";
 import { useKitchenProducts } from "@/hooks/useKitchenProducts";
 import { useAlcoholicDrinksList } from "@/hooks/useAlcoholicDrinksList";
 import { AlcoholicDrinksService } from "@/services/alcoholic-drinks.service";
-import { TurnData } from "@/types/turn.types";
+import { TurnData, ShpenzimiData } from "@/types/turn.types";
 
 const DailyEntry = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -242,6 +242,54 @@ const DailyEntry = () => {
     setTurn2(prev => ({
       ...prev,
       coffee: { ...prev.coffee, [coffee]: value }
+    }));
+  }, []);
+
+  // Shpenzime handlers for Turn 1
+  const addShpenzimiT1 = useCallback((shpenzimi: ShpenzimiData) => {
+    setTurn1(prev => ({
+      ...prev,
+      shpenzime: [...(prev.shpenzime || []), shpenzimi]
+    }));
+  }, []);
+
+  const removeShpenzimiT1 = useCallback((index: number) => {
+    setTurn1(prev => ({
+      ...prev,
+      shpenzime: (prev.shpenzime || []).filter((_, i) => i !== index)
+    }));
+  }, []);
+
+  const updateShpenzimiT1 = useCallback((index: number, field: keyof ShpenzimiData, value: string | number) => {
+    setTurn1(prev => ({
+      ...prev,
+      shpenzime: (prev.shpenzime || []).map((s, i) => 
+        i === index ? { ...s, [field]: value } : s
+      )
+    }));
+  }, []);
+
+  // Shpenzime handlers for Turn 2
+  const addShpenzimiT2 = useCallback((shpenzimi: ShpenzimiData) => {
+    setTurn2(prev => ({
+      ...prev,
+      shpenzime: [...(prev.shpenzime || []), shpenzimi]
+    }));
+  }, []);
+
+  const removeShpenzimiT2 = useCallback((index: number) => {
+    setTurn2(prev => ({
+      ...prev,
+      shpenzime: (prev.shpenzime || []).filter((_, i) => i !== index)
+    }));
+  }, []);
+
+  const updateShpenzimiT2 = useCallback((index: number, field: keyof ShpenzimiData, value: string | number) => {
+    setTurn2(prev => ({
+      ...prev,
+      shpenzime: (prev.shpenzime || []).map((s, i) => 
+        i === index ? { ...s, [field]: value } : s
+      )
     }));
   }, []);
 
@@ -507,6 +555,9 @@ const DailyEntry = () => {
               onEditedNameChange={setEditedProductName}
               onSaveEdit={saveEditedProduct}
               onCancelEdit={cancelEditingProduct}
+              onShpenzimiAdd={addShpenzimiT1}
+              onShpenzimiRemove={removeShpenzimiT1}
+              onShpenzimiUpdate={updateShpenzimiT1}
             />
           </TabsContent>
 
@@ -534,6 +585,9 @@ const DailyEntry = () => {
               onEditedNameChange={setEditedProductName}
               onSaveEdit={saveEditedProduct}
               onCancelEdit={cancelEditingProduct}
+              onShpenzimiAdd={addShpenzimiT2}
+              onShpenzimiRemove={removeShpenzimiT2}
+              onShpenzimiUpdate={updateShpenzimiT2}
             />
           </TabsContent>
         </Tabs>
@@ -549,20 +603,44 @@ const DailyEntry = () => {
               <h4 className="text-lg font-bold mb-4">Përmbledhje e Xhiros</h4>
             </div>
             
-            <div className="grid gap-4 md:grid-cols-3 print:grid-cols-3">
-              <div className="space-y-1 print:border-r print:border-gray-300 print:pr-4">
-                <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro Totale</p>
-                <p className="text-2xl font-bold print:text-3xl">{totalXhiro.toLocaleString()} ALL</p>
-              </div>
-              <div className="space-y-1 print:border-r print:border-gray-300 print:px-4">
-                <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro T1</p>
-                <p className="text-xl font-semibold">{turn1.xhiro.toLocaleString()} ALL</p>
-              </div>
-              <div className="space-y-1 print:pl-4">
-                <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro T2</p>
-                <p className="text-xl font-semibold">{turn2.xhiro.toLocaleString()} ALL</p>
-              </div>
-            </div>
+            {(() => {
+              const totalShpenzimeT1 = (turn1.shpenzime || []).reduce((sum, s) => sum + (s.vlera || 0), 0);
+              const totalShpenzimeT2 = (turn2.shpenzime || []).reduce((sum, s) => sum + (s.vlera || 0), 0);
+              const totalShpenzime = totalShpenzimeT1 + totalShpenzimeT2;
+              const xhiroNeto = totalXhiro - totalShpenzime;
+              
+              return (
+                <>
+                  <div className="grid gap-4 md:grid-cols-3 print:grid-cols-3">
+                    <div className="space-y-1 print:border-r print:border-gray-300 print:pr-4">
+                      <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro Totale</p>
+                      <p className="text-2xl font-bold print:text-3xl">{totalXhiro.toLocaleString()} ALL</p>
+                    </div>
+                    <div className="space-y-1 print:border-r print:border-gray-300 print:px-4">
+                      <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro T1</p>
+                      <p className="text-xl font-semibold">{turn1.xhiro.toLocaleString()} ALL</p>
+                    </div>
+                    <div className="space-y-1 print:pl-4">
+                      <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro T2</p>
+                      <p className="text-xl font-semibold">{turn2.xhiro.toLocaleString()} ALL</p>
+                    </div>
+                  </div>
+                  
+                  {totalShpenzime > 0 && (
+                    <div className="mt-4 pt-4 border-t grid gap-4 md:grid-cols-3 print:grid-cols-3">
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground print:text-gray-600">Total Shpenzime</p>
+                        <p className="text-xl font-semibold text-destructive">- {totalShpenzime.toLocaleString()} ALL</p>
+                      </div>
+                      <div className="space-y-1 md:col-span-2">
+                        <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro Neto (pas zbritjeve)</p>
+                        <p className="text-2xl font-bold text-primary">{xhiroNeto.toLocaleString()} ALL</p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
             
             <div className="mt-4 flex gap-2 flex-wrap items-center print:hidden">
               <Button onClick={handleSave} className="flex-1 md:flex-initial">

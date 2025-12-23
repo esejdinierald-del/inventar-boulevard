@@ -51,7 +51,8 @@ const migrateProductNames = (turnData: TurnData, productList: string[]): TurnDat
   
   return {
     ...turnData,
-    products: migratedProducts
+    products: migratedProducts,
+    shpenzime: turnData.shpenzime || []
   };
 };
 
@@ -68,7 +69,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     coffee: Object.fromEntries(coffeeTypes.map(c => [c, 0])),
     xhiro: 0,
     mulliriFillim: 0,
-    mulliriPerfund: 0
+    mulliriPerfund: 0,
+    shpenzime: []
   }), [products, coffeeTypes]);
 
   const [turn1, setTurn1] = useState<TurnData>(createEmptyTurnData);

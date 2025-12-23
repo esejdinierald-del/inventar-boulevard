@@ -1,9 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TurnData, ProductData } from "@/types/turn.types";
+import { TurnData, ProductData, ShpenzimiData } from "@/types/turn.types";
 import { ProductTable } from "./ProductTable";
 import { CoffeeTable } from "./CoffeeTable";
 import { TurnExtras } from "./TurnExtras";
+import { ShpenzimiTable } from "./ShpenzimiTable";
 import { ReceiptScanner } from "@/components/ReceiptScanner";
 import { CalculationService } from "@/services/calculations";
 
@@ -32,6 +33,9 @@ interface TurnSectionProps {
   onEditedNameChange: (name: string) => void;
   onSaveEdit: (oldName: string) => void;
   onCancelEdit: () => void;
+  onShpenzimiAdd: (shpenzimi: ShpenzimiData) => void;
+  onShpenzimiRemove: (index: number) => void;
+  onShpenzimiUpdate: (index: number, field: keyof ShpenzimiData, value: string | number) => void;
 }
 
 export const TurnSection = ({
@@ -59,6 +63,9 @@ export const TurnSection = ({
   onEditedNameChange,
   onSaveEdit,
   onCancelEdit,
+  onShpenzimiAdd,
+  onShpenzimiRemove,
+  onShpenzimiUpdate,
 }: TurnSectionProps) => {
   return (
     <div className="space-y-4">
@@ -134,6 +141,22 @@ export const TurnSection = ({
             mulliriPerfundDisabled={isTurnLocked}
             onUpdate={onTurnUpdate}
             onMulliriPerfundUpdate={onMulliriPerfundUpdate}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Shpenzime Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Shpenzime / Anullime - Turni {turnName}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ShpenzimiTable
+            shpenzime={turnData.shpenzime || []}
+            isFieldDisabled={isFieldDisabled}
+            onAdd={onShpenzimiAdd}
+            onRemove={onShpenzimiRemove}
+            onUpdate={onShpenzimiUpdate}
           />
         </CardContent>
       </Card>

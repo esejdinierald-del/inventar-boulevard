@@ -9,6 +9,11 @@ export interface CoffeeData {
   [key: string]: number;
 }
 
+export interface ShpenzimiData {
+  emertimi: string;
+  vlera: number;
+}
+
 export interface TurnData {
   products: {
     [key: string]: ProductData;
@@ -17,6 +22,7 @@ export interface TurnData {
   xhiro: number;
   mulliriFillim: number;
   mulliriPerfund: number;
+  shpenzime: ShpenzimiData[];
 }
 
 export interface FurnizimeData {
