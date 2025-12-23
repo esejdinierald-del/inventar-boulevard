@@ -49,7 +49,7 @@ export const TurnExtras = ({
       </div>
 
       <div className="space-y-2">
-        <Label>Mulliri Fillim (kg)</Label>
+        <Label>Mulliri Fillim (copa)</Label>
         <Input
           type="number"
           step="any"
@@ -62,7 +62,7 @@ export const TurnExtras = ({
         {mulliriFillimDisabled && (
           <p className="text-xs text-muted-foreground">
             📊 {turnData.mulliriFillim > 0 
-              ? `Ngarkuar nga Mulliri Perfund T1: ${turnData.mulliriFillim} kg` 
+              ? `Ngarkuar nga Mulliri Perfund T1: ${turnData.mulliriFillim} copa` 
               : 'Në pritje të Mulliri Perfund nga T1'}
           </p>
         )}
@@ -70,7 +70,7 @@ export const TurnExtras = ({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label>Mulliri Perfund (kg)</Label>
+          <Label>Mulliri Perfund (copa)</Label>
           {!mulliriPerfundDisabled && (
             <GrinderPhotoScanner
               turnName={turnName}
@@ -105,9 +105,13 @@ export const TurnExtras = ({
       </div>
 
       <div className="space-y-2">
-        <Label>Diferenca Mulliri (kg)</Label>
-        <div className="rounded-md border border-input bg-muted px-3 py-2 text-sm font-medium">
-          {mulliriDif}
+        <Label>Diferenca Mulliri (copa)</Label>
+        <div className={`rounded-md border px-3 py-2 text-sm font-medium ${
+          mulliriDif < 0 ? 'border-destructive bg-destructive/10 text-destructive' : 
+          mulliriDif > 0 ? 'border-warning bg-warning/10 text-warning' : 
+          'border-input bg-muted'
+        }`}>
+          {mulliriDif} {mulliriDif < 0 ? '(mungojnë)' : mulliriDif > 0 ? '(tepricë)' : ''}
         </div>
       </div>
     </div>
