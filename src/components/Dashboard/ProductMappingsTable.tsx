@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Loader2, Upload, Edit } from "lucide-react";
+import { Trash2, Loader2, Upload, Edit, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { debounce } from "lodash";
@@ -270,7 +270,7 @@ export const ProductMappingsTable = () => {
               Lista e produkteve nga shiritat e shitjes që janë të mapuara me produktet në sistem
             </p>
           </div>
-          <div>
+          <div className="flex gap-2">
             <input
               ref={fileInputRef}
               type="file"
@@ -281,6 +281,29 @@ export const ProductMappingsTable = () => {
             <Button onClick={() => fileInputRef.current?.click()} variant="outline">
               <Upload className="h-4 w-4 mr-2" />
               Importo
+            </Button>
+            <Button 
+              onClick={() => {
+                const dataStr = JSON.stringify(mappings.map(m => ({
+                  receipt_name: m.receipt_name,
+                  product_type: m.product_type,
+                  product_name: m.product_name,
+                  quantity: m.quantity
+                })), null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `product-mappings-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                URL.revokeObjectURL(url);
+                toast.success('Mapimet u shkarkuan!');
+              }} 
+              variant="outline"
+              disabled={mappings.length === 0}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Eksporto
             </Button>
           </div>
         </div>
