@@ -18,7 +18,6 @@ import { useTurnData } from "@/hooks/useTurnData";
 import { useTurnLock } from "@/hooks/useTurnLock";
 import { useKitchenProducts } from "@/hooks/useKitchenProducts";
 import { useAlcoholicDrinksList } from "@/hooks/useAlcoholicDrinksList";
-import { useAlcoholicDrinks } from "@/hooks/useAlcoholicDrinks";
 import { AlcoholicDrinksService } from "@/services/alcoholic-drinks.service";
 import { TurnData } from "@/types/turn.types";
 
@@ -35,7 +34,6 @@ const DailyEntry = () => {
   const { products, coffeeTypes, addProduct: originalAddProduct, deleteProduct: originalDeleteProduct, updateProduct, addCoffeeType: originalAddCoffeeType, deleteCoffeeType: originalDeleteCoffeeType } = useProductList();
   const { kitchenProducts } = useKitchenProducts();
   const { alcoholicDrinks } = useAlcoholicDrinksList();
-  const { turn1Drinks, turn2Drinks, setTurn1Drinks, setTurn2Drinks } = useAlcoholicDrinks(selectedDate);
   const { lockState, lockTurn, unlockTurn, isTurnLocked, getLockedBy } = useTurnLock(selectedDate);
   const {
     turn1,
@@ -468,8 +466,6 @@ const DailyEntry = () => {
               onMulliriPerfundUpdate={handleMulliriT1Update}
               onCopyToNextTurn={copyT1ToT2}
               onReceiptData={handleReceiptDataT1}
-              onAlcoholicDrinksSalesUpdate={setTurn1Drinks}
-              alcoholicDrinksSales={turn1Drinks}
               onProductDelete={deleteProduct}
               onProductAdd={addProduct}
               onProductEdit={startEditingProduct}
@@ -497,8 +493,6 @@ const DailyEntry = () => {
               onTurnUpdate={updateTurn2Field}
               onMulliriPerfundUpdate={(value) => updateTurn2Field('mulliriPerfund', value)}
               onReceiptData={handleReceiptDataT2}
-              onAlcoholicDrinksSalesUpdate={setTurn2Drinks}
-              alcoholicDrinksSales={turn2Drinks}
               onProductDelete={deleteProduct}
               onProductAdd={addProduct}
               onProductEdit={startEditingProduct}
