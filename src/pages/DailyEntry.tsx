@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Lock, Unlock, Printer, LockKeyhole, UnlockKeyhole } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { ProductMappingManager } from "@/components/ProductMappingManager";
 import { InvoiceMappingManager } from "@/components/InvoiceMappingManager";
 import { AdminPasswordDialog } from "@/components/DailyEntry/AdminPasswordDialog";
@@ -249,9 +250,11 @@ const DailyEntry = () => {
     syncMulliriT1ToT2(value);
   }, [updateTurn1Field, syncMulliriT1ToT2]);
 
-  const handleApplySupplies = useCallback((mapping: any) => {
+  const handleApplySupplies = useCallback(async (mapping: any) => {
     console.log("Applying supplies from mapping:", mapping);
     console.log("Active turn:", activeTurn);
+    
+    const alcoholicUpdates: { name: string; quantity: number }[] = [];
     
     for (const [invoiceName, mappedItem] of Object.entries(mapping)) {
       const item = mappedItem as any;
@@ -268,12 +271,66 @@ const DailyEntry = () => {
           updateTurn2Product(item.name, 'furnizime', quantity);
         }
       } else if (item.type === 'coffee') {
-        // For coffee, we don't have furnizime field in the current structure
-        console.log("Coffee supplies not yet implemented");
+        // Kafeja mbahet në copa - furnizimet janë kg kafe të bluar, jo copa
+        // Do të implementohet si inventar i veçantë nëse nevojitet
+        console.log(`Coffee supplies: ${item.name} x${quantity} (struktura aktuale nuk e mbështet)`);
+        toast.info(`Kafe furnizime: ${item.name} - duhet inventar i veçantë për kg kafe`);
       } else if (item.type === 'kitchen') {
-        console.log("Kitchen supplies not yet implemented");
-      } else if (item.type === 'alcoholic') {
-        console.log("Alcoholic supplies not yet implemented");
+        // Kitchen products nuk kanë inventar në databazë aktualisht
+        console.log(`Kitchen supplies: ${item.name} x${quantity}`);
+      } else if (item.type === 'alcoholic_drink' || item.type === 'alcoholic') {
+        // Grumbullo pijet alkoolike për t'i përditësuar në fund
+        alcoholicUpdates.push({ name: item.name, quantity });
+      }
+    }
+    
+    // Përditëso furnizimet e pijeve alkoolike në databazë
+    if (alcoholicUpdates.length > 0) {
+      console.log("Applying alcoholic drinks furnizime:", alcoholicUpdates);
+      let successCount = 0;
+      
+      for (const update of alcoholicUpdates) {
+        try {
+          // Merr gjendjen aktuale
+          const { data: drink, error: fetchError } = await supabase
+            .from('alcoholic_drinks_inventory')
+            .select('*')
+            .eq('drink_name', update.name)
+            .single();
+          
+          if (fetchError || !drink) {
+            console.warn(`Pije alkoolike nuk u gjet: ${update.name}`);
+            toast.error(`Pije alkoolike nuk u gjet: ${update.name}`);
+            continue;
+          }
+          
+          // Shto furnizimin në gjendjen aktuale
+          const newFurnizime = drink.furnizime + update.quantity;
+          const newGjendje = newFurnizime - drink.shitje;
+          
+          const { error: updateError } = await supabase
+            .from('alcoholic_drinks_inventory')
+            .update({
+              furnizime: newFurnizime,
+              gjendje: newGjendje,
+              updated_at: new Date().toISOString()
+            })
+            .eq('drink_name', update.name);
+          
+          if (updateError) {
+            console.error(`Error updating ${update.name}:`, updateError);
+            toast.error(`Gabim në përditësimin e ${update.name}`);
+          } else {
+            console.log(`✅ Furnizim shtuar: ${update.name} +${update.quantity}, total: ${newFurnizime}, gjendje: ${newGjendje}`);
+            successCount++;
+          }
+        } catch (error) {
+          console.error(`Error processing ${update.name}:`, error);
+        }
+      }
+      
+      if (successCount > 0) {
+        toast.success(`${successCount} pije alkoolike u përditësuan me sukses!`);
       }
     }
   }, [updateTurn1Product, updateTurn2Product, activeTurn]);
