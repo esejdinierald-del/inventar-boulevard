@@ -205,37 +205,61 @@ export const useInvoiceMappings = () => {
   const saveMapping = async (isAdmin: boolean) => {
     if (!isAdmin) {
       toast.error("Vetëm admin mund të ruajë mapimin!");
-      return;
+      return false;
     }
     
     if (Object.keys(invoiceMapping).length === 0) {
       toast.error("Nuk ka asnjë mapping për të ruajtur!");
-      return;
+      return false;
     }
     
     try {
-      // Konverto mapping object në array për insert
-      const mappingsToInsert = Object.entries(invoiceMapping).map(([invoiceName, mapping]) => ({
-        invoice_name: invoiceName,
-        product_type: mapping.type,
-        product_name: mapping.name,
-        quantity: mapping.quantity || 1
-      }));
+      console.log("Saving invoice mappings:", invoiceMapping);
       
-      // Fshij mappings ekzistuese dhe shto të rejat
-      const { error: deleteError } = await supabase
-        .from('invoice_mappings')
-        .delete()
-        .in('invoice_name', Object.keys(invoiceMapping));
+      // Për çdo mapping, bëj upsert (update nëse ekziston, insert nëse jo)
+      for (const [invoiceName, mapping] of Object.entries(invoiceMapping)) {
+        // Kontrollo nëse ekziston
+        const { data: existing } = await supabase
+          .from('invoice_mappings')
+          .select('id')
+          .eq('invoice_name', invoiceName)
+          .maybeSingle();
+        
+        if (existing) {
+          // Update
+          const { error: updateError } = await supabase
+            .from('invoice_mappings')
+            .update({
+              product_type: mapping.type,
+              product_name: mapping.name,
+              quantity: mapping.quantity || 1,
+              updated_at: new Date().toISOString()
+            })
+            .eq('invoice_name', invoiceName);
+          
+          if (updateError) {
+            console.error("Update error:", updateError);
+            throw updateError;
+          }
+        } else {
+          // Insert
+          const { error: insertError } = await supabase
+            .from('invoice_mappings')
+            .insert({
+              invoice_name: invoiceName,
+              product_type: mapping.type,
+              product_name: mapping.name,
+              quantity: mapping.quantity || 1
+            });
+          
+          if (insertError) {
+            console.error("Insert error:", insertError);
+            throw insertError;
+          }
+        }
+      }
       
-      if (deleteError) throw deleteError;
-      
-      const { error: insertError } = await supabase
-        .from('invoice_mappings')
-        .insert(mappingsToInsert);
-      
-      if (insertError) throw insertError;
-      
+      console.log("All mappings saved successfully");
       toast.success("Mapimi i faturave u ruajt me sukses!");
       return true;
     } catch (error) {
