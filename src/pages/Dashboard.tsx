@@ -25,6 +25,11 @@ interface WeeklyData {
   endDate: Date;
 }
 
+interface ProductSales {
+  name: string;
+  quantity: number;
+}
+
 interface MonthlyData {
   totalXhiro: number;
   weeklyBreakdown: WeeklyData[];
@@ -33,6 +38,9 @@ interface MonthlyData {
     turn1_data: TurnData;
     turn2_data: TurnData;
   }>;
+  topProducts: ProductSales[];
+  totalCoffee: number;
+  totalProductsInStock: number;
 }
 
 const Dashboard = () => {
@@ -42,7 +50,10 @@ const Dashboard = () => {
   const [monthlyData, setMonthlyData] = useState<MonthlyData>({
     totalXhiro: 0,
     weeklyBreakdown: [],
-    entries: []
+    entries: [],
+    topProducts: [],
+    totalCoffee: 0,
+    totalProductsInStock: 0
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -113,13 +124,52 @@ const Dashboard = () => {
         };
       });
 
-      // Calculate total
+      // Calculate total xhiro and aggregate product sales
       let totalXhiro = 0;
+      let totalCoffee = 0;
+      const productSalesMap: { [key: string]: number } = {};
+      let latestStockData: { [key: string]: number } = {};
+      
       entries?.forEach(entry => {
         const turn1 = entry.turn1_data as unknown as TurnData;
         const turn2 = entry.turn2_data as unknown as TurnData;
         totalXhiro += (turn1?.xhiro || 0) + (turn2?.xhiro || 0);
+        
+        // Aggregate coffee sales
+        if (turn1?.coffee) {
+          Object.values(turn1.coffee).forEach(qty => {
+            totalCoffee += qty || 0;
+          });
+        }
+        if (turn2?.coffee) {
+          Object.values(turn2.coffee).forEach(qty => {
+            totalCoffee += qty || 0;
+          });
+        }
+        
+        // Aggregate product sales (shiriti = sold)
+        if (turn1?.products) {
+          Object.entries(turn1.products).forEach(([name, data]) => {
+            productSalesMap[name] = (productSalesMap[name] || 0) + (data.shiriti || 0);
+          });
+        }
+        if (turn2?.products) {
+          Object.entries(turn2.products).forEach(([name, data]) => {
+            productSalesMap[name] = (productSalesMap[name] || 0) + (data.shiriti || 0);
+            // Keep track of latest stock (gjendje from last entry)
+            latestStockData[name] = data.gjendje || 0;
+          });
+        }
       });
+      
+      // Get top 5 selling products
+      const topProducts: ProductSales[] = Object.entries(productSalesMap)
+        .map(([name, quantity]) => ({ name, quantity }))
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 5);
+      
+      // Calculate total products in stock from latest entry
+      const totalProductsInStock = Object.values(latestStockData).reduce((sum, qty) => sum + qty, 0);
 
       setMonthlyData({
         totalXhiro,
@@ -128,7 +178,10 @@ const Dashboard = () => {
           entry_date: e.entry_date,
           turn1_data: e.turn1_data as unknown as TurnData,
           turn2_data: e.turn2_data as unknown as TurnData
-        })) || []
+        })) || [],
+        topProducts,
+        totalCoffee,
+        totalProductsInStock
       });
     } catch (error) {
       console.error('Error:', error);
@@ -235,12 +288,12 @@ const Dashboard = () => {
           />
           <StatsCard
             title="Produkte në Stok"
-            value="0"
+            value={isLoading ? "..." : `${monthlyData.totalProductsInStock}`}
             icon={<Package className="h-4 w-4" />}
           />
           <StatsCard
-            title="Furnizime Aktive"
-            value="0"
+            title="Total Kafe Shitur"
+            value={isLoading ? "..." : `${monthlyData.totalCoffee} copa`}
             icon={<ShoppingCart className="h-4 w-4" />}
           />
         </div>
@@ -274,25 +327,28 @@ const Dashboard = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Produktet Më të Shitura</CardTitle>
+              <CardTitle>Produktet Më të Shitura - {format(selectedMonth, 'MMMM', { locale: sq })}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Kafe</span>
-                  <span className="text-sm font-medium">0 copë</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Kanace</span>
-                  <span className="text-sm font-medium">0 copë</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Heineken 330</span>
-                  <span className="text-sm font-medium">0 copë</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Red Bull</span>
-                  <span className="text-sm font-medium">0 copë</span>
+                {monthlyData.topProducts.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nuk ka të dhëna për këtë muaj</p>
+                ) : (
+                  monthlyData.topProducts.map((product, index) => (
+                    <div key={product.name} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold bg-primary/10 text-primary rounded-full w-5 h-5 flex items-center justify-center">
+                          {index + 1}
+                        </span>
+                        <span className="text-sm text-muted-foreground">{product.name}</span>
+                      </div>
+                      <span className="text-sm font-medium">{product.quantity} copë</span>
+                    </div>
+                  ))
+                )}
+                <div className="border-t pt-4 flex items-center justify-between">
+                  <span className="font-medium">Total Kafe</span>
+                  <span className="text-lg font-bold text-primary">{monthlyData.totalCoffee} copa</span>
                 </div>
               </div>
             </CardContent>
