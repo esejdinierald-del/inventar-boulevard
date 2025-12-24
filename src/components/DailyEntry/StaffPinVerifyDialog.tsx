@@ -57,14 +57,13 @@ export const StaffPinVerifyDialog = ({
     }
   };
 
-  const handleClose = () => {
-    setPin("");
-    onOpenChange(false);
-  };
-
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent>
+    <Dialog open={open} onOpenChange={() => {}}>
+      <DialogContent 
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        className="[&>button]:hidden"
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Lock className="h-5 w-5 text-primary" />
@@ -97,10 +96,7 @@ export const StaffPinVerifyDialog = ({
               autoFocus
             />
           </div>
-          <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={handleClose} disabled={isVerifying}>
-              Anulo
-            </Button>
+          <div className="flex justify-end">
             <Button onClick={handleVerify} disabled={isVerifying || pin.length !== 4}>
               {isVerifying ? 'Duke verifikuar...' : 'Verifiko'}
             </Button>
