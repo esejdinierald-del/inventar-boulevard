@@ -41,6 +41,7 @@ interface MonthlyData {
   topProducts: ProductSales[];
   totalCoffee: number;
   totalProductsInStock: number;
+  totalExpenses: number;
 }
 
 const Dashboard = () => {
@@ -53,7 +54,8 @@ const Dashboard = () => {
     entries: [],
     topProducts: [],
     totalCoffee: 0,
-    totalProductsInStock: 0
+    totalProductsInStock: 0,
+    totalExpenses: 0
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -95,6 +97,19 @@ const Dashboard = () => {
         toast.error('Gabim në ngarkimin e të dhënave');
         return;
       }
+
+      // Load expenses for the month
+      const { data: expenses, error: expensesError } = await supabase
+        .from('expenses')
+        .select('cost')
+        .gte('expense_date', startDate)
+        .lte('expense_date', endDate);
+
+      if (expensesError) {
+        console.error('Error loading expenses:', expensesError);
+      }
+
+      const totalExpenses = expenses?.reduce((sum, exp) => sum + Number(exp.cost || 0), 0) || 0;
 
       // Calculate weekly breakdown
       const monthStart = startOfMonth(selectedMonth);
@@ -181,7 +196,8 @@ const Dashboard = () => {
         })) || [],
         topProducts,
         totalCoffee,
-        totalProductsInStock
+        totalProductsInStock,
+        totalExpenses
       });
     } catch (error) {
       console.error('Error:', error);
@@ -275,11 +291,16 @@ const Dashboard = () => {
         </Card>
 
         {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <StatsCard
             title={`Xhiro Progresive - ${format(selectedMonth, 'MMMM', { locale: sq })}`}
             value={isLoading ? "Duke ngarkuar..." : `${monthlyData.totalXhiro.toLocaleString()} ALL`}
             icon={<DollarSign className="h-4 w-4" />}
+          />
+          <StatsCard
+            title="Shpenzime Mujore"
+            value={isLoading ? "..." : `${monthlyData.totalExpenses.toLocaleString()} ALL`}
+            icon={<ShoppingCart className="h-4 w-4" />}
           />
           <StatsCard
             title="Ditë me Regjistrime"
