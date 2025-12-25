@@ -5,25 +5,23 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { CalendarIcon, Download, FileText } from "lucide-react";
-import { format, startOfMonth, endOfMonth } from "date-fns";
-import { sq } from "date-fns/locale";
+import { format, startOfMonth, endOfMonth, parseISO, isWithinInterval } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { TurnData, ShpenzimiData } from "@/types/turn.types";
 
-interface Expense {
-  id: string;
-  expense_date: string;
-  product_name: string;
-  cost: number;
-  category: string | null;
-  notes: string | null;
+interface DailyExpenseItem {
+  date: string;
+  turn: string;
+  emertimi: string;
+  vlera: number;
 }
 
 export const ExpensesReport = () => {
   const [fromDate, setFromDate] = useState<Date>(startOfMonth(new Date()));
   const [toDate, setToDate] = useState<Date>(endOfMonth(new Date()));
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expenses, setExpenses] = useState<DailyExpenseItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -34,19 +32,55 @@ export const ExpensesReport = () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
-        .from('expenses')
-        .select('*')
-        .gte('expense_date', format(fromDate, 'yyyy-MM-dd'))
-        .lte('expense_date', format(toDate, 'yyyy-MM-dd'))
-        .order('expense_date', { ascending: false });
+        .from('daily_entries')
+        .select('entry_date, turn1_data, turn2_data')
+        .gte('entry_date', format(fromDate, 'yyyy-MM-dd'))
+        .lte('entry_date', format(toDate, 'yyyy-MM-dd'))
+        .order('entry_date', { ascending: false });
 
       if (error) {
-        console.error('Error loading expenses:', error);
+        console.error('Error loading daily entries:', error);
         toast.error('Gabim në ngarkimin e shpenzimeve');
         return;
       }
 
-      setExpenses(data || []);
+      // Extract shpenzime from each turn
+      const allExpenses: DailyExpenseItem[] = [];
+      
+      data?.forEach(entry => {
+        const t1 = entry.turn1_data as unknown as TurnData;
+        const t2 = entry.turn2_data as unknown as TurnData;
+        
+        // Get T1 shpenzime
+        if (t1?.shpenzime && Array.isArray(t1.shpenzime)) {
+          t1.shpenzime.forEach((shp: ShpenzimiData) => {
+            if (shp.emertimi && shp.vlera > 0) {
+              allExpenses.push({
+                date: entry.entry_date,
+                turn: 'T1',
+                emertimi: shp.emertimi,
+                vlera: shp.vlera
+              });
+            }
+          });
+        }
+        
+        // Get T2 shpenzime
+        if (t2?.shpenzime && Array.isArray(t2.shpenzime)) {
+          t2.shpenzime.forEach((shp: ShpenzimiData) => {
+            if (shp.emertimi && shp.vlera > 0) {
+              allExpenses.push({
+                date: entry.entry_date,
+                turn: 'T2',
+                emertimi: shp.emertimi,
+                vlera: shp.vlera
+              });
+            }
+          });
+        }
+      });
+
+      setExpenses(allExpenses);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -54,7 +88,7 @@ export const ExpensesReport = () => {
     }
   };
 
-  const totalExpenses = expenses.reduce((sum, exp) => sum + Number(exp.cost || 0), 0);
+  const totalExpenses = expenses.reduce((sum, exp) => sum + exp.vlera, 0);
 
   const exportExpenses = () => {
     if (expenses.length === 0) {
@@ -62,19 +96,18 @@ export const ExpensesReport = () => {
       return;
     }
 
-    let csvContent = "Data,Produkti,Kategoria,Shuma,Shënime\n";
+    let csvContent = "Data,Turni,Emërtimi,Vlera\n";
     
     expenses.forEach(exp => {
-      const notes = exp.notes ? `"${exp.notes.replace(/"/g, '""')}"` : '';
-      csvContent += `${exp.expense_date},${exp.product_name},${exp.category || ''},${exp.cost},${notes}\n`;
+      csvContent += `${exp.date},${exp.turn},${exp.emertimi},${exp.vlera}\n`;
     });
 
-    csvContent += `\nTotal,,,"${totalExpenses} ALL",`;
+    csvContent += `\nTotal,,,${totalExpenses} ALL`;
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `shpenzime-${format(fromDate, 'yyyy-MM-dd')}-${format(toDate, 'yyyy-MM-dd')}.csv`;
+    link.download = `shpenzime-turni-${format(fromDate, 'yyyy-MM-dd')}-${format(toDate, 'yyyy-MM-dd')}.csv`;
     link.click();
     toast.success('Shpenzimet u eksportuan me sukses');
   };
@@ -84,7 +117,7 @@ export const ExpensesReport = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="h-5 w-5" />
-          Raporti i Shpenzimeve
+          Raporti i Shpenzimeve të Turnit
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -154,36 +187,41 @@ export const ExpensesReport = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Data</TableHead>
-                <TableHead>Produkti</TableHead>
-                <TableHead>Kategoria</TableHead>
-                <TableHead className="text-right">Shuma</TableHead>
-                <TableHead>Shënime</TableHead>
+                <TableHead>Turni</TableHead>
+                <TableHead>Emërtimi</TableHead>
+                <TableHead className="text-right">Vlera</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                     Duke ngarkuar...
                   </TableCell>
                 </TableRow>
               ) : expenses.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                     Nuk ka shpenzime për periudhën e zgjedhur
                   </TableCell>
                 </TableRow>
               ) : (
-                expenses.map((exp) => (
-                  <TableRow key={exp.id}>
-                    <TableCell>{format(new Date(exp.expense_date), "dd/MM/yyyy")}</TableCell>
-                    <TableCell className="font-medium">{exp.product_name}</TableCell>
-                    <TableCell>{exp.category || '-'}</TableCell>
-                    <TableCell className="text-right text-destructive font-semibold">
-                      {Number(exp.cost).toLocaleString()} ALL
+                expenses.map((exp, index) => (
+                  <TableRow key={`${exp.date}-${exp.turn}-${index}`}>
+                    <TableCell>{format(new Date(exp.date), "dd/MM/yyyy")}</TableCell>
+                    <TableCell>
+                      <span className={cn(
+                        "px-2 py-1 rounded text-xs font-medium",
+                        exp.turn === 'T1' 
+                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                          : "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                      )}>
+                        {exp.turn}
+                      </span>
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">
-                      {exp.notes || '-'}
+                    <TableCell className="font-medium">{exp.emertimi}</TableCell>
+                    <TableCell className="text-right text-destructive font-semibold">
+                      {exp.vlera.toLocaleString()} ALL
                     </TableCell>
                   </TableRow>
                 ))
@@ -196,7 +234,6 @@ export const ExpensesReport = () => {
                   <TableCell className="text-right font-bold text-destructive text-lg">
                     {totalExpenses.toLocaleString()} ALL
                   </TableCell>
-                  <TableCell></TableCell>
                 </TableRow>
               </TableFooter>
             )}
