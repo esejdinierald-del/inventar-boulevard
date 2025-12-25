@@ -627,14 +627,24 @@ const DailyEntry = () => {
                   </div>
                   
                   {totalShpenzime > 0 && (
-                    <div className="mt-4 pt-4 border-t grid gap-4 md:grid-cols-3 print:grid-cols-3">
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground print:text-gray-600">Total Shpenzime</p>
-                        <p className="text-xl font-semibold text-destructive">- {totalShpenzime.toLocaleString()} ALL</p>
-                      </div>
-                      <div className="space-y-1 md:col-span-2">
-                        <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro Neto (pas zbritjeve)</p>
-                        <p className="text-2xl font-bold text-primary">{xhiroNeto.toLocaleString()} ALL</p>
+                    <div className="mt-4 pt-4 border-t space-y-4">
+                      <div className="grid gap-4 md:grid-cols-4 print:grid-cols-4">
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground print:text-gray-600">Shpenzime T1</p>
+                          <p className="text-lg font-semibold text-destructive">- {totalShpenzimeT1.toLocaleString()} ALL</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground print:text-gray-600">Shpenzime T2</p>
+                          <p className="text-lg font-semibold text-destructive">- {totalShpenzimeT2.toLocaleString()} ALL</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground print:text-gray-600">Total Shpenzime</p>
+                          <p className="text-xl font-bold text-destructive">- {totalShpenzime.toLocaleString()} ALL</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro Neto</p>
+                          <p className="text-2xl font-bold text-primary">{xhiroNeto.toLocaleString()} ALL</p>
+                        </div>
                       </div>
                     </div>
                   )}
