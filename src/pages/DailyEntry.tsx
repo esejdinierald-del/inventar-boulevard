@@ -611,24 +611,27 @@ const DailyEntry = () => {
               
               return (
                 <>
-                  <div className="grid gap-4 md:grid-cols-3 print:grid-cols-3">
-                    <div className="space-y-1 print:border-r print:border-gray-300 print:pr-4">
-                      <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro Totale</p>
-                      <p className="text-2xl font-bold print:text-3xl">{totalXhiro.toLocaleString()} ALL</p>
+                  {/* Llogaritja: Bruto - Shpenzime = Neto */}
+                  <div className="space-y-4">
+                    {/* Xhiro Bruto sipas turneve */}
+                    <div className="grid gap-4 md:grid-cols-3 print:grid-cols-3">
+                      <div className="space-y-1 print:border-r print:border-gray-300 print:pr-4">
+                        <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro Bruto</p>
+                        <p className="text-2xl font-bold print:text-3xl">{totalXhiro.toLocaleString()} ALL</p>
+                      </div>
+                      <div className="space-y-1 print:border-r print:border-gray-300 print:px-4">
+                        <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro T1</p>
+                        <p className="text-xl font-semibold">{turn1.xhiro.toLocaleString()} ALL</p>
+                      </div>
+                      <div className="space-y-1 print:pl-4">
+                        <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro T2</p>
+                        <p className="text-xl font-semibold">{turn2.xhiro.toLocaleString()} ALL</p>
+                      </div>
                     </div>
-                    <div className="space-y-1 print:border-r print:border-gray-300 print:px-4">
-                      <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro T1</p>
-                      <p className="text-xl font-semibold">{turn1.xhiro.toLocaleString()} ALL</p>
-                    </div>
-                    <div className="space-y-1 print:pl-4">
-                      <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro T2</p>
-                      <p className="text-xl font-semibold">{turn2.xhiro.toLocaleString()} ALL</p>
-                    </div>
-                  </div>
-                  
-                  {totalShpenzime > 0 && (
-                    <div className="mt-4 pt-4 border-t space-y-4">
-                      <div className="grid gap-4 md:grid-cols-4 print:grid-cols-4">
+                    
+                    {/* Shpenzime sipas turneve */}
+                    <div className="pt-4 border-t">
+                      <div className="grid gap-4 md:grid-cols-3 print:grid-cols-3">
                         <div className="space-y-1">
                           <p className="text-sm text-muted-foreground print:text-gray-600">Shpenzime T1</p>
                           <p className="text-lg font-semibold text-destructive">- {totalShpenzimeT1.toLocaleString()} ALL</p>
@@ -641,13 +644,21 @@ const DailyEntry = () => {
                           <p className="text-sm text-muted-foreground print:text-gray-600">Total Shpenzime</p>
                           <p className="text-xl font-bold text-destructive">- {totalShpenzime.toLocaleString()} ALL</p>
                         </div>
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro Neto</p>
-                          <p className="text-2xl font-bold text-primary">{xhiroNeto.toLocaleString()} ALL</p>
-                        </div>
                       </div>
                     </div>
-                  )}
+                    
+                    {/* Formula finale: Bruto - Shpenzime = Neto */}
+                    <div className="pt-4 border-t bg-muted/30 rounded-lg p-4 print:bg-gray-100">
+                      <div className="flex flex-wrap items-center justify-center gap-2 text-lg md:text-xl font-semibold">
+                        <span>{totalXhiro.toLocaleString()}</span>
+                        <span className="text-muted-foreground">−</span>
+                        <span className="text-destructive">{totalShpenzime.toLocaleString()}</span>
+                        <span className="text-muted-foreground">=</span>
+                        <span className="text-primary text-2xl font-bold">{xhiroNeto.toLocaleString()} ALL</span>
+                      </div>
+                      <p className="text-center text-sm text-muted-foreground mt-2">Bruto − Shpenzime = Xhiro Neto</p>
+                    </div>
+                  </div>
                 </>
               );
             })()}
