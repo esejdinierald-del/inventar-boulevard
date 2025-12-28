@@ -258,11 +258,12 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
   }, [turn1, turn2, selectedDate, setSaveStatus]);
 
   // Auto-sync T1 stock to T2 when T1 changes AND propagate if past date
+  // KRITIKE: Përdor T1.gjendje (vlera aktuale e numëruar) si T2.stokFillim
   useEffect(() => {
     if (isInitialLoad.current) return;
     
     const syncAndPropagate = async () => {
-      console.log('🔄 Syncing T1 → T2');
+      console.log('🔄 Syncing T1 → T2 (using gjendje as stokFillim)');
       setTurn2(prev => {
         const newT2 = {
           ...prev,
@@ -270,9 +271,10 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
             Object.entries(prev.products).map(([key, data]) => {
               const t1Data = turn1.products[key];
               if (t1Data) {
-                const calculatedStock = CalculationService.calculateNewStock(t1Data);
-                console.log(`  ${key}: ${t1Data.stokFillim} + ${t1Data.furnizime} - ${t1Data.shiriti} = ${calculatedStock}`);
-                return [key, { ...data, stokFillim: calculatedStock }];
+                // KRITIKE: Përdor gjendje (vlera reale e numëruar) jo llogaritje teorike
+                const newStokFillim = t1Data.gjendje;
+                console.log(`  ${key}: T1.gjendje = ${t1Data.gjendje} → T2.stokFillim`);
+                return [key, { ...data, stokFillim: newStokFillim }];
               }
               return [key, data];
             })
@@ -387,19 +389,19 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     }));
   }, []);
 
-  // Copy T1 stock to T2
+  // Copy T1 stock to T2 - përdor gjendje (vlera reale) jo llogaritje teorike
   const copyT1ToT2 = useCallback(() => {
     setTurn2(prev => ({
       ...prev,
       products: Object.fromEntries(
         Object.entries(prev.products).map(([key, data]) => {
           const t1Data = turn1.products[key];
-          const calculatedStock = CalculationService.calculateNewStock(t1Data);
-          return [key, { ...data, stokFillim: calculatedStock }];
+          // KRITIKE: Përdor gjendje (vlera reale e numëruar)
+          return [key, { ...data, stokFillim: t1Data.gjendje }];
         })
       )
     }));
-    toast.success("Stoku i T1 u kalkulua dhe u kopjua në T2");
+    toast.success("Gjendje e T1 u kopjua në T2 stokFillim");
   }, [turn1]);
 
   // Save current day data
