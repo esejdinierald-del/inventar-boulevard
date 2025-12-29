@@ -261,9 +261,9 @@ export class StorageService {
         const mapping: MappingData = {};
         data.forEach(item => {
           mapping[item.receipt_name] = {
-            type: item.product_type as 'product' | 'coffee',
+            type: item.product_type as 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink',
             name: item.product_name,
-            quantity: item.quantity
+            quantity: item.quantity || 1
           };
         });
         return mapping;
@@ -279,7 +279,7 @@ export class StorageService {
           converted[key] = { type: 'product', name: value, quantity: 1 };
         } else if (value && typeof value === 'object' && 'type' in value && 'name' in value) {
           converted[key] = { 
-            type: value.type as 'product' | 'coffee', 
+            type: value.type as 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink', 
             name: value.name as string, 
             quantity: (value as any).quantity || 1 
           };
