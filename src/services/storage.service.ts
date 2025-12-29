@@ -135,9 +135,9 @@ export class StorageService {
         .from('next_day_stock')
         .select('stock_data')
         .eq('stock_date', date)
-        .single();
+        .maybeSingle();
       
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) throw error;
       
       if (data) {
         return data.stock_data as { [key: string]: number };
@@ -194,9 +194,9 @@ export class StorageService {
         .from('next_day_stock')
         .select('mulliri_fillim')
         .eq('stock_date', date)
-        .single();
+        .maybeSingle();
       
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) throw error;
       
       if (data) {
         return data.mulliri_fillim;
