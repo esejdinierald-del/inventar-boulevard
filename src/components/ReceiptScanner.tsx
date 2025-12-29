@@ -147,6 +147,18 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
                   ...prev,
                   [index.toString()]: { type: 'coffee', name: matchedCoffee, quantity: 1 }
                 }));
+              } else {
+                // Try smart matching for alcoholic drinks
+                const matchedDrink = alcoholicDrinks.find(d => 
+                  d.toLowerCase().includes(item.name.toLowerCase()) ||
+                  item.name.toLowerCase().includes(d.toLowerCase())
+                );
+                if (matchedDrink) {
+                  setMappedData(prev => ({
+                    ...prev,
+                    [index.toString()]: { type: 'alcoholic_drink', name: matchedDrink, quantity: 1 }
+                  }));
+                }
               }
             }
           }
@@ -474,7 +486,7 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
                             </div>
                             {isMapped && (
                               <div className="text-xs text-green-600">
-                                ✓ {mapping.type === 'product' ? '📦 Produkt' : '☕ Kafe'}: {mapping.name} x{mapping.quantity}
+                                ✓ {mapping.type === 'product' ? '📦 Produkt' : mapping.type === 'coffee' ? '☕ Kafe' : '🍸 Pije Alkoolike'}: {mapping.name} x{mapping.quantity}
                               </div>
                             )}
                           </div>
