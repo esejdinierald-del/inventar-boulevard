@@ -24,7 +24,7 @@ interface TurnSectionProps {
   onTurnUpdate: (field: keyof TurnData, value: number) => void;
   onMulliriPerfundUpdate?: (value: number) => void;
   onCopyToNextTurn?: () => void;
-  onReceiptData: (productData: { [key: string]: number }, coffeeData: { [key: string]: number }, alcoholicDrinksData?: { [key: string]: number }) => void;
+  onReceiptData: (productData: { [key: string]: number }, coffeeData: { [key: string]: number }, alcoholicDrinksData?: { [key: string]: number }, total?: number) => void;
   onProductDelete?: (product: string) => void | Promise<void>;
   onProductAdd?: (productName: string) => boolean | Promise<boolean>;
   onProductEdit?: (product: string) => void;
