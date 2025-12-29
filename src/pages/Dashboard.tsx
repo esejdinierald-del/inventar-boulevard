@@ -15,6 +15,7 @@ import { StaffTurnPinsManager } from "@/components/Dashboard/StaffTurnPinsManage
 import { AdminSettingsCard } from "@/components/Dashboard/AdminSettingsCard";
 import { ExpensesReport } from "@/components/Dashboard/ExpensesReport";
 import { ProductsManager } from "@/components/Dashboard/ProductsManager";
+import { FixedExpensesManager } from "@/components/Dashboard/FixedExpensesManager";
 import { supabase } from "@/integrations/supabase/client";
 import { TurnData } from "@/types/turn.types";
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, eachWeekOfInterval, startOfWeek, endOfWeek, isWithinInterval, parseISO } from "date-fns";
@@ -392,6 +393,9 @@ const Dashboard = () => {
 
         {/* Staff Turn PINs Manager */}
         <StaffTurnPinsManager />
+
+        {/* Fixed Expenses Manager */}
+        <FixedExpensesManager />
 
         {/* Expenses Report with Date Range */}
         <ExpensesReport />
