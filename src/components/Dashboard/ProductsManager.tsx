@@ -3,19 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChefHat, Trash2, Edit2, Check, X } from "lucide-react";
+import { Package, Trash2, Edit2, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-interface KitchenProduct {
+interface Product {
   id: string;
   name: string;
   purchase_price: number;
   sort_order: number;
 }
 
-export const KitchenProductsManager = () => {
-  const [products, setProducts] = useState<KitchenProduct[]>([]);
+export const ProductsManager = () => {
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newProductName, setNewProductName] = useState("");
   const [newPurchasePrice, setNewPurchasePrice] = useState("");
@@ -31,14 +31,14 @@ export const KitchenProductsManager = () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
-        .from('kitchen_products')
+        .from('products')
         .select('id, name, purchase_price, sort_order')
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
       setProducts(data || []);
     } catch (error) {
-      console.error('Error loading kitchen products:', error);
+      console.error('Error loading products:', error);
       toast.error('Gabim në ngarkimin e produkteve');
     } finally {
       setIsLoading(false);
@@ -60,7 +60,7 @@ export const KitchenProductsManager = () => {
     try {
       const maxSortOrder = Math.max(...products.map(p => p.sort_order), 0);
       const { error } = await supabase
-        .from('kitchen_products')
+        .from('products')
         .insert({
           name: trimmed,
           purchase_price: parseFloat(newPurchasePrice) || 0,
@@ -79,7 +79,7 @@ export const KitchenProductsManager = () => {
     }
   };
 
-  const startEdit = (product: KitchenProduct) => {
+  const startEdit = (product: Product) => {
     setEditingProduct(product.id);
     setEditedName(product.name);
     setEditedPrice(String(product.purchase_price || 0));
@@ -94,7 +94,7 @@ export const KitchenProductsManager = () => {
 
     try {
       const { error } = await supabase
-        .from('kitchen_products')
+        .from('products')
         .update({
           name: trimmed,
           purchase_price: parseFloat(editedPrice) || 0
@@ -121,7 +121,7 @@ export const KitchenProductsManager = () => {
   const deleteProduct = async (productId: string) => {
     try {
       const { error } = await supabase
-        .from('kitchen_products')
+        .from('products')
         .delete()
         .eq('id', productId);
 
@@ -138,7 +138,7 @@ export const KitchenProductsManager = () => {
   const updatePrice = async (productId: string, price: number) => {
     try {
       const { error } = await supabase
-        .from('kitchen_products')
+        .from('products')
         .update({ purchase_price: price })
         .eq('id', productId);
 
@@ -155,8 +155,8 @@ export const KitchenProductsManager = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ChefHat className="h-5 w-5" />
-            Produktet e Kuzhinës
+            <Package className="h-5 w-5" />
+            Produktet e Barit
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -170,11 +170,11 @@ export const KitchenProductsManager = () => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <ChefHat className="h-5 w-5" />
-          Produktet e Kuzhinës
+          <Package className="h-5 w-5" />
+          Produktet e Barit
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Këta produkte shfaqen vetëm në faturë dhe nuk duken te kamarieri
+          Menaxho produktet dhe çmimet e blerjes për njësi
         </p>
       </CardHeader>
       <CardContent>
@@ -293,7 +293,7 @@ export const KitchenProductsManager = () => {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground text-center py-8">
-              Nuk ka produkte. Shto produktin e parë të kuzhinës!
+              Nuk ka produkte. Shto produktin e parë!
             </p>
           )}
         </div>

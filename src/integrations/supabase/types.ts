@@ -21,6 +21,7 @@ export type Database = {
           furnizime: number
           gjendje: number
           id: string
+          purchase_price: number | null
           shitje: number
           sort_order: number | null
           updated_at: string | null
@@ -31,6 +32,7 @@ export type Database = {
           furnizime?: number
           gjendje?: number
           id?: string
+          purchase_price?: number | null
           shitje?: number
           sort_order?: number | null
           updated_at?: string | null
@@ -41,6 +43,7 @@ export type Database = {
           furnizime?: number
           gjendje?: number
           id?: string
+          purchase_price?: number | null
           shitje?: number
           sort_order?: number | null
           updated_at?: string | null
@@ -52,18 +55,21 @@ export type Database = {
           created_at: string | null
           id: string
           name: string
+          purchase_price: number | null
           sort_order: number | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           name: string
+          purchase_price?: number | null
           sort_order?: number | null
         }
         Update: {
           created_at?: string | null
           id?: string
           name?: string
+          purchase_price?: number | null
           sort_order?: number | null
         }
         Relationships: []
@@ -208,18 +214,21 @@ export type Database = {
           created_at: string | null
           id: string
           name: string
+          purchase_price: number | null
           sort_order: number | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           name: string
+          purchase_price?: number | null
           sort_order?: number | null
         }
         Update: {
           created_at?: string | null
           id?: string
           name?: string
+          purchase_price?: number | null
           sort_order?: number | null
         }
         Relationships: []
@@ -286,18 +295,21 @@ export type Database = {
           created_at: string | null
           id: string
           name: string
+          purchase_price: number | null
           sort_order: number | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           name: string
+          purchase_price?: number | null
           sort_order?: number | null
         }
         Update: {
           created_at?: string | null
           id?: string
           name?: string
+          purchase_price?: number | null
           sort_order?: number | null
         }
         Relationships: []
