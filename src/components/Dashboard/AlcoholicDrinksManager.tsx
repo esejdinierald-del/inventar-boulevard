@@ -15,11 +15,12 @@ interface AlcoholicDrink {
   gjendje: number;
   sort_order: number;
   updated_at: string;
+  purchase_price: number;
 }
 
 interface DrinkRowProps {
   drink: AlcoholicDrink;
-  onUpdate: (id: string, field: 'furnizime' | 'shitje' | 'gjendje', value: number) => void;
+  onUpdate: (id: string, field: 'furnizime' | 'shitje' | 'gjendje' | 'purchase_price', value: number) => void;
   onDelete: (id: string) => void;
 }
 
@@ -27,25 +28,27 @@ const DrinkRow = ({ drink, onUpdate, onDelete }: DrinkRowProps) => {
   const [values, setValues] = useState({
     furnizime: String(drink.furnizime),
     shitje: String(drink.shitje),
-    gjendje: String(drink.gjendje)
+    gjendje: String(drink.gjendje),
+    purchase_price: String(drink.purchase_price || 0)
   });
 
   useEffect(() => {
     setValues({
       furnizime: String(drink.furnizime),
       shitje: String(drink.shitje),
-      gjendje: String(drink.gjendje)
+      gjendje: String(drink.gjendje),
+      purchase_price: String(drink.purchase_price || 0)
     });
-  }, [drink.furnizime, drink.shitje, drink.gjendje]);
+  }, [drink.furnizime, drink.shitje, drink.gjendje, drink.purchase_price]);
 
-  const handleChange = (field: 'furnizime' | 'shitje' | 'gjendje', value: string) => {
+  const handleChange = (field: 'furnizime' | 'shitje' | 'gjendje' | 'purchase_price', value: string) => {
     // Allow numbers with decimal (both . and ,)
     if (value === '' || /^-?\d*[.,]?\d*$/.test(value)) {
       setValues(prev => ({ ...prev, [field]: value }));
     }
   };
 
-  const handleBlur = (field: 'furnizime' | 'shitje' | 'gjendje') => {
+  const handleBlur = (field: 'furnizime' | 'shitje' | 'gjendje' | 'purchase_price') => {
     // Convert comma to dot for parsing
     const normalizedValue = values[field].replace(',', '.');
     const numValue = parseFloat(normalizedValue) || 0;
@@ -57,6 +60,16 @@ const DrinkRow = ({ drink, onUpdate, onDelete }: DrinkRowProps) => {
   return (
     <tr className="border-b">
       <td className="p-3 font-medium">{drink.drink_name}</td>
+      <td className="p-3">
+        <Input
+          type="text"
+          inputMode="numeric"
+          value={values.purchase_price}
+          onChange={(e) => handleChange('purchase_price', e.target.value)}
+          onBlur={() => handleBlur('purchase_price')}
+          className="w-24"
+        />
+      </td>
       <td className="p-3">
         <Input
           type="text"
@@ -117,7 +130,7 @@ export const AlcoholicDrinksManager = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('alcoholic_drinks_inventory')
-        .select('id, drink_name, furnizime, shitje, gjendje, sort_order, updated_at')
+        .select('id, drink_name, furnizime, shitje, gjendje, sort_order, updated_at, purchase_price')
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
@@ -159,7 +172,7 @@ export const AlcoholicDrinksManager = () => {
     }
   };
 
-  const updateDrink = async (id: string, field: 'furnizime' | 'shitje' | 'gjendje', value: number) => {
+  const updateDrink = async (id: string, field: 'furnizime' | 'shitje' | 'gjendje' | 'purchase_price', value: number) => {
     try {
       const { error } = await supabase
         .from('alcoholic_drinks_inventory')
@@ -219,6 +232,7 @@ export const AlcoholicDrinksManager = () => {
               <thead>
                 <tr className="border-b bg-muted/50">
                   <th className="p-3 text-left font-medium">Pija</th>
+                  <th className="p-3 text-left font-medium">Çmim Blerje</th>
                   <th className="p-3 text-left font-medium">Furnizim</th>
                   <th className="p-3 text-left font-medium">Shitje</th>
                   <th className="p-3 text-left font-medium">Gjendje</th>
