@@ -174,20 +174,27 @@ export const AlcoholicDrinksManager = () => {
 
   const updateDrink = async (id: string, field: 'furnizime' | 'shitje' | 'gjendje' | 'purchase_price', value: number) => {
     try {
-      const drink = drinks.find(d => d.id === id);
-      if (!drink) return;
+      // Merr të dhënat aktuale nga databaza për saktësi
+      const { data: currentDrink, error: fetchError } = await supabase
+        .from('alcoholic_drinks_inventory')
+        .select('furnizime, shitje, gjendje')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+      if (!currentDrink) return;
 
       // Llogarit gjendjen automatikisht kur ndryshon furnizimi ose shitja
       let updateData: Record<string, number> = { [field]: value };
       
       if (field === 'furnizime') {
         // Gjendje += furnizim i ri - furnizim i vjetër
-        const diff = value - drink.furnizime;
-        updateData.gjendje = drink.gjendje + diff;
+        const diff = value - currentDrink.furnizime;
+        updateData.gjendje = currentDrink.gjendje + diff;
       } else if (field === 'shitje') {
         // Gjendje -= shitje e re - shitje e vjetër
-        const diff = value - drink.shitje;
-        updateData.gjendje = drink.gjendje - diff;
+        const diff = value - currentDrink.shitje;
+        updateData.gjendje = currentDrink.gjendje - diff;
       }
 
       const { error } = await supabase
