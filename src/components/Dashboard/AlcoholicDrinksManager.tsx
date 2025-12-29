@@ -81,14 +81,7 @@ const DrinkRow = ({ drink, onUpdate, onDelete }: DrinkRowProps) => {
         />
       </td>
       <td className="p-3">
-        <Input
-          type="text"
-          inputMode="numeric"
-          value={values.shitje}
-          onChange={(e) => handleChange('shitje', e.target.value)}
-          onBlur={() => handleBlur('shitje')}
-          className="w-24"
-        />
+        <span className="text-muted-foreground font-medium">{drink.shitje}</span>
       </td>
       <td className="p-3">
         <Input
@@ -184,18 +177,24 @@ export const AlcoholicDrinksManager = () => {
       if (fetchError) throw fetchError;
       if (!currentDrink) return;
 
-      // Llogarit gjendjen automatikisht kur ndryshon furnizimi ose shitja
-      let updateData: Record<string, number> = { [field]: value };
+      let updateData: Record<string, number> = {};
       
       if (field === 'furnizime') {
-        // Gjendje += furnizim i ri - furnizim i vjetër
-        const diff = value - currentDrink.furnizime;
-        updateData.gjendje = currentDrink.gjendje + diff;
-      } else if (field === 'shitje') {
-        // Gjendje -= shitje e re - shitje e vjetër
-        const diff = value - currentDrink.shitje;
-        updateData.gjendje = currentDrink.gjendje - diff;
+        // Furnizimi shton te gjendje dhe pastaj pastrohet në 0
+        // Gjendje += vlera e furnizimit
+        if (value > 0) {
+          updateData.gjendje = currentDrink.gjendje + value;
+          updateData.furnizime = 0; // Pastrohet furnizimi
+        }
+      } else if (field === 'gjendje') {
+        // Gjendje mund të ndryshohet manualisht
+        updateData.gjendje = value;
+      } else if (field === 'purchase_price') {
+        updateData.purchase_price = value;
       }
+      // Shitje nuk ndryshohet manualisht - vjen nga shiriti
+
+      if (Object.keys(updateData).length === 0) return;
 
       const { error } = await supabase
         .from('alcoholic_drinks_inventory')
