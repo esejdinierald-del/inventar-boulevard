@@ -56,7 +56,7 @@ const Reports = () => {
 
       if (error) throw error;
 
-      // Load expenses for the same period
+      // Load expenses from expenses table
       const { data: expensesData, error: expensesError } = await supabase
         .from("expenses")
         .select("cost")
@@ -65,8 +65,23 @@ const Reports = () => {
 
       if (expensesError) throw expensesError;
 
-      const expensesTotal = expensesData?.reduce((sum, exp) => sum + exp.cost, 0) || 0;
-      setTotalExpenses(expensesTotal);
+      const expensesTableTotal = expensesData?.reduce((sum, exp) => sum + Number(exp.cost), 0) || 0;
+      
+      // Also calculate expenses from daily entries (turn1_data.shpenzime + turn2_data.shpenzime)
+      let dailyExpensesTotal = 0;
+      data?.forEach((entry: any) => {
+        const t1Shpenzime = entry.turn1_data?.shpenzime || [];
+        const t2Shpenzime = entry.turn2_data?.shpenzime || [];
+        
+        t1Shpenzime.forEach((sh: { vlera: number }) => {
+          dailyExpensesTotal += Number(sh.vlera) || 0;
+        });
+        t2Shpenzime.forEach((sh: { vlera: number }) => {
+          dailyExpensesTotal += Number(sh.vlera) || 0;
+        });
+      });
+      
+      setTotalExpenses(expensesTableTotal + dailyExpensesTotal);
 
       // Process data
       const daysInMonth = endDate.getDate();
