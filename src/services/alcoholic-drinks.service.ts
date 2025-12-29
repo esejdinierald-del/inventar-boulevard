@@ -50,8 +50,9 @@ export class AlcoholicDrinksService {
           }
 
           // Përditëso shitjet dhe gjendjen
+          // Shitje += shitjet e reja, Gjendje -= shitjet e reja
           const newShitje = drink.shitje + soldQuantity;
-          const newGjendje = drink.furnizime - newShitje;
+          const newGjendje = drink.gjendje - soldQuantity;
 
           const { error: updateError } = await supabase
             .from('alcoholic_drinks_inventory')

@@ -46,29 +46,24 @@ export const useAlcoholicDrinks = (selectedDate: string) => {
       if (fetchError) throw fetchError;
       if (!drinks) return;
 
-      // Calculate total sales for each drink
-      const updates = drinks.map(drink => {
+      // Calculate total sales for each drink and update
+      for (const drink of drinks) {
         const turn1Sales = turn1Drinks[drink.drink_name] || 0;
         const turn2Sales = turn2Drinks[drink.drink_name] || 0;
         const totalSales = turn1Sales + turn2Sales;
 
-        return {
-          id: drink.id,
-          shitje: drink.shitje + totalSales,
-          gjendje: drink.furnizime - (drink.shitje + totalSales)
-        };
-      });
+        if (totalSales > 0) {
+          // Shitje += shitjet e reja, Gjendje -= shitjet e reja
+          const newShitje = drink.shitje + totalSales;
+          const newGjendje = drink.gjendje - totalSales;
 
-      // Update each drink
-      for (const update of updates) {
-        if (turn1Drinks[update.id] || turn2Drinks[update.id]) {
           const { error } = await supabase
             .from('alcoholic_drinks_inventory')
             .update({
-              shitje: update.shitje,
-              gjendje: update.gjendje
+              shitje: newShitje,
+              gjendje: newGjendje
             })
-            .eq('id', update.id);
+            .eq('id', drink.id);
 
           if (error) throw error;
         }
