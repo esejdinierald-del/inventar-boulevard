@@ -463,18 +463,37 @@ const DailyEntry = () => {
           verifiedStaff={verifiedStaff}
         />
         {/* Date restriction warnings for staff */}
-        {isPastDate() && !isAdminUnlocked && !isFieldDisabled() && (
+        {isPastDate() && !isAdminUnlocked && !isFieldDisabled() && isYesterday() && (
           <div className="rounded-lg border border-success/50 bg-success/10 p-4 print:hidden">
             <p className="text-sm font-medium text-success">
-              ✅ Jeni brenda 10 minutave pas mesnatës - mund të modifikoni të dhënat e djeshme.
+              ✅ Jeni brenda 4 orëve pas mesnatës - mund të modifikoni të dhënat e djeshme.
             </p>
           </div>
         )}
-        {(isPastDate() || isFutureDate()) && !isAdminUnlocked && isFieldDisabled() && (
-          <div className="rounded-lg border border-warning/50 bg-warning/10 p-4 print:hidden">
-            <p className="text-sm font-medium text-warning">
-              🔒 {isPastDate() ? 'Datë e kaluar' : 'Datë e ardhshme'} - Vetëm shikimi është i lejuar. Për të modifikuar, hyr si Admin.
-            </p>
+        
+        {/* Block past dates completely for staff (except yesterday within 4h window) */}
+        {!isAdminUnlocked && verifiedStaff && (isPastDate() || isFutureDate()) && isFieldDisabled() && (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6 print:hidden">
+            <div className="flex flex-col items-center gap-4">
+              <Lock className="h-12 w-12 text-destructive" />
+              <div className="text-center">
+                <p className="text-lg font-semibold text-destructive">
+                  🔒 Akses i Bllokuar
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  {isPastDate() 
+                    ? 'Stafi nuk ka akses në të dhënat e datave të kaluara.' 
+                    : 'Stafi nuk ka akses në të dhënat e datave të ardhshme.'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Për të parë ose modifikuar këto të dhëna, hyni si Admin.
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={toggleAdminMode}>
+                <Lock className="h-3 w-3 mr-1" />
+                Hyr si Admin
+              </Button>
+            </div>
           </div>
         )}
 
@@ -505,9 +524,9 @@ const DailyEntry = () => {
                   const newDate = e.target.value;
                   const today = new Date().toISOString().split('T')[0];
                   
-                  // Stafi mund të zgjedhë vetëm datën e sotme (ose e djeshme brenda 10 min)
+                  // Stafi mund të zgjedhë vetëm datën e sotme (ose e djeshme brenda 4 orëve)
                   if (!isAdminUnlocked && newDate !== today) {
-                    // Kontrollo nëse është e djeshme dhe brenda 10 min
+                    // Kontrollo nëse është e djeshme dhe brenda 4 orëve
                     const yesterday = new Date();
                     yesterday.setDate(yesterday.getDate() - 1);
                     const yesterdayDate = yesterday.toISOString().split('T')[0];
@@ -515,7 +534,7 @@ const DailyEntry = () => {
                     if (newDate === yesterdayDate && isWithinStaffEditWindow()) {
                       setSelectedDate(newDate);
                     } else {
-                      toast.error('🔒 Stafi mund të zgjedhë vetëm datën e sotme. Hyr si Admin për data të tjera.');
+                      toast.error('🔒 Stafi nuk ka akses në datat e kaluara/ardhshme. Hyr si Admin.');
                       return;
                     }
                   } else {
@@ -534,7 +553,8 @@ const DailyEntry = () => {
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs - Only show if staff has access to this date */}
+        {(!verifiedStaff || isAdminUnlocked || !isFieldDisabled() || !(isPastDate() || isFutureDate())) && (
         <Tabs defaultValue="turn1" className="w-full" value={activeTurn} onValueChange={handleTurnChange}>
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="turn1" className="flex items-center gap-1">
@@ -638,6 +658,7 @@ const DailyEntry = () => {
             />
           </TabsContent>
         </Tabs>
+        )}
 
         {/* Summary Card - Printable */}
         <Card className="print-summary">
