@@ -31,7 +31,7 @@ const DailyEntry = () => {
   const [verifiedStaff, setVerifiedStaff] = useState<string | null>(null);
 
   // Custom hooks
-  const { isAdminUnlocked, showPasswordDialog, validatePassword, toggleAdminMode, closePasswordDialog, isWithinStaffEditWindow } = useAuth();
+  const { isAdminUnlocked, showPasswordDialog, validatePassword, toggleAdminMode, closePasswordDialog, isWithinStaffEditWindow, unlockAdmin } = useAuth();
   const { products, coffeeTypes, addProduct: originalAddProduct, deleteProduct: originalDeleteProduct, updateProduct, addCoffeeType: originalAddCoffeeType, deleteCoffeeType: originalDeleteCoffeeType } = useProductList();
   const { kitchenProducts } = useKitchenProducts();
   const { alcoholicDrinks } = useAlcoholicDrinksList();
@@ -748,6 +748,11 @@ const DailyEntry = () => {
           open={showPinDialog}
           onOpenChange={handlePinDialogClose}
           onVerified={handlePinVerified}
+          onAdminVerified={() => {
+            unlockAdmin();
+            setShowPinDialog(false);
+            setVerifiedStaff("Admin");
+          }}
         />
       </div>
     </Layout>

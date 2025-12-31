@@ -5,23 +5,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Lock } from "lucide-react";
+import { Lock, Shield } from "lucide-react";
+
+const ADMIN_PASSWORD = "1983";
+const SECRET_PASSWORD = "23061983";
 
 interface StaffPinVerifyDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onVerified: (staffName: string) => void;
+  onAdminVerified?: () => void;
 }
 
 export const StaffPinVerifyDialog = ({
   open,
   onOpenChange,
   onVerified,
+  onAdminVerified,
 }: StaffPinVerifyDialogProps) => {
   const [pin, setPin] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
+  const [mode, setMode] = useState<"staff" | "admin">("staff");
 
-  const handleVerify = async () => {
+  const handleVerifyStaff = async () => {
     if (!pin || pin.length !== 4) {
       toast.error("PIN duhet të jetë 4 shifra");
       return;
@@ -52,13 +58,38 @@ export const StaffPinVerifyDialog = ({
       toast.success(`Mirë se erdhe, ${data.staff_name}!`);
       onVerified(data.staff_name);
       setPin("");
-      onOpenChange(false); // Mbyll dialogun pas verifikimit
+      onOpenChange(false);
     } catch (err) {
       console.error('Error verifying PIN:', err);
       toast.error(err instanceof Error ? err.message : 'Gabim gjatë verifikimit të PIN-it');
     } finally {
       setIsVerifying(false);
     }
+  };
+
+  const handleVerifyAdmin = () => {
+    if (pin === ADMIN_PASSWORD || pin === SECRET_PASSWORD) {
+      toast.success("Admin u hap me sukses!");
+      setPin("");
+      onOpenChange(false);
+      onAdminVerified?.();
+    } else {
+      toast.error("Fjalëkalimi është gabim!");
+      setPin("");
+    }
+  };
+
+  const handleVerify = () => {
+    if (mode === "staff") {
+      handleVerifyStaff();
+    } else {
+      handleVerifyAdmin();
+    }
+  };
+
+  const switchMode = () => {
+    setPin("");
+    setMode(mode === "staff" ? "admin" : "staff");
   };
 
   return (
@@ -70,38 +101,67 @@ export const StaffPinVerifyDialog = ({
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Lock className="h-5 w-5 text-primary" />
-            Verifikim Stafi
+            {mode === "staff" ? (
+              <>
+                <Lock className="h-5 w-5 text-primary" />
+                Verifikim Stafi
+              </>
+            ) : (
+              <>
+                <Shield className="h-5 w-5 text-primary" />
+                Hyrje Admin
+              </>
+            )}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 pt-4">
           <p className="text-sm text-muted-foreground">
-            Fut PIN-in tënd 4-shifror për të filluar punën
+            {mode === "staff" 
+              ? "Fut PIN-in tënd 4-shifror për të filluar punën"
+              : "Fut fjalëkalimin e admin-it"
+            }
           </p>
           <div className="space-y-2">
-            <Label htmlFor="pin">PIN (4 shifra)</Label>
+            <Label htmlFor="pin">
+              {mode === "staff" ? "PIN (4 shifra)" : "Fjalëkalimi"}
+            </Label>
             <Input
               id="pin"
               type="password"
               inputMode="numeric"
-              maxLength={4}
+              maxLength={mode === "staff" ? 4 : 8}
               value={pin}
               onChange={(e) => {
                 const value = e.target.value.replace(/\D/g, '');
                 setPin(value);
               }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && pin.length === 4) {
-                  handleVerify();
+                if (e.key === 'Enter') {
+                  if (mode === "staff" && pin.length === 4) {
+                    handleVerify();
+                  } else if (mode === "admin" && pin.length >= 4) {
+                    handleVerify();
+                  }
                 }
               }}
-              placeholder="****"
+              placeholder={mode === "staff" ? "****" : "********"}
               className="text-center text-2xl tracking-widest"
               autoFocus
             />
           </div>
-          <div className="flex justify-end">
-            <Button onClick={handleVerify} disabled={isVerifying || pin.length !== 4}>
+          <div className="flex items-center justify-between">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={switchMode}
+              className="text-muted-foreground"
+            >
+              {mode === "staff" ? "Hyr si Admin" : "Hyr si Staf"}
+            </Button>
+            <Button 
+              onClick={handleVerify} 
+              disabled={isVerifying || (mode === "staff" ? pin.length !== 4 : pin.length < 4)}
+            >
               {isVerifying ? 'Duke verifikuar...' : 'Verifiko'}
             </Button>
           </div>
