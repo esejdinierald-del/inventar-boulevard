@@ -37,7 +37,11 @@ export const StaffPinVerifyDialog = ({
         .eq('is_active', true)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error verifying PIN:', error);
+        toast.error(`Gabim verifikimi: ${error.message}`);
+        return;
+      }
 
       if (!data) {
         toast.error("PIN i gabuar ose jo aktiv");
@@ -49,9 +53,9 @@ export const StaffPinVerifyDialog = ({
       onVerified(data.staff_name);
       setPin("");
       onOpenChange(false); // Mbyll dialogun pas verifikimit
-    } catch (error) {
-      console.error('Error verifying PIN:', error);
-      toast.error('Gabim gjatë verifikimit të PIN-it');
+    } catch (err) {
+      console.error('Error verifying PIN:', err);
+      toast.error(err instanceof Error ? err.message : 'Gabim gjatë verifikimit të PIN-it');
     } finally {
       setIsVerifying(false);
     }
