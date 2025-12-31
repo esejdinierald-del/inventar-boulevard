@@ -181,9 +181,16 @@ const DailyEntry = () => {
     return selectedDate === yesterdayDate;
   }, [selectedDate]);
 
+  // Check if user has elevated access (admin or manager with dashboard permission)
+  const hasElevatedAccess = useCallback(() => {
+    if (isAdminUnlocked) return true;
+    if (verifiedStaffData?.isManager && verifiedStaffData?.permissions?.dashboard) return true;
+    return false;
+  }, [isAdminUnlocked, verifiedStaffData]);
+
   const isFieldDisabled = useCallback(() => {
-    // Nëse është admin, nuk ka kufizime
-    if (isAdminUnlocked) return false;
+    // Nëse është admin ose menaxher me të drejta dashboard, nuk ka kufizime për datat
+    if (hasElevatedAccess()) return false;
     
     // Nëse stafi nuk ka bërë verifikimin me PIN, blloko të gjitha field-et
     if (!verifiedStaff) return true;
@@ -194,10 +201,10 @@ const DailyEntry = () => {
       return true;
     }
     
-    // STAFI: Vetëm data aktuale ose e djeshme brenda 10 minutave pas mesnatës
-    // Data e ardhshme dhe e kaluar (përveç dita djeshme brenda 10 min) janë të bllokuara
+    // STAFI: Vetëm data aktuale ose e djeshme brenda 4 orëve pas mesnatës
+    // Data e ardhshme dhe e kaluar (përveç dita djeshme brenda 4 orëve) janë të bllokuara
     
-    // Nëse është dita e djeshme dhe jemi brenda 10 minutave pas mesnatës, lejo modifikimin
+    // Nëse është dita e djeshme dhe jemi brenda 4 orëve pas mesnatës, lejo modifikimin
     if (isYesterday() && isWithinStaffEditWindow()) {
       return false;
     }
@@ -209,7 +216,7 @@ const DailyEntry = () => {
     
     // Të gjitha datat e tjera (e kaluara dhe e ardhshme) janë të bllokuara për stafin
     return true;
-  }, [isToday, isPastDate, isYesterday, isAdminUnlocked, isWithinStaffEditWindow, verifiedStaff, activeTurn, isTurnLocked]);
+  }, [isToday, isPastDate, isYesterday, hasElevatedAccess, isWithinStaffEditWindow, verifiedStaff, activeTurn, isTurnLocked]);
 
   // Product editing
   const startEditingProduct = useCallback((productName: string) => {
@@ -471,8 +478,8 @@ const DailyEntry = () => {
           </div>
         )}
         
-        {/* Block past dates completely for staff (except yesterday within 4h window) */}
-        {!isAdminUnlocked && verifiedStaff && (isPastDate() || isFutureDate()) && isFieldDisabled() && (
+        {/* Block past dates completely for staff without elevated access */}
+        {!hasElevatedAccess() && verifiedStaff && (isPastDate() || isFutureDate()) && isFieldDisabled() && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6 print:hidden">
             <div className="flex flex-col items-center gap-4">
               <Lock className="h-12 w-12 text-destructive" />
@@ -486,7 +493,7 @@ const DailyEntry = () => {
                     : 'Stafi nuk ka akses në të dhënat e datave të ardhshme.'}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Për të parë ose modifikuar këto të dhëna, hyni si Admin.
+                  Për të parë ose modifikuar këto të dhëna, hyni si Admin ose Menaxher.
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={toggleAdminMode}>
@@ -524,8 +531,9 @@ const DailyEntry = () => {
                   const newDate = e.target.value;
                   const today = new Date().toISOString().split('T')[0];
                   
+                  // Admin ose Menaxher me të drejta mund të zgjedhë çdo datë
                   // Stafi mund të zgjedhë vetëm datën e sotme (ose e djeshme brenda 4 orëve)
-                  if (!isAdminUnlocked && newDate !== today) {
+                  if (!hasElevatedAccess() && newDate !== today) {
                     // Kontrollo nëse është e djeshme dhe brenda 4 orëve
                     const yesterday = new Date();
                     yesterday.setDate(yesterday.getDate() - 1);
@@ -534,7 +542,7 @@ const DailyEntry = () => {
                     if (newDate === yesterdayDate && isWithinStaffEditWindow()) {
                       setSelectedDate(newDate);
                     } else {
-                      toast.error('🔒 Stafi nuk ka akses në datat e kaluara/ardhshme. Hyr si Admin.');
+                      toast.error('🔒 Stafi nuk ka akses në datat e kaluara/ardhshme.');
                       return;
                     }
                   } else {
@@ -542,9 +550,9 @@ const DailyEntry = () => {
                   }
                 }}
                 className="w-auto"
-                title={!isAdminUnlocked ? "Stafi mund të zgjedhë vetëm datën e sotme" : "Zgjidhni datën"}
+                title={hasElevatedAccess() ? "Zgjidhni datën" : "Stafi mund të zgjedhë vetëm datën e sotme"}
               />
-              {!isAdminUnlocked && (
+              {!hasElevatedAccess() && (
                 <span className="text-xs text-muted-foreground hidden md:inline">
                   (vetëm sot)
                 </span>
@@ -553,8 +561,8 @@ const DailyEntry = () => {
           </div>
         </div>
 
-        {/* Tabs - Only show if staff has access to this date */}
-        {(!verifiedStaff || isAdminUnlocked || !isFieldDisabled() || !(isPastDate() || isFutureDate())) && (
+        {/* Tabs - Only show if user has access to this date (admin, manager with dashboard, or staff for today) */}
+        {(!verifiedStaff || hasElevatedAccess() || !isFieldDisabled() || !(isPastDate() || isFutureDate())) && (
         <Tabs defaultValue="turn1" className="w-full" value={activeTurn} onValueChange={handleTurnChange}>
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="turn1" className="flex items-center gap-1">
