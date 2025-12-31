@@ -498,9 +498,35 @@ const DailyEntry = () => {
               <Input
                 type="date"
                 value={selectedDate}
-                onChange={e => setSelectedDate(e.target.value)}
+                onChange={e => {
+                  const newDate = e.target.value;
+                  const today = new Date().toISOString().split('T')[0];
+                  
+                  // Stafi mund të zgjedhë vetëm datën e sotme (ose e djeshme brenda 10 min)
+                  if (!isAdminUnlocked && newDate !== today) {
+                    // Kontrollo nëse është e djeshme dhe brenda 10 min
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    const yesterdayDate = yesterday.toISOString().split('T')[0];
+                    
+                    if (newDate === yesterdayDate && isWithinStaffEditWindow()) {
+                      setSelectedDate(newDate);
+                    } else {
+                      toast.error('🔒 Stafi mund të zgjedhë vetëm datën e sotme. Hyr si Admin për data të tjera.');
+                      return;
+                    }
+                  } else {
+                    setSelectedDate(newDate);
+                  }
+                }}
                 className="w-auto"
+                title={!isAdminUnlocked ? "Stafi mund të zgjedhë vetëm datën e sotme" : "Zgjidhni datën"}
               />
+              {!isAdminUnlocked && (
+                <span className="text-xs text-muted-foreground hidden md:inline">
+                  (vetëm sot)
+                </span>
+              )}
             </div>
           </div>
         </div>
