@@ -45,6 +45,10 @@ export const useAuth = () => {
     setShowPasswordDialog(false);
   }, []);
 
+  const unlockAdmin = useCallback(() => {
+    setIsAdminUnlocked(true);
+  }, []);
+
   return {
     isAdminUnlocked,
     showPasswordDialog,
@@ -52,5 +56,6 @@ export const useAuth = () => {
     toggleAdminMode,
     closePasswordDialog,
     isWithinStaffEditWindow,
+    unlockAdmin,
   };
 };
