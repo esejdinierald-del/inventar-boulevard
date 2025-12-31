@@ -81,7 +81,14 @@ const DrinkRow = ({ drink, onUpdate, onDelete }: DrinkRowProps) => {
         />
       </td>
       <td className="p-3">
-        <span className="text-muted-foreground font-medium">{drink.shitje}</span>
+        <Input
+          type="text"
+          inputMode="numeric"
+          value={values.shitje}
+          onChange={(e) => handleChange('shitje', e.target.value)}
+          onBlur={() => handleBlur('shitje')}
+          className="w-24"
+        />
       </td>
       <td className="p-3">
         <Input
@@ -189,10 +196,12 @@ export const AlcoholicDrinksManager = () => {
       } else if (field === 'gjendje') {
         // Gjendje mund të ndryshohet manualisht
         updateData.gjendje = value;
+      } else if (field === 'shitje') {
+        // Shitje mund të ndryshohet manualisht për rregullime inventari
+        updateData.shitje = value;
       } else if (field === 'purchase_price') {
         updateData.purchase_price = value;
       }
-      // Shitje nuk ndryshohet manualisht - vjen nga shiriti
 
       if (Object.keys(updateData).length === 0) return;
 
