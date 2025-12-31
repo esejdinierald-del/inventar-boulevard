@@ -161,6 +161,16 @@ const DailyEntry = () => {
     return selectedDate < today;
   }, [selectedDate]);
 
+  const isFutureDate = useCallback(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return selectedDate > today;
+  }, [selectedDate]);
+
+  const isToday = useCallback(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return selectedDate === today;
+  }, [selectedDate]);
+
   const isYesterday = useCallback(() => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
@@ -181,14 +191,22 @@ const DailyEntry = () => {
       return true;
     }
     
+    // STAFI: Vetëm data aktuale ose e djeshme brenda 10 minutave pas mesnatës
+    // Data e ardhshme dhe e kaluar (përveç dita djeshme brenda 10 min) janë të bllokuara
+    
     // Nëse është dita e djeshme dhe jemi brenda 10 minutave pas mesnatës, lejo modifikimin
     if (isYesterday() && isWithinStaffEditWindow()) {
       return false;
     }
     
-    // Përndryshe, blloko nëse është datë e kaluar
-    return isPastDate();
-  }, [isPastDate, isYesterday, isAdminUnlocked, isWithinStaffEditWindow, verifiedStaff, activeTurn, isTurnLocked]);
+    // Nëse është sot, lejo modifikimin
+    if (isToday()) {
+      return false;
+    }
+    
+    // Të gjitha datat e tjera (e kaluara dhe e ardhshme) janë të bllokuara për stafin
+    return true;
+  }, [isToday, isPastDate, isYesterday, isAdminUnlocked, isWithinStaffEditWindow, verifiedStaff, activeTurn, isTurnLocked]);
 
   // Product editing
   const startEditingProduct = useCallback((productName: string) => {
@@ -441,7 +459,7 @@ const DailyEntry = () => {
           selectedDate={selectedDate}
           verifiedStaff={verifiedStaff}
         />
-        {/* Past date warning */}
+        {/* Date restriction warnings for staff */}
         {isPastDate() && !isAdminUnlocked && !isFieldDisabled() && (
           <div className="rounded-lg border border-success/50 bg-success/10 p-4 print:hidden">
             <p className="text-sm font-medium text-success">
@@ -449,10 +467,10 @@ const DailyEntry = () => {
             </p>
           </div>
         )}
-        {isPastDate() && !isAdminUnlocked && isFieldDisabled() && (
+        {(isPastDate() || isFutureDate()) && !isAdminUnlocked && isFieldDisabled() && (
           <div className="rounded-lg border border-warning/50 bg-warning/10 p-4 print:hidden">
             <p className="text-sm font-medium text-warning">
-              🔒 Po shikon të dhëna nga e kaluara. Vetëm shikimi është i lejuar. Për të modifikuar, hyr si Admin.
+              🔒 {isPastDate() ? 'Datë e kaluar' : 'Datë e ardhshme'} - Vetëm shikimi është i lejuar. Për të modifikuar, hyr si Admin.
             </p>
           </div>
         )}
