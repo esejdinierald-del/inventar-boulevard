@@ -10,10 +10,23 @@ import { Lock, Shield } from "lucide-react";
 const ADMIN_PASSWORD = "1983";
 const SECRET_PASSWORD = "23061983";
 
+export interface StaffPermissions {
+  dashboard: boolean;
+  products: boolean;
+  expenses: boolean;
+  staff: boolean;
+}
+
+export interface VerifiedStaffData {
+  name: string;
+  isManager: boolean;
+  permissions: StaffPermissions;
+}
+
 interface StaffPinVerifyDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onVerified: (staffName: string) => void;
+  onVerified: (staffName: string, staffData?: VerifiedStaffData) => void;
   onAdminVerified?: () => void;
 }
 
@@ -55,8 +68,32 @@ export const StaffPinVerifyDialog = ({
         return;
       }
 
-      toast.success(`Mirë se erdhe, ${data.staff_name}!`);
-      onVerified(data.staff_name);
+      // Parse permissions from the database
+      const perms = data.permissions as unknown;
+      const defaultPerms: StaffPermissions = {
+        dashboard: false,
+        products: false,
+        expenses: false,
+        staff: false
+      };
+      
+      const permissions: StaffPermissions = perms && typeof perms === 'object' && !Array.isArray(perms)
+        ? { ...defaultPerms, ...(perms as StaffPermissions) }
+        : defaultPerms;
+
+      const staffData: VerifiedStaffData = {
+        name: data.staff_name,
+        isManager: data.is_manager,
+        permissions
+      };
+
+      if (data.is_manager) {
+        toast.success(`Mirë se erdhe, Menaxher ${data.staff_name}!`);
+      } else {
+        toast.success(`Mirë se erdhe, ${data.staff_name}!`);
+      }
+      
+      onVerified(data.staff_name, staffData);
       setPin("");
       onOpenChange(false);
     } catch (err) {
