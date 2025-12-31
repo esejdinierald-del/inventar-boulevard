@@ -1,7 +1,7 @@
 import Layout from "@/components/Layout";
 import StatsCard from "@/components/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, DollarSign, Package, ShoppingCart, Lock, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { TrendingUp, DollarSign, Package, ShoppingCart, Lock, Download, ChevronLeft, ChevronRight, User, Shield } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TurnData } from "@/types/turn.types";
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, eachWeekOfInterval, startOfWeek, endOfWeek, isWithinInterval, parseISO } from "date-fns";
 import { sq } from "date-fns/locale";
+import { useManagerPermissions, ManagerPermissions } from "@/hooks/useManagerPermissions";
 
 interface WeeklyData {
   weekLabel: string;
@@ -50,6 +51,7 @@ interface MonthlyData {
 const Dashboard = () => {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [password, setPassword] = useState("");
+  const [loginMode, setLoginMode] = useState<'admin' | 'manager'>('admin');
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [monthlyData, setMonthlyData] = useState<MonthlyData>({
     totalXhiro: 0,
@@ -61,16 +63,62 @@ const Dashboard = () => {
     totalExpenses: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  
+  const { 
+    verifiedUser, 
+    setStaffUser, 
+    setAdminUser, 
+    hasPermission,
+    isAdmin 
+  } = useManagerPermissions();
 
-  const handleUnlock = () => {
-    const storedPassword = localStorage.getItem('admin_password') || "1983";
-    const secretPassword = "23061983";
-    
-    if (password === storedPassword || password === secretPassword) {
-      setIsUnlocked(true);
-      toast.success("Dashboard u zhbllokua");
+  const handleUnlock = async () => {
+    if (loginMode === 'admin') {
+      const storedPassword = localStorage.getItem('admin_password') || "1983";
+      const secretPassword = "23061983";
+      
+      if (password === storedPassword || password === secretPassword) {
+        setAdminUser();
+        setIsUnlocked(true);
+        toast.success("Dashboard u zhbllokua si Admin");
+      } else {
+        toast.error("Fjalëkalimi është i gabuar");
+      }
     } else {
-      toast.error("Fjalëkalimi është i gabuar");
+      // Manager PIN verification
+      if (password.length !== 4) {
+        toast.error("PIN duhet të jetë 4 shifra");
+        return;
+      }
+      
+      try {
+        const { data, error } = await supabase
+          .from('staff_turn_pins')
+          .select('staff_name, is_manager, permissions')
+          .eq('pin', password)
+          .eq('is_active', true)
+          .eq('is_manager', true)
+          .single();
+
+        if (error || !data) {
+          toast.error("PIN i pavlefshëm ose nuk është menaxher");
+          return;
+        }
+
+        const permissions = data.permissions as unknown as ManagerPermissions;
+        
+        if (!permissions.dashboard) {
+          toast.error("Nuk keni të drejtë të hyni në Dashboard");
+          return;
+        }
+
+        setStaffUser(data.staff_name, true, permissions);
+        setIsUnlocked(true);
+        toast.success(`Mirësevini, ${data.staff_name}!`);
+      } catch (err) {
+        console.error('Error verifying PIN:', err);
+        toast.error("Gabim në verifikimin e PIN-it");
+      }
     }
   };
 
@@ -250,13 +298,37 @@ const Dashboard = () => {
 
         {!isUnlocked && (
           <Card className="border-warning">
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 space-y-4">
+              {/* Login Mode Toggle */}
+              <div className="flex gap-2 justify-center">
+                <Button
+                  variant={loginMode === 'admin' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => { setLoginMode('admin'); setPassword(''); }}
+                  className="flex items-center gap-2"
+                >
+                  <Shield className="h-4 w-4" />
+                  Admin
+                </Button>
+                <Button
+                  variant={loginMode === 'manager' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => { setLoginMode('manager'); setPassword(''); }}
+                  className="flex items-center gap-2"
+                >
+                  <User className="h-4 w-4" />
+                  Menaxher
+                </Button>
+              </div>
+              
               <div className="flex items-center gap-4">
                 <Lock className="h-5 w-5 text-warning" />
                 <Input
                   type="password"
                   autoComplete="current-password"
-                  placeholder="Fut fjalëkalimin për të parë të dhënat"
+                  inputMode={loginMode === 'manager' ? 'numeric' : undefined}
+                  maxLength={loginMode === 'manager' ? 4 : undefined}
+                  placeholder={loginMode === 'admin' ? "Fut fjalëkalimin e Admin" : "Fut PIN-in 4-shifror"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
@@ -379,35 +451,35 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Products Manager */}
-        <ProductsManager />
+        {/* Products Manager - requires 'products' permission */}
+        {hasPermission('products') && <ProductsManager />}
 
-        {/* Coffee Types Manager */}
-        <CoffeeTypesManager />
+        {/* Coffee Types Manager - requires 'products' permission */}
+        {hasPermission('products') && <CoffeeTypesManager />}
 
-        {/* Kitchen Products Manager */}
-        <KitchenProductsManager />
+        {/* Kitchen Products Manager - requires 'products' permission */}
+        {hasPermission('products') && <KitchenProductsManager />}
 
-        {/* Alcoholic Drinks Manager */}
-        <AlcoholicDrinksManager />
+        {/* Alcoholic Drinks Manager - requires 'products' permission */}
+        {hasPermission('products') && <AlcoholicDrinksManager />}
 
-        {/* Staff Turn PINs Manager */}
-        <StaffTurnPinsManager />
+        {/* Staff Turn PINs Manager - requires 'staff' permission */}
+        {hasPermission('staff') && <StaffTurnPinsManager />}
 
-        {/* Fixed Expenses Manager */}
-        <FixedExpensesManager />
+        {/* Fixed Expenses Manager - requires 'expenses' permission */}
+        {hasPermission('expenses') && <FixedExpensesManager />}
 
-        {/* Expenses Report with Date Range */}
-        <ExpensesReport />
+        {/* Expenses Report with Date Range - requires 'expenses' permission */}
+        {hasPermission('expenses') && <ExpensesReport />}
 
-        {/* Admin Settings */}
-        <AdminSettingsCard />
+        {/* Admin Settings - Admin only */}
+        {isAdmin && <AdminSettingsCard />}
 
-        {/* Invoice Mappings Table */}
-        <InvoiceMappingsTable />
+        {/* Invoice Mappings Table - Admin only */}
+        {isAdmin && <InvoiceMappingsTable />}
 
-        {/* Product Mappings Table */}
-        <ProductMappingsTable />
+        {/* Product Mappings Table - Admin only */}
+        {isAdmin && <ProductMappingsTable />}
 
         {/* Quick Actions */}
         <Card>
