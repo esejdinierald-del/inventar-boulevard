@@ -352,6 +352,8 @@ export type Database = {
           created_at: string | null
           id: string
           is_active: boolean
+          is_manager: boolean
+          permissions: Json
           pin: string
           staff_name: string
           turn_number: number | null
@@ -361,6 +363,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean
+          is_manager?: boolean
+          permissions?: Json
           pin: string
           staff_name: string
           turn_number?: number | null
@@ -370,6 +374,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean
+          is_manager?: boolean
+          permissions?: Json
           pin?: string
           staff_name?: string
           turn_number?: number | null

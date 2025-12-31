@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProductMappingManager } from "@/components/ProductMappingManager";
 import { InvoiceMappingManager } from "@/components/InvoiceMappingManager";
 import { AdminPasswordDialog } from "@/components/DailyEntry/AdminPasswordDialog";
-import { StaffPinVerifyDialog } from "@/components/DailyEntry/StaffPinVerifyDialog";
+import { StaffPinVerifyDialog, VerifiedStaffData } from "@/components/DailyEntry/StaffPinVerifyDialog";
 import { TurnSection } from "@/components/DailyEntry/TurnSection";
 import { PrintableTurnReport } from "@/components/DailyEntry/PrintableTurnReport";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,6 +29,7 @@ const DailyEntry = () => {
   const [activeTurn, setActiveTurn] = useState<"turn1" | "turn2">("turn1");
   const [showPinDialog, setShowPinDialog] = useState(false);
   const [verifiedStaff, setVerifiedStaff] = useState<string | null>(null);
+  const [verifiedStaffData, setVerifiedStaffData] = useState<VerifiedStaffData | null>(null);
 
   // Custom hooks
   const { isAdminUnlocked, showPasswordDialog, validatePassword, toggleAdminMode, closePasswordDialog, isWithinStaffEditWindow, unlockAdmin } = useAuth();
@@ -126,6 +127,7 @@ const DailyEntry = () => {
   // Reset staff verification when date changes
   useEffect(() => {
     setVerifiedStaff(null);
+    setVerifiedStaffData(null);
     setShowPinDialog(true);
   }, [selectedDate]);
 
@@ -138,9 +140,10 @@ const DailyEntry = () => {
     }
   };
 
-  const handlePinVerified = (staffName: string) => {
-    console.log('✅ PIN verified for:', staffName);
+  const handlePinVerified = (staffName: string, staffData?: VerifiedStaffData) => {
+    console.log('✅ PIN verified for:', staffName, 'isManager:', staffData?.isManager);
     setVerifiedStaff(staffName);
+    setVerifiedStaffData(staffData || null);
     // Dialog do të mbyllet automatikisht nga StaffPinVerifyDialog
   };
 
