@@ -258,12 +258,12 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
   }, [turn1, turn2, selectedDate, setSaveStatus]);
 
   // Auto-sync T1 stock to T2 when T1 changes AND propagate if past date
-  // KRITIKE: Përdor T1.gjendje (vlera aktuale e numëruar) si T2.stokFillim
+  // KRITIKE: Përdor T1.gjendje nëse > 0, përndryshe llogarit teorikisht
   useEffect(() => {
     if (isInitialLoad.current) return;
     
     const syncAndPropagate = async () => {
-      console.log('🔄 Syncing T1 → T2 (using gjendje as stokFillim)');
+      console.log('🔄 Syncing T1 → T2 (gjendje if filled, otherwise calculated)');
       setTurn2(prev => {
         const newT2 = {
           ...prev,
@@ -271,9 +271,21 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
             Object.entries(prev.products).map(([key, data]) => {
               const t1Data = turn1.products[key];
               if (t1Data) {
-                // KRITIKE: Përdor gjendje (vlera reale e numëruar) jo llogaritje teorike
-                const newStokFillim = t1Data.gjendje;
-                console.log(`  ${key}: T1.gjendje = ${t1Data.gjendje} → T2.stokFillim`);
+                // KRITIKE: Nëse T1.gjendje > 0, përdor atë (vlera reale e numëruar)
+                // Nëse T1.gjendje = 0 por ka stokFillim, llogarit teorikisht
+                let newStokFillim: number;
+                if (t1Data.gjendje > 0) {
+                  // Gjendje e plotësuar - përdor vlerën reale
+                  newStokFillim = t1Data.gjendje;
+                  console.log(`  ${key}: T1.gjendje = ${t1Data.gjendje} → T2.stokFillim (vlera reale)`);
+                } else if (t1Data.stokFillim > 0 || t1Data.furnizime > 0) {
+                  // Gjendje e pa-plotësuar por ka stok - llogarit teorikisht
+                  newStokFillim = CalculationService.calculateNewStock(t1Data);
+                  console.log(`  ${key}: T1 teorik (${t1Data.stokFillim} + ${t1Data.furnizime} - ${t1Data.shiriti}) = ${newStokFillim} → T2.stokFillim`);
+                } else {
+                  // Asnjë të dhënë - mbaj 0
+                  newStokFillim = 0;
+                }
                 return [key, { ...data, stokFillim: newStokFillim }];
               }
               return [key, data];
