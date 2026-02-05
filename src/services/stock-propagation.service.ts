@@ -201,8 +201,8 @@ export class StockPropagationService {
   }
 
   /**
-   * Përditëso T2 stokFillim bazuar në T1.gjendje (vlera reale e numëruar)
-   * KRITIKE: Përdorim gjendje jo calculateNewStock sepse gjendje është vlera reale
+   * Përditëso T2 stokFillim bazuar në T1.gjendje (nëse plotësuar) ose llogaritje teorike
+   * KRITIKE: Nëse gjendje > 0 përdor atë, përndryshe llogarit stokFillim + furnizime - shiriti
    */
   private static updateT2FromT1(t2: TurnData, t1: TurnData): TurnData {
     const updatedProducts: { [key: string]: ProductData } = {};
@@ -212,10 +212,19 @@ export class StockPropagationService {
       const t1Data = t1.products[productName] as ProductData;
       
       if (t1Data) {
-        // KRITIKE: Përdor gjendje (vlera reale e numëruar) jo llogaritje teorike
+        // KRITIKE: Nëse T1.gjendje > 0, përdor atë (vlera reale e numëruar)
+        // Nëse T1.gjendje = 0 por ka stok, llogarit teorikisht
+        let newStokFillim: number;
+        if (t1Data.gjendje > 0) {
+          newStokFillim = t1Data.gjendje;
+        } else if (t1Data.stokFillim > 0 || t1Data.furnizime > 0) {
+          newStokFillim = CalculationService.calculateNewStock(t1Data);
+        } else {
+          newStokFillim = 0;
+        }
         updatedProducts[productName] = {
           ...productData,
-          stokFillim: t1Data.gjendje
+          stokFillim: newStokFillim
         };
       } else {
         updatedProducts[productName] = productData;
