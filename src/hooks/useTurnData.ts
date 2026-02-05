@@ -149,12 +149,35 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
             }
           }
           
-          // Siguro që T2 mulliriFillim është sinkronizuar me T1 mulliriPerfund
+          // KRITIKE: Sinkronizo T2 stokFillim dhe mulliriFillim nga T1
+          // Përdor T1.gjendje nëse > 0, përndryshe llogarit teorikisht
+          const syncedT2Products = Object.fromEntries(
+            Object.entries(migratedT2.products).map(([key, data]) => {
+              const t1Data = migratedT1.products[key];
+              if (t1Data) {
+                let newStokFillim: number;
+                if (t1Data.gjendje > 0) {
+                  // T1.gjendje e plotësuar - përdor vlerën reale
+                  newStokFillim = t1Data.gjendje;
+                } else if (t1Data.stokFillim > 0 || t1Data.furnizime > 0) {
+                  // T1 pa gjendje por ka stok - llogarit teorikisht
+                  newStokFillim = CalculationService.calculateNewStock(t1Data);
+                } else {
+                  // Asnjë të dhënë - mbaj vlerën ekzistuese ose 0
+                  newStokFillim = data.stokFillim || 0;
+                }
+                return [key, { ...data, stokFillim: newStokFillim }];
+              }
+              return [key, data];
+            })
+          );
+          
           const syncedT2 = {
             ...migratedT2,
+            products: syncedT2Products,
             mulliriFillim: migratedT1.mulliriPerfund
           };
-          console.log(`🔄 Syncing T1 mulliriPerfund (${migratedT1.mulliriPerfund}) to T2 mulliriFillim`);
+          console.log(`🔄 Syncing T1 → T2 (gjendje if filled, otherwise calculated)`);
           console.log('📊 T1 data:', { mulliriFillim: migratedT1.mulliriFillim, mulliriPerfund: migratedT1.mulliriPerfund });
           console.log('📊 T2 data:', { mulliriFillim: syncedT2.mulliriFillim, mulliriPerfund: syncedT2.mulliriPerfund });
           
