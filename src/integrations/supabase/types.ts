@@ -404,42 +404,6 @@ export type Database = {
         }
         Relationships: []
       }
-      waiter_calls: {
-        Row: {
-          acknowledged_at: string | null
-          call_type: string
-          completed_at: string | null
-          created_at: string
-          id: string
-          priority: number | null
-          special_request: string | null
-          status: string
-          table_number: number
-        }
-        Insert: {
-          acknowledged_at?: string | null
-          call_type: string
-          completed_at?: string | null
-          created_at?: string
-          id?: string
-          priority?: number | null
-          special_request?: string | null
-          status?: string
-          table_number: number
-        }
-        Update: {
-          acknowledged_at?: string | null
-          call_type?: string
-          completed_at?: string | null
-          created_at?: string
-          id?: string
-          priority?: number | null
-          special_request?: string | null
-          status?: string
-          table_number?: number
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never

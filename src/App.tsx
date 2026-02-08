@@ -12,8 +12,6 @@ import Install from "./pages/Install";
 import Manual from "./pages/Manual";
 import ManualStaff from "./pages/ManualStaff";
 import ManualAdmin from "./pages/ManualAdmin";
-import WaiterService from "./pages/WaiterService";
-import WaiterDashboard from "./pages/WaiterDashboard";
 import NotFound from "./pages/NotFound";
 import { useAnonymousAuth } from "./hooks/useAnonymousAuth";
 
@@ -62,8 +60,6 @@ const AppContent = () => {
       <Route path="/manual" element={<Manual />} />
       <Route path="/manual-staff" element={<ManualStaff />} />
       <Route path="/manual-admin" element={<ManualAdmin />} />
-      <Route path="/waiter" element={<WaiterService />} />
-      <Route path="/waiter-dashboard" element={<WaiterDashboard />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
