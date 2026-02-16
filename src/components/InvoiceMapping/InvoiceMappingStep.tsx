@@ -3,11 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Save, Upload } from "lucide-react";
-
-interface InvoiceProduct {
-  name: string;
-  originalName: string;
-}
+import { InvoiceProduct } from "@/hooks/useInvoiceMappings";
 
 interface InvoiceMapping {
   [key: string]: {
@@ -26,6 +22,7 @@ interface InvoiceMappingStepProps {
   isAdmin: boolean;
   onMappingChange: (product: string, type: 'product' | 'kitchen' | 'alcoholic_drink', name: string) => void;
   onQuantityChange: (product: string, quantity: number) => void;
+  onInvoiceQuantityChange: (product: string, quantity: number) => void;
   onSave: () => void;
   onApply: () => void;
   onBack: () => void;
@@ -40,19 +37,37 @@ export const InvoiceMappingStep = ({
   isAdmin,
   onMappingChange,
   onQuantityChange,
+  onInvoiceQuantityChange,
   onSave,
   onApply,
   onBack,
 }: InvoiceMappingStepProps) => {
   const mappedCount = detectedProducts.filter(p => invoiceMapping[p.name]).length;
 
+  // Llogarit totalin e furnizimeve për çdo produkt të mapuar
+  const getCalculatedSupply = (product: InvoiceProduct) => {
+    const mapping = invoiceMapping[product.name];
+    if (!mapping) return 0;
+    return product.invoiceQuantity * mapping.quantity;
+  };
+
   return (
     <div className="flex-1 space-y-4 overflow-hidden flex flex-col">
       <div className="flex-shrink-0">
         <Label>Mapo produktet nga fatura me artikujt e sistemit</Label>
         <p className="text-xs text-muted-foreground">
-          U gjetën {detectedProducts.length} artikuj unikë nga faturat. Zgjidh se cili artikull i faturës korrespondon me produktet në sistem.
+          U gjetën {detectedProducts.length} artikuj nga faturat. Zgjidh korrespondencën dhe kontrollo sasitë.
         </p>
+      </div>
+
+      {/* Header */}
+      <div className="hidden md:grid grid-cols-[1fr_auto_1.2fr_80px_80px_80px] gap-2 px-3 text-xs font-medium text-muted-foreground border-b pb-2">
+        <span>Artikulli i faturës</span>
+        <span></span>
+        <span>Produkti në sistem</span>
+        <span className="text-center">Sasia faturës</span>
+        <span className="text-center">Copë/njësi</span>
+        <span className="text-center">Furnizime</span>
       </div>
 
       <ScrollArea className="h-[400px] pr-4">
@@ -60,67 +75,88 @@ export const InvoiceMappingStep = ({
           {detectedProducts.map((product, index) => {
             const mapping = invoiceMapping[product.name];
             const currentValue = mapping ? `${mapping.type}:${mapping.name}` : "";
+            const calculatedSupply = getCalculatedSupply(product);
             
             return (
-              <div key={index} className="flex items-center gap-3 p-3 border rounded">
-                <div className="flex-1">
+              <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_auto_1.2fr_80px_80px_80px] gap-2 items-center p-3 border rounded">
+                {/* Emri nga fatura + çmimi */}
+                <div>
                   <p className="text-sm font-mono font-medium">{product.name}</p>
-                  <p className="text-xs text-muted-foreground">Nga fatura</p>
+                  <p className="text-xs text-muted-foreground">
+                    {product.invoicePrice > 0 
+                      ? `${product.invoicePrice.toLocaleString()} lekë` 
+                      : 'Pa çmim'}
+                  </p>
                 </div>
-                <div className="text-muted-foreground">→</div>
-                <div className="flex gap-2 items-center flex-1">
-                  <select
-                    value={currentValue}
-                    onChange={(e) => {
-                      const [type, name] = e.target.value.split(':');
-                      if (type && name) {
-                        onMappingChange(product.name, type as 'product' | 'kitchen' | 'alcoholic_drink', name);
-                      }
-                    }}
-                    className="text-sm border rounded p-2 flex-1"
+
+                <div className="text-muted-foreground hidden md:block">→</div>
+
+                {/* Select produkti */}
+                <select
+                  value={currentValue}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const colonIdx = val.indexOf(':');
+                    if (colonIdx === -1) return;
+                    const type = val.substring(0, colonIdx);
+                    const name = val.substring(colonIdx + 1);
+                    if (type && name) {
+                      onMappingChange(product.name, type as 'product' | 'kitchen' | 'alcoholic_drink', name);
+                    }
+                  }}
+                  className="text-sm border rounded p-2"
+                  disabled={!isAdmin}
+                >
+                  <option value="">-- Zgjidh --</option>
+                  <optgroup label="📦 Produkte">
+                    {products.map(p => (
+                      <option key={p} value={`product:${p}`}>{p}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="🍳 Kuzhinë">
+                    {kitchenProducts.map(k => (
+                      <option key={k} value={`kitchen:${k}`}>{k}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="🍸 Pijet Alkoolike">
+                    {alcoholicDrinks.map(d => (
+                      <option key={d} value={`alcoholic_drink:${d}`}>{d}</option>
+                    ))}
+                  </optgroup>
+                </select>
+
+                {/* Sasia nga fatura - editabile */}
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={product.invoiceQuantity}
+                  onChange={(e) => onInvoiceQuantityChange(product.name, parseFloat(e.target.value) || 0)}
+                  className="h-8 text-sm text-center"
+                  title="Sasia nga fatura"
+                />
+
+                {/* Copë/njësi (mapping quantity) */}
+                {mapping ? (
+                  <Input
+                    type="number"
+                    min="0.5"
+                    step="0.5"
+                    value={mapping.quantity}
+                    onChange={(e) => onQuantityChange(product.name, parseFloat(e.target.value) || 1)}
+                    className="h-8 text-sm text-center"
                     disabled={!isAdmin}
-                  >
-                    <option value="">-- Zgjidh --</option>
-                    <optgroup label="📦 Produkte">
-                      {products.map(p => (
-                        <option key={p} value={`product:${p}`}>
-                          {p}
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="🍳 Kuzhinë">
-                      {kitchenProducts.map(k => (
-                        <option key={k} value={`kitchen:${k}`}>
-                          {k}
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="🍸 Pijet Alkoolike">
-                      {alcoholicDrinks.map(d => (
-                        <option key={d} value={`alcoholic_drink:${d}`}>
-                          {d}
-                        </option>
-                      ))}
-                    </optgroup>
-                  </select>
-                  
-                  {mapping && (
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1">
-                        <Label className="text-xs whitespace-nowrap">Sasia:</Label>
-                        <Input
-                          type="number"
-                          min="1"
-                          value={mapping.quantity}
-                          onChange={(e) => onQuantityChange(product.name, parseInt(e.target.value) || 1)}
-                          className="w-20 h-8 text-sm"
-                        />
-                      </div>
-                      <span className="text-xs text-green-600 whitespace-nowrap">
-                        ✓ {mapping.type === 'product' ? '📦' : mapping.type === 'kitchen' ? '🍳' : '🍸'} {mapping.name}
-                      </span>
-                    </div>
-                  )}
+                    title="Sa copë për njësi"
+                  />
+                ) : (
+                  <div className="h-8 flex items-center justify-center text-xs text-muted-foreground">-</div>
+                )}
+
+                {/* Furnizime totale = sasia × copë/njësi */}
+                <div className={`h-8 flex items-center justify-center text-sm font-bold rounded ${
+                  mapping ? 'bg-green-100 text-green-800' : 'text-muted-foreground'
+                }`}>
+                  {mapping ? calculatedSupply : '-'}
                 </div>
               </div>
             );
@@ -128,13 +164,22 @@ export const InvoiceMappingStep = ({
         </div>
       </ScrollArea>
 
+      {/* Përmbledhje */}
       <div className="rounded-lg border border-info/50 bg-info/10 p-3">
         <p className="text-sm">
           {isAdmin 
-            ? "💡 Mund të modifikosh mappings dhe të aplikosh furnizime në stok."
-            : `✓ ${mappedCount} produkte janë tashmë të mapuara dhe gati për t'u aplikuar në stok.`
+            ? `💡 Maponi produktet dhe vendosni copë/njësi. Stafi do shohë sasinë totale automatikisht.`
+            : `✓ ${mappedCount} produkte të mapuara. Kontrollo sasitë nga fatura para se të aplikosh.`
           }
         </p>
+        {mappedCount > 0 && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Total furnizime: {detectedProducts
+              .filter(p => invoiceMapping[p.name])
+              .map(p => `${invoiceMapping[p.name].name}: ${getCalculatedSupply(p)}`)
+              .join(' | ')}
+          </p>
+        )}
       </div>
 
       <div className="flex gap-2 pt-4 border-t">

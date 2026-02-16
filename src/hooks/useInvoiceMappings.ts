@@ -4,16 +4,18 @@ import { toast } from "sonner";
 import { MappingData } from "@/types/mapping.types";
 import { findBestMapping } from "@/utils/invoiceMatching";
 
-interface InvoiceProduct {
+export interface InvoiceProduct {
   name: string;
   originalName: string;
+  invoiceQuantity: number;  // Sasia nga fatura
+  invoicePrice: number;     // Çmimi total nga fatura
 }
 
 type InvoiceMapping = { 
   [key: string]: { 
     type: 'product' | 'kitchen' | 'alcoholic_drink'; 
     name: string; 
-    quantity: number 
+    quantity: number;  // Sa copë për njësi (mapping quantity)
   } 
 };
 
@@ -36,7 +38,6 @@ export const useInvoiceMappings = () => {
       if (data && data.length > 0) {
         const mapping: InvoiceMapping = {};
         data.forEach(item => {
-          // Injoro mappings të kafesë (duhet të jenë vetëm për shitje)
           if (item.product_type !== 'coffee') {
             mapping[item.invoice_name] = {
               type: item.product_type as 'product' | 'kitchen' | 'alcoholic_drink',
@@ -65,7 +66,6 @@ export const useInvoiceMappings = () => {
           reject();
           return;
         }
-
         const reader = new FileReader();
         reader.onload = (event) => resolve(event.target?.result as string);
         reader.onerror = reject;
@@ -89,7 +89,8 @@ export const useInvoiceMappings = () => {
     }
 
     setIsProcessing(true);
-    const allProducts = new Set<string>();
+    // Grumbullo artikujt me sasi dhe çmim
+    const productMap = new Map<string, { totalQty: number; totalPrice: number }>();
 
     try {
       toast.info(`Po analizon ${uploadedImages.length} fatura...`);
@@ -107,22 +108,32 @@ export const useInvoiceMappings = () => {
         }
 
         if (data && data.success && data.data && data.data.items) {
-          data.data.items.forEach((item: { name: string }) => {
-            allProducts.add(item.name);
+          data.data.items.forEach((item: { name: string; quantity?: number; price?: number }) => {
+            const existing = productMap.get(item.name);
+            const qty = item.quantity || 1;
+            const price = item.price || 0;
+            if (existing) {
+              existing.totalQty += qty;
+              existing.totalPrice += price;
+            } else {
+              productMap.set(item.name, { totalQty: qty, totalPrice: price });
+            }
           });
         }
 
         toast.info(`Analizuar ${i + 1}/${uploadedImages.length} fatura...`);
       }
 
-      const uniqueProducts: InvoiceProduct[] = Array.from(allProducts).map(name => ({
+      const uniqueProducts: InvoiceProduct[] = Array.from(productMap.entries()).map(([name, info]) => ({
         name,
-        originalName: name
+        originalName: name,
+        invoiceQuantity: info.totalQty,
+        invoicePrice: info.totalPrice,
       }));
 
       setDetectedProducts(uniqueProducts);
       
-      // Ngarko mappings e ruajtura nga databaza dhe apliko automatikisht me fuzzy matching
+      // Auto-map with saved mappings
       const { data: savedMappingsData } = await supabase
         .from('invoice_mappings')
         .select('*');
@@ -131,7 +142,6 @@ export const useInvoiceMappings = () => {
       if (savedMappingsData && savedMappingsData.length > 0) {
         savedMapping = {};
         savedMappingsData.forEach(item => {
-          // Injoro mappings të kafesë (duhet të jenë vetëm për shitje)
           if (item.product_type !== 'coffee') {
             savedMapping![item.invoice_name] = {
               type: item.product_type as 'product' | 'kitchen' | 'alcoholic_drink',
@@ -160,16 +170,13 @@ export const useInvoiceMappings = () => {
         
         setInvoiceMapping(autoMapped);
         
-        const mappedCount = matchedProducts.length;
-        if (mappedCount > 0) {
-          toast.success(`U gjetën ${uniqueProducts.length} produkte! ${mappedCount} u mapuan automatikisht.`, {
-            description: matchedProducts.slice(0, 3).join(", ") + (mappedCount > 3 ? "..." : "")
-          });
+        if (matchedProducts.length > 0) {
+          toast.success(`U gjetën ${uniqueProducts.length} produkte! ${matchedProducts.length} u mapuan automatikisht.`);
         } else {
-          toast.info(`U gjetën ${uniqueProducts.length} produkte unike, por asnjë nuk është i mapuar.`);
+          toast.info(`U gjetën ${uniqueProducts.length} produkte, por asnjë nuk është i mapuar.`);
         }
       } else {
-        toast.info(`U gjetën ${uniqueProducts.length} produkte unike. Admini duhet të krijojë mapping.`);
+        toast.info(`U gjetën ${uniqueProducts.length} produkte. Admini duhet të krijojë mapping.`);
       }
       
       setStep('mapping');
@@ -186,20 +193,25 @@ export const useInvoiceMappings = () => {
     type: 'product' | 'kitchen' | 'alcoholic_drink', 
     name: string
   ) => {
-    const newMapping = {
-      ...invoiceMapping,
-      [invoiceProduct]: { type, name, quantity: invoiceMapping[invoiceProduct]?.quantity || 1 }
-    };
-    setInvoiceMapping(newMapping);
+    setInvoiceMapping(prev => ({
+      ...prev,
+      [invoiceProduct]: { type, name, quantity: prev[invoiceProduct]?.quantity || 1 }
+    }));
   };
 
   const handleQuantityChange = (invoiceProduct: string, quantity: number) => {
     if (invoiceMapping[invoiceProduct]) {
-      setInvoiceMapping({
-        ...invoiceMapping,
-        [invoiceProduct]: { ...invoiceMapping[invoiceProduct], quantity: quantity || 1 }
-      });
+      setInvoiceMapping(prev => ({
+        ...prev,
+        [invoiceProduct]: { ...prev[invoiceProduct], quantity: quantity || 1 }
+      }));
     }
+  };
+
+  const handleInvoiceQuantityChange = (productName: string, newQty: number) => {
+    setDetectedProducts(prev => prev.map(p => 
+      p.name === productName ? { ...p, invoiceQuantity: newQty } : p
+    ));
   };
 
   const saveMapping = async (isAdmin: boolean) => {
@@ -214,11 +226,7 @@ export const useInvoiceMappings = () => {
     }
     
     try {
-      console.log("Saving invoice mappings:", invoiceMapping);
-      
-      // Për çdo mapping, bëj upsert (update nëse ekziston, insert nëse jo)
       for (const [invoiceName, mapping] of Object.entries(invoiceMapping)) {
-        // Kontrollo nëse ekziston
         const { data: existing } = await supabase
           .from('invoice_mappings')
           .select('id')
@@ -226,7 +234,6 @@ export const useInvoiceMappings = () => {
           .maybeSingle();
         
         if (existing) {
-          // Update
           const { error: updateError } = await supabase
             .from('invoice_mappings')
             .update({
@@ -236,13 +243,8 @@ export const useInvoiceMappings = () => {
               updated_at: new Date().toISOString()
             })
             .eq('invoice_name', invoiceName);
-          
-          if (updateError) {
-            console.error("Update error:", updateError);
-            throw updateError;
-          }
+          if (updateError) throw updateError;
         } else {
-          // Insert
           const { error: insertError } = await supabase
             .from('invoice_mappings')
             .insert({
@@ -251,15 +253,10 @@ export const useInvoiceMappings = () => {
               product_name: mapping.name,
               quantity: mapping.quantity || 1
             });
-          
-          if (insertError) {
-            console.error("Insert error:", insertError);
-            throw insertError;
-          }
+          if (insertError) throw insertError;
         }
       }
       
-      console.log("All mappings saved successfully");
       toast.success("Mapimi i faturave u ruajt me sukses!");
       return true;
     } catch (error) {
@@ -269,22 +266,64 @@ export const useInvoiceMappings = () => {
     }
   };
 
-  const applySupplies = (onApplySupplies?: (mapping: MappingData) => void) => {
+  /**
+   * Apliko furnizime duke llogaritue: furnizime_total = sasia_fatures × sasia_mapimit
+   * Çmimi mesatar llogaritet kur disa artikuj mapohen tek i njëjti produkt
+   */
+  const applySupplies = (onApplySupplies?: (mapping: MappingData, invoiceItems?: InvoiceProduct[]) => void) => {
     const mappedProducts = detectedProducts.filter(p => invoiceMapping[p.name]);
     if (mappedProducts.length === 0) {
       toast.error("Nuk ka produkte të mapuara për t'u aplikuar!");
       return false;
     }
 
-    if (onApplySupplies) {
-      onApplySupplies(invoiceMapping);
+    // Llogarit furnizime totale dhe çmim mesatar për çdo produkt destinacion
+    const aggregated: { [productName: string]: { type: string; totalUnits: number; totalCost: number } } = {};
+    
+    mappedProducts.forEach(p => {
+      const mapping = invoiceMapping[p.name];
+      const totalUnits = p.invoiceQuantity * mapping.quantity;
+      const key = `${mapping.type}:${mapping.name}`;
+      
+      if (aggregated[key]) {
+        aggregated[key].totalUnits += totalUnits;
+        aggregated[key].totalCost += p.invoicePrice;
+      } else {
+        aggregated[key] = {
+          type: mapping.type,
+          totalUnits,
+          totalCost: p.invoicePrice,
+        };
+      }
+    });
+
+    // Krijo mapping final me sasinë totale të llogarituar
+    const finalMapping: MappingData = {};
+    for (const [key, agg] of Object.entries(aggregated)) {
+      const [type, name] = [key.substring(0, key.indexOf(':')), key.substring(key.indexOf(':') + 1)];
+      const avgPrice = agg.totalUnits > 0 ? Math.round(agg.totalCost / agg.totalUnits) : 0;
+      finalMapping[name] = {
+        type: type as any,
+        name,
+        quantity: agg.totalUnits,
+      };
+      console.log(`📦 ${name}: ${agg.totalUnits} copë, çmim mesatar: ${avgPrice} lekë/copë`);
     }
 
-    toast.success(`${mappedProducts.length} produkte u aplikuan në stok!`, {
-      description: mappedProducts.map(p => {
-        const mapping = invoiceMapping[p.name];
-        return `${mapping.name} (${mapping.quantity})`;
-      }).join(", ")
+    if (onApplySupplies) {
+      onApplySupplies(finalMapping, mappedProducts);
+    }
+
+    // Shfaq përmbythjen
+    const summaryLines = Object.entries(aggregated).map(([key, agg]) => {
+      const name = key.substring(key.indexOf(':') + 1);
+      const avgPrice = agg.totalUnits > 0 ? Math.round(agg.totalCost / agg.totalUnits) : 0;
+      return `${name}: ${agg.totalUnits} copë (${avgPrice} lekë/copë)`;
+    });
+
+    toast.success(`${Object.keys(aggregated).length} produkte u aplikuan në stok!`, {
+      description: summaryLines.join(", "),
+      duration: 6000,
     });
     return true;
   };
@@ -298,7 +337,7 @@ export const useInvoiceMappings = () => {
       const { error } = await supabase
         .from('invoice_mappings')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Fshij të gjitha
+        .neq('id', '00000000-0000-0000-0000-000000000000');
       
       if (error) throw error;
       
@@ -328,20 +367,18 @@ export const useInvoiceMappings = () => {
   };
 
   return {
-    // State
     isOpen,
     isProcessing,
     uploadedImages,
     detectedProducts,
     invoiceMapping,
     step,
-    
-    // Actions
     setStep,
     handleImagesUpload,
     analyzeAllInvoices,
     handleMappingChange,
     handleQuantityChange,
+    handleInvoiceQuantityChange,
     saveMapping,
     applySupplies,
     deleteMapping,

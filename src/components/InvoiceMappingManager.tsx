@@ -33,6 +33,7 @@ export const InvoiceMappingManager = ({
     analyzeAllInvoices,
     handleMappingChange,
     handleQuantityChange,
+    handleInvoiceQuantityChange,
     saveMapping,
     applySupplies,
     deleteMapping,
@@ -108,6 +109,7 @@ export const InvoiceMappingManager = ({
               isAdmin={isAdmin}
               onMappingChange={handleMappingChange}
               onQuantityChange={handleQuantityChange}
+              onInvoiceQuantityChange={handleInvoiceQuantityChange}
               onSave={handleSave}
               onApply={handleApply}
               onBack={() => setStep('upload')}
