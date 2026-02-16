@@ -417,7 +417,7 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
                           startCapturing = true;
                           continue;
                         }
-                        if (startCapturing && line.trim() && !line.includes('---')) {
+                        if (startCapturing && line.trim() && !line.includes('---') && !line.includes('TOTALI')) {
                           productLines.push(line);
                         }
                       }
@@ -435,13 +435,17 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
                             <div className="flex gap-2">
                               <select
                                 value={currentValue}
-                                onChange={(e) => {
-                                  const [type, name] = e.target.value.split(':');
-                                  if (type && name) {
-                                    const currentQuantity = mapping?.quantity || 1;
-                                    handleMapProduct(index.toString(), type as 'product' | 'coffee' | 'alcoholic_drink', name, currentQuantity);
-                                  }
-                                }}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const colonIdx = val.indexOf(':');
+                              if (colonIdx === -1) return;
+                              const type = val.substring(0, colonIdx);
+                              const name = val.substring(colonIdx + 1);
+                              if (type && name) {
+                                const currentQuantity = mapping?.quantity || 1;
+                                handleMapProduct(index.toString(), type as 'product' | 'coffee' | 'alcoholic_drink', name, currentQuantity);
+                              }
+                            }}
                                 className={`flex-1 text-sm border rounded p-2 ${
                                   isMapped ? 'border-green-500 bg-green-50' : 'border-orange-500'
                                 }`}

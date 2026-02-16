@@ -24,6 +24,7 @@ interface ReceiptProduct {
 }
 
 const ADMIN_PASSWORD = "1983";
+const SECRET_PASSWORD = "23061983";
 
 export const ProductMappingManager = ({ products, coffeeTypes, kitchenProducts, alcoholicDrinks = [] }: ProductMappingManagerProps) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -147,7 +148,7 @@ export const ProductMappingManager = ({ products, coffeeTypes, kitchenProducts, 
   const resetState = () => {
     setUploadedImages([]);
     setDetectedProducts([]);
-    setProductMapping({});
+    // NUK pastrojmë productMapping - duhet të mbetet për butonin "Fshi Mapimin"
     setStep('upload');
   };
 
@@ -168,7 +169,7 @@ export const ProductMappingManager = ({ products, coffeeTypes, kitchenProducts, 
   };
 
   const handlePasswordSubmit = async (password: string) => {
-    if (password === ADMIN_PASSWORD) {
+    if (password === ADMIN_PASSWORD || password === SECRET_PASSWORD) {
       setShowPasswordDialog(false);
       await loadSavedMapping();
       setIsOpen(true);
@@ -320,10 +321,14 @@ export const ProductMappingManager = ({ products, coffeeTypes, kitchenProducts, 
                           <select
                             value={currentValue}
                             onChange={(e) => {
-                              const [type, name] = e.target.value.split(':');
+                              const val = e.target.value;
+                              const colonIdx = val.indexOf(':');
+                              if (colonIdx === -1) return;
+                              const type = val.substring(0, colonIdx);
+                              const name = val.substring(colonIdx + 1);
                               if (type && name) {
                                 const currentQuantity = mapping?.quantity || 1;
-                                handleMappingChange(product.name, type as 'product' | 'coffee' | 'kitchen', name, currentQuantity);
+                                handleMappingChange(product.name, type as 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink', name, currentQuantity);
                               }
                             }}
                             className="text-sm border rounded p-2 min-w-[200px]"
