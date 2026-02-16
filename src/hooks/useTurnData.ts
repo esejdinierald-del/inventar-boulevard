@@ -356,8 +356,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
         console.log('💾 Saving T2 stock for next day (T2 → Next Day T1)...');
         const nextDayStock = Object.fromEntries(
           Object.entries(turn2.products).map(([key, data]) => {
-            const calculatedStock = CalculationService.calculateNewStock(data);
-            console.log(`  📦 ${key}: ${data.stokFillim} + ${data.furnizime} - ${data.shiriti} = ${calculatedStock}`);
+            const calculatedStock = CalculationService.calculateStockForNextTurn(data);
+            console.log(`  📦 ${key}: gjendje=${data.gjendje}, stok=${data.stokFillim}+furn=${data.furnizime}-shir=${data.shiriti} → ${calculatedStock}`);
             return [key, calculatedStock];
           })
         );

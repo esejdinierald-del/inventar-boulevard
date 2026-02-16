@@ -66,8 +66,27 @@ export class CalculationService {
 
   /**
    * Llogarit stokun e ri bazuar në formulën: Stok Fillim + Furnizime - Shiriti
+   * KUJDES: Kjo formulë nuk merr parasysh gjendjen fizike!
+   * Për propagim stoku, përdor calculateStockForNextTurn()
    */
   static calculateNewStock(productData: ProductData): number {
+    return productData.stokFillim + productData.furnizime - productData.shiriti;
+  }
+
+  /**
+   * Llogarit stokun për turnin/ditën tjetër:
+   * - Nëse gjendje > 0 (numërim fizik i bërë), përdor gjendjen
+   * - Përndryshe llogarit teorikisht: stokFillim + furnizime - shiriti
+   * Kjo formulë duhet përdorur GJITHMONË kur propagohet stoku
+   */
+  static calculateStockForNextTurn(productData: ProductData): number {
+    if (productData.gjendje > 0) {
+      return productData.gjendje;
+    }
+    // Nëse nuk ka asnjë të dhënë, kthe 0
+    if (productData.stokFillim === 0 && productData.furnizime === 0) {
+      return 0;
+    }
     return productData.stokFillim + productData.furnizime - productData.shiriti;
   }
 }
