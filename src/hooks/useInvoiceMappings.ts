@@ -108,15 +108,9 @@ export const useInvoiceMappings = () => {
         }
 
         if (data && data.success && data.data && data.data.items) {
-          data.data.items.forEach((item: { name: string; quantity?: number; price?: number }) => {
-            const existing = productMap.get(item.name);
-            const qty = item.quantity || 1;
-            const price = item.price || 0;
-            if (existing) {
-              existing.totalQty += qty;
-              existing.totalPrice += price;
-            } else {
-              productMap.set(item.name, { totalQty: qty, totalPrice: price });
+          data.data.items.forEach((item: { name: string; price?: number }) => {
+            if (!productMap.has(item.name)) {
+              productMap.set(item.name, { totalQty: 0, totalPrice: item.price || 0 });
             }
           });
         }
