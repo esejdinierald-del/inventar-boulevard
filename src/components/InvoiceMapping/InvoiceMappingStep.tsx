@@ -188,17 +188,34 @@ export const InvoiceMappingStep = ({
         );
       })()}
 
-      {/* Përmbledhje furnizimesh */}
-      {mappedCount > 0 && (
-        <div className="rounded-lg border border-info/50 bg-info/10 p-3">
-          <p className="text-xs text-muted-foreground">
-            Total furnizime: {detectedProducts
-              .filter(p => invoiceMapping[p.name])
-              .map(p => `${invoiceMapping[p.name].name}: ${getCalculatedSupply(p)}`)
-              .join(' | ')}
-          </p>
-        </div>
-      )}
+      {/* Përmbledhje furnizimesh - agreguar sipas produktit destinacion */}
+      {mappedCount > 0 && (() => {
+        const aggregated: { [key: string]: { name: string; totalUnits: number; totalCost: number } } = {};
+        detectedProducts
+          .filter(p => invoiceMapping[p.name])
+          .forEach(p => {
+            const mapping = invoiceMapping[p.name];
+            const units = p.invoiceQuantity * mapping.quantity;
+            const key = `${mapping.type}:${mapping.name}`;
+            if (aggregated[key]) {
+              aggregated[key].totalUnits += units;
+              aggregated[key].totalCost += p.invoicePrice;
+            } else {
+              aggregated[key] = { name: mapping.name, totalUnits: units, totalCost: p.invoicePrice };
+            }
+          });
+        return (
+          <div className="rounded-lg border border-info/50 bg-info/10 p-3">
+            <p className="text-xs font-medium mb-1">📦 Përmbledhje furnizimesh (agreguar):</p>
+            <p className="text-xs text-muted-foreground">
+              {Object.values(aggregated).map(agg => {
+                const avgPrice = agg.totalUnits > 0 ? Math.round(agg.totalCost / agg.totalUnits) : 0;
+                return `${agg.name}: ${agg.totalUnits} copë (${avgPrice} lekë/copë)`;
+              }).join(' | ')}
+            </p>
+          </div>
+        );
+      })()}
 
       <div className="flex gap-2 pt-4 border-t">
         <Button onClick={onBack} variant="outline">
