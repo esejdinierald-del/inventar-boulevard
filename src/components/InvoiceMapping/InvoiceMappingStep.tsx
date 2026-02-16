@@ -16,6 +16,7 @@ interface InvoiceMapping {
 interface InvoiceMappingStepProps {
   detectedProducts: InvoiceProduct[];
   invoiceMapping: InvoiceMapping;
+  invoiceTotal: number;
   products: string[];
   kitchenProducts: string[];
   alcoholicDrinks: string[];
@@ -31,6 +32,7 @@ interface InvoiceMappingStepProps {
 export const InvoiceMappingStep = ({
   detectedProducts,
   invoiceMapping,
+  invoiceTotal,
   products,
   kitchenProducts,
   alcoholicDrinks,
@@ -164,23 +166,39 @@ export const InvoiceMappingStep = ({
         </div>
       </ScrollArea>
 
-      {/* Përmbledhje */}
-      <div className="rounded-lg border border-info/50 bg-info/10 p-3">
-        <p className="text-sm">
-          {isAdmin 
-            ? `💡 Maponi produktet dhe vendosni copë/njësi. Stafi do shohë sasinë totale automatikisht.`
-            : `✓ ${mappedCount} produkte të mapuara. Kontrollo sasitë nga fatura para se të aplikosh.`
-          }
-        </p>
-        {mappedCount > 0 && (
-          <p className="text-xs text-muted-foreground mt-1">
+      {/* Krahasimi i vlerës së faturës vs produkteve */}
+      {detectedProducts.length > 0 && (() => {
+        const sumProducts = detectedProducts.reduce((sum, p) => sum + p.invoicePrice, 0);
+        const diff = invoiceTotal - sumProducts;
+        const isMatch = Math.abs(diff) < 1;
+        return (
+          <div className={`rounded-lg border p-3 ${
+            isMatch 
+              ? 'border-green-500/50 bg-green-50 dark:bg-green-950/20' 
+              : 'border-destructive/50 bg-destructive/10'
+          }`}>
+            <div className="flex items-center justify-between text-sm">
+              <span>📄 Total fatura (foto): <strong>{invoiceTotal.toLocaleString()} lekë</strong></span>
+              <span>📋 Shuma artikujve: <strong>{sumProducts.toLocaleString()} lekë</strong></span>
+              <span className={`font-bold ${isMatch ? 'text-green-700 dark:text-green-400' : 'text-destructive'}`}>
+                {isMatch ? '✅ Përputhet!' : `⚠️ Diferencë: ${diff > 0 ? '+' : ''}${diff.toLocaleString()} lekë`}
+              </span>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Përmbledhje furnizimesh */}
+      {mappedCount > 0 && (
+        <div className="rounded-lg border border-info/50 bg-info/10 p-3">
+          <p className="text-xs text-muted-foreground">
             Total furnizime: {detectedProducts
               .filter(p => invoiceMapping[p.name])
               .map(p => `${invoiceMapping[p.name].name}: ${getCalculatedSupply(p)}`)
               .join(' | ')}
           </p>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="flex gap-2 pt-4 border-t">
         <Button onClick={onBack} variant="outline">

@@ -26,6 +26,7 @@ export const useInvoiceMappings = () => {
   const [detectedProducts, setDetectedProducts] = useState<InvoiceProduct[]>([]);
   const [invoiceMapping, setInvoiceMapping] = useState<InvoiceMapping>({});
   const [step, setStep] = useState<'upload' | 'mapping'>('upload');
+  const [invoiceTotal, setInvoiceTotal] = useState<number>(0);
 
   const loadSavedMapping = async () => {
     try {
@@ -89,8 +90,8 @@ export const useInvoiceMappings = () => {
     }
 
     setIsProcessing(true);
-    // Grumbullo artikujt me sasi dhe çmim
     const productMap = new Map<string, { totalQty: number; totalPrice: number }>();
+    let totalFromInvoices = 0;
 
     try {
       toast.info(`Po analizon ${uploadedImages.length} fatura...`);
@@ -107,12 +108,17 @@ export const useInvoiceMappings = () => {
           continue;
         }
 
-        if (data && data.success && data.data && data.data.items) {
-          data.data.items.forEach((item: { name: string; price?: number }) => {
-            if (!productMap.has(item.name)) {
-              productMap.set(item.name, { totalQty: 0, totalPrice: item.price || 0 });
-            }
-          });
+        if (data && data.success && data.data) {
+          if (data.data.total) {
+            totalFromInvoices += data.data.total;
+          }
+          if (data.data.items) {
+            data.data.items.forEach((item: { name: string; price?: number }) => {
+              if (!productMap.has(item.name)) {
+                productMap.set(item.name, { totalQty: 0, totalPrice: item.price || 0 });
+              }
+            });
+          }
         }
 
         toast.info(`Analizuar ${i + 1}/${uploadedImages.length} fatura...`);
@@ -126,7 +132,7 @@ export const useInvoiceMappings = () => {
       }));
 
       setDetectedProducts(uniqueProducts);
-      
+      setInvoiceTotal(totalFromInvoices);
       // Auto-map with saved mappings
       const { data: savedMappingsData } = await supabase
         .from('invoice_mappings')
@@ -348,6 +354,7 @@ export const useInvoiceMappings = () => {
     setDetectedProducts([]);
     setInvoiceMapping({});
     setStep('upload');
+    setInvoiceTotal(0);
   };
 
   const handleOpen = async () => {
@@ -366,6 +373,7 @@ export const useInvoiceMappings = () => {
     uploadedImages,
     detectedProducts,
     invoiceMapping,
+    invoiceTotal,
     step,
     setStep,
     handleImagesUpload,

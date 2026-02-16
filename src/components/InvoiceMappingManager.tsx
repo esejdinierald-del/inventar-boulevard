@@ -27,6 +27,7 @@ export const InvoiceMappingManager = ({
     uploadedImages,
     detectedProducts,
     invoiceMapping,
+    invoiceTotal,
     step,
     setStep,
     handleImagesUpload,
@@ -103,6 +104,7 @@ export const InvoiceMappingManager = ({
             <InvoiceMappingStep
               detectedProducts={detectedProducts}
               invoiceMapping={invoiceMapping}
+              invoiceTotal={invoiceTotal}
               products={products}
               kitchenProducts={kitchenProducts}
               alcoholicDrinks={alcoholicDrinks}
