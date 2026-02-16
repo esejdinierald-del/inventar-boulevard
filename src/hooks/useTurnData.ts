@@ -76,6 +76,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
   const [turn1, setTurn1] = useState<TurnData>(createEmptyTurnData);
   const [turn2, setTurn2] = useState<TurnData>(createEmptyTurnData);
   const isInitialLoad = useRef(true);
+  const loadCompleteCounter = useRef(0); // Tracks how many times data was loaded
 
   // Load data for current date on mount and when date changes
   useEffect(() => {
@@ -235,11 +236,18 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
         setTurn2(createEmptyTurnData());
       }
       
-      // Mark initial load as complete after a short delay
+      // Mark initial load as complete after sync timeouts have passed
+      // T1→T2 sync fires at 800ms, T2→next_day at 1200ms
+      // Wait 1500ms to ensure all initial syncs complete before enabling auto-save
+      loadCompleteCounter.current += 1;
+      const currentLoad = loadCompleteCounter.current;
       setTimeout(() => {
-        console.log('✅ Initial load complete - auto-save enabled');
-        isInitialLoad.current = false;
-      }, 500);
+        // Only mark complete if no newer load has started
+        if (loadCompleteCounter.current === currentLoad) {
+          console.log('✅ Initial load complete - auto-save enabled');
+          isInitialLoad.current = false;
+        }
+      }, 1500);
     };
     
     loadData();
@@ -333,6 +341,15 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     
     const saveNextDayAndPropagate = async () => {
       try {
+        // MBROJTJE SHTESË: Mos mbishkruaj next_day_stock me 0 nëse T2 nuk ka të dhëna reale
+        const hasAnyT2Data = Object.values(turn2.products).some(
+          p => p.stokFillim > 0 || p.furnizime > 0 || p.shiriti > 0 || p.gjendje > 0
+        );
+        if (!hasAnyT2Data && turn2.xhiro === 0) {
+          console.log('⏭️ T2 nuk ka të dhëna reale - duke shmangur mbishkrimin e next_day_stock');
+          return;
+        }
+        
         const today = new Date().toISOString().split('T')[0];
         const isPastDate = selectedDate < today;
         
