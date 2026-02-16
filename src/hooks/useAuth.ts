@@ -7,7 +7,9 @@ const STAFF_EDIT_WINDOW_MINUTES = 240; // Staff mund të modifikojë të dhënat
 
 export const useAuth = () => {
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
+  const [isViewOnlyUnlocked, setIsViewOnlyUnlocked] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [showViewOnlyDialog, setShowViewOnlyDialog] = useState(false);
 
   // Kontrollo nëse staff mund të modifikojë të dhënat e ditës së djeshme
   const isWithinStaffEditWindow = useCallback((): boolean => {
@@ -32,6 +34,18 @@ export const useAuth = () => {
     }
   }, []);
 
+  const validateViewOnlyPassword = useCallback((password: string): boolean => {
+    if (password === ADMIN_PASSWORD || password === SECRET_PASSWORD) {
+      setIsViewOnlyUnlocked(true);
+      setShowViewOnlyDialog(false);
+      toast.success("🔓 Shikimi i datave të kaluara u zhbllokua!");
+      return true;
+    } else {
+      toast.error("Fjalëkalimi është gabim!");
+      return false;
+    }
+  }, []);
+
   const toggleAdminMode = useCallback(() => {
     if (isAdminUnlocked) {
       setIsAdminUnlocked(false);
@@ -41,8 +55,16 @@ export const useAuth = () => {
     }
   }, [isAdminUnlocked]);
 
+  const requestViewOnly = useCallback(() => {
+    setShowViewOnlyDialog(true);
+  }, []);
+
   const closePasswordDialog = useCallback(() => {
     setShowPasswordDialog(false);
+  }, []);
+
+  const closeViewOnlyDialog = useCallback(() => {
+    setShowViewOnlyDialog(false);
   }, []);
 
   const unlockAdmin = useCallback(() => {
@@ -51,10 +73,15 @@ export const useAuth = () => {
 
   return {
     isAdminUnlocked,
+    isViewOnlyUnlocked,
     showPasswordDialog,
+    showViewOnlyDialog,
     validatePassword,
+    validateViewOnlyPassword,
     toggleAdminMode,
+    requestViewOnly,
     closePasswordDialog,
+    closeViewOnlyDialog,
     isWithinStaffEditWindow,
     unlockAdmin,
   };

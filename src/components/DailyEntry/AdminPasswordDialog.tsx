@@ -6,9 +6,11 @@ interface AdminPasswordDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (password: string) => void;
+  title?: string;
+  description?: string;
 }
 
-export const AdminPasswordDialog = ({ isOpen, onClose, onSubmit }: AdminPasswordDialogProps) => {
+export const AdminPasswordDialog = ({ isOpen, onClose, onSubmit, title = "Hyrje Admin", description = "Vendos fjalëkalimin për të hyrë si administrator" }: AdminPasswordDialogProps) => {
   const [password, setPassword] = useState("");
 
   const handleSubmit = () => {
@@ -20,9 +22,9 @@ export const AdminPasswordDialog = ({ isOpen, onClose, onSubmit }: AdminPassword
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Hyrje Admin</AlertDialogTitle>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>
-            Vendos fjalëkalimin për të hyrë si administrator
+            {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <Input
