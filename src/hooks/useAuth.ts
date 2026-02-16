@@ -5,11 +5,24 @@ const ADMIN_PASSWORD = "1983";
 const SECRET_PASSWORD = "23061983"; // Fjalëkalim sekret backup
 const STAFF_EDIT_WINDOW_MINUTES = 240; // Staff mund të modifikojë të dhënat për 4 orë pas mesnatës (00:00 - 04:00)
 
+const VIEW_ONLY_DURATION_MS = 24 * 60 * 60 * 1000; // 24 orë
+
 export const useAuth = () => {
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
-  const [isViewOnlyUnlocked, setIsViewOnlyUnlocked] = useState(false);
+  const [viewOnlyExpiry, setViewOnlyExpiry] = useState<number | null>(() => {
+    // Kontrollo nëse ka sesion aktiv në localStorage
+    const saved = localStorage.getItem('viewOnlyExpiry');
+    if (saved) {
+      const expiry = Number(saved);
+      if (expiry > Date.now()) return expiry;
+      localStorage.removeItem('viewOnlyExpiry');
+    }
+    return null;
+  });
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [showViewOnlyDialog, setShowViewOnlyDialog] = useState(false);
+
+  const isViewOnlyUnlocked = viewOnlyExpiry !== null && viewOnlyExpiry > Date.now();
 
   // Kontrollo nëse staff mund të modifikojë të dhënat e ditës së djeshme
   const isWithinStaffEditWindow = useCallback((): boolean => {
@@ -36,9 +49,11 @@ export const useAuth = () => {
 
   const validateViewOnlyPassword = useCallback((password: string): boolean => {
     if (password === ADMIN_PASSWORD || password === SECRET_PASSWORD) {
-      setIsViewOnlyUnlocked(true);
+      const expiry = Date.now() + VIEW_ONLY_DURATION_MS;
+      setViewOnlyExpiry(expiry);
+      localStorage.setItem('viewOnlyExpiry', String(expiry));
       setShowViewOnlyDialog(false);
-      toast.success("🔓 Shikimi i datave të kaluara u zhbllokua!");
+      toast.success("🔓 Shikimi u zhbllokua për 24 orë!");
       return true;
     } else {
       toast.error("Fjalëkalimi është gabim!");

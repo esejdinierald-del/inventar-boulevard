@@ -516,10 +516,10 @@ const DailyEntry = () => {
               <span className="text-lg">👁️</span>
               <div>
                 <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                  Modalitet Shikimi (Read-Only)
+                  Modalitet Shikimi (Read-Only) — aktiv për 24 orë
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Po shikon të dhënat e datës {formatDate(selectedDate)}. Nuk mund të bësh ndryshime.
+                  Po shikon të dhënat e datës {selectedDate}. Nuk mund të bësh ndryshime.
                 </p>
               </div>
             </div>
