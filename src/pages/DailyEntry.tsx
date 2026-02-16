@@ -519,7 +519,7 @@ const DailyEntry = () => {
                   Modalitet Shikimi (Read-Only) — aktiv për 24 orë
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Po shikon të dhënat e datës {selectedDate}. Nuk mund të bësh ndryshime.
+                  Po shikon të dhënat e datës {formatDate(selectedDate)}. Nuk mund të bësh ndryshime.
                 </p>
               </div>
             </div>
@@ -549,28 +549,7 @@ const DailyEntry = () => {
               <Input
                 type="date"
                 value={selectedDate}
-                onChange={e => {
-                  const newDate = e.target.value;
-                  const today = new Date().toISOString().split('T')[0];
-                  
-                  // Admin ose Menaxher me të drejta mund të zgjedhë çdo datë
-                  // Stafi mund të zgjedhë çdo datë (do shihet read-only nëse nuk ka akses)
-                  if (!hasElevatedAccess() && !isViewOnlyUnlocked && newDate !== today) {
-                    // Kontrollo nëse është e djeshme dhe brenda 4 orëve
-                    const yesterday = new Date();
-                    yesterday.setDate(yesterday.getDate() - 1);
-                    const yesterdayDate = yesterday.toISOString().split('T')[0];
-                    
-                    if (newDate === yesterdayDate && isWithinStaffEditWindow()) {
-                      setSelectedDate(newDate);
-                    } else {
-                      // Lejo navigimin por do shfaqet blloku i aksesit
-                      setSelectedDate(newDate);
-                    }
-                  } else {
-                    setSelectedDate(newDate);
-                  }
-                }}
+                onChange={e => setSelectedDate(e.target.value)}
                 className="w-auto"
                 title="Zgjidhni datën"
               />
@@ -756,31 +735,34 @@ const DailyEntry = () => {
               );
             })()}
             
-            <div className="mt-4 flex gap-2 flex-wrap items-center print:hidden">
-              <Button onClick={handleSave} className="flex-1 md:flex-initial">
-                💾 Ruaj të Dhënat
-              </Button>
-              
-              {/* Print button - kyç turnin kur printo */}
-              {!isTurnLocked(activeTurn === 'turn1' ? 1 : 2) ? (
-                <Button onClick={handlePrintAndLock} variant="default" className="flex-1 md:flex-initial bg-primary">
-                  <Printer className="h-4 w-4 mr-2" />
-                  Printo & Kyç Turnin
+            {/* Fsheh butonat ruaj/printo kur jemi në modalitet read-only */}
+            {!(isViewOnlyUnlocked && !hasElevatedAccess() && (isPastDate() || isFutureDate())) && (
+              <div className="mt-4 flex gap-2 flex-wrap items-center print:hidden">
+                <Button onClick={handleSave} className="flex-1 md:flex-initial">
+                  💾 Ruaj të Dhënat
                 </Button>
-              ) : (
-                <Button onClick={() => window.print()} variant="outline" className="flex-1 md:flex-initial">
-                  <Printer className="h-4 w-4 mr-2" />
-                  Riprinto
-                </Button>
-              )}
-              
-              {saveStatus === 'saving' && (
-                <span className="text-sm text-muted-foreground">💾 Duke ruajtur...</span>
-              )}
-              {saveStatus === 'saved' && (
-                <span className="text-sm text-success">✅ Ruajtur!</span>
-              )}
-            </div>
+                
+                {/* Print button - kyç turnin kur printo */}
+                {!isTurnLocked(activeTurn === 'turn1' ? 1 : 2) ? (
+                  <Button onClick={handlePrintAndLock} variant="default" className="flex-1 md:flex-initial bg-primary">
+                    <Printer className="h-4 w-4 mr-2" />
+                    Printo & Kyç Turnin
+                  </Button>
+                ) : (
+                  <Button onClick={() => window.print()} variant="outline" className="flex-1 md:flex-initial">
+                    <Printer className="h-4 w-4 mr-2" />
+                    Riprinto
+                  </Button>
+                )}
+                
+                {saveStatus === 'saving' && (
+                  <span className="text-sm text-muted-foreground">💾 Duke ruajtur...</span>
+                )}
+                {saveStatus === 'saved' && (
+                  <span className="text-sm text-success">✅ Ruajtur!</span>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 

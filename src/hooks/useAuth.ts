@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 
 const ADMIN_PASSWORD = "1983";
@@ -6,6 +6,7 @@ const SECRET_PASSWORD = "23061983"; // Fjalëkalim sekret backup
 const STAFF_EDIT_WINDOW_MINUTES = 240; // Staff mund të modifikojë të dhënat për 4 orë pas mesnatës (00:00 - 04:00)
 
 const VIEW_ONLY_DURATION_MS = 24 * 60 * 60 * 1000; // 24 orë
+const VIEW_ONLY_CHECK_INTERVAL_MS = 60 * 1000; // Kontrollo çdo minutë
 
 export const useAuth = () => {
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
@@ -23,6 +24,22 @@ export const useAuth = () => {
   const [showViewOnlyDialog, setShowViewOnlyDialog] = useState(false);
 
   const isViewOnlyUnlocked = viewOnlyExpiry !== null && viewOnlyExpiry > Date.now();
+
+  // Timer për të skaduar automatikisht view-only kur mbaron 24-orëshi
+  useEffect(() => {
+    if (!viewOnlyExpiry) return;
+    
+    const check = () => {
+      if (viewOnlyExpiry <= Date.now()) {
+        setViewOnlyExpiry(null);
+        localStorage.removeItem('viewOnlyExpiry');
+        toast.info('⏰ Sesioni i shikimit 24-orësh ka skaduar');
+      }
+    };
+
+    const interval = setInterval(check, VIEW_ONLY_CHECK_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [viewOnlyExpiry]);
 
   // Kontrollo nëse staff mund të modifikojë të dhënat e ditës së djeshme
   const isWithinStaffEditWindow = useCallback((): boolean => {
