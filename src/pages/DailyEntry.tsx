@@ -32,7 +32,7 @@ const DailyEntry = () => {
   const [verifiedStaffData, setVerifiedStaffData] = useState<VerifiedStaffData | null>(null);
 
   // Custom hooks
-  const { isAdminUnlocked, showPasswordDialog, validatePassword, toggleAdminMode, closePasswordDialog, isWithinStaffEditWindow, unlockAdmin } = useAuth();
+  const { isAdminUnlocked, isViewOnlyUnlocked, showPasswordDialog, showViewOnlyDialog, validatePassword, validateViewOnlyPassword, toggleAdminMode, requestViewOnly, closePasswordDialog, closeViewOnlyDialog, isWithinStaffEditWindow, unlockAdmin } = useAuth();
   const { products, coffeeTypes, addProduct: originalAddProduct, deleteProduct: originalDeleteProduct, updateProduct, addCoffeeType: originalAddCoffeeType, deleteCoffeeType: originalDeleteCoffeeType } = useProductList();
   const { kitchenProducts } = useKitchenProducts();
   const { alcoholicDrinks } = useAlcoholicDrinksList();
@@ -478,8 +478,8 @@ const DailyEntry = () => {
           </div>
         )}
         
-        {/* Block past dates completely for staff without elevated access */}
-        {!hasElevatedAccess() && verifiedStaff && (isPastDate() || isFutureDate()) && isFieldDisabled() && (
+        {/* Block past dates for staff - offer view-only unlock */}
+        {!hasElevatedAccess() && verifiedStaff && (isPastDate() || isFutureDate()) && isFieldDisabled() && !isViewOnlyUnlocked && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6 print:hidden">
             <div className="flex flex-col items-center gap-4">
               <Lock className="h-12 w-12 text-destructive" />
@@ -493,13 +493,35 @@ const DailyEntry = () => {
                     : 'Stafi nuk ka akses në të dhënat e datave të ardhshme.'}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Për të parë ose modifikuar këto të dhëna, hyni si Admin ose Menaxher.
+                  Kërko lejen e adminit për të parë këto të dhëna (vetëm lexim).
                 </p>
               </div>
-              <Button variant="outline" size="sm" onClick={toggleAdminMode}>
-                <Lock className="h-3 w-3 mr-1" />
-                Hyr si Admin
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={requestViewOnly}>
+                  👁️ Kërko Leje Shikimi
+                </Button>
+                <Button variant="outline" size="sm" onClick={toggleAdminMode}>
+                  <Lock className="h-3 w-3 mr-1" />
+                  Hyr si Admin
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* View-only mode banner */}
+        {!hasElevatedAccess() && isViewOnlyUnlocked && (isPastDate() || isFutureDate()) && (
+          <div className="rounded-lg border border-blue-500/50 bg-blue-500/10 p-4 print:hidden">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">👁️</span>
+              <div>
+                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                  Modalitet Shikimi (Read-Only)
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Po shikon të dhënat e datës {formatDate(selectedDate)}. Nuk mund të bësh ndryshime.
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -532,8 +554,8 @@ const DailyEntry = () => {
                   const today = new Date().toISOString().split('T')[0];
                   
                   // Admin ose Menaxher me të drejta mund të zgjedhë çdo datë
-                  // Stafi mund të zgjedhë vetëm datën e sotme (ose e djeshme brenda 4 orëve)
-                  if (!hasElevatedAccess() && newDate !== today) {
+                  // Stafi mund të zgjedhë çdo datë (do shihet read-only nëse nuk ka akses)
+                  if (!hasElevatedAccess() && !isViewOnlyUnlocked && newDate !== today) {
                     // Kontrollo nëse është e djeshme dhe brenda 4 orëve
                     const yesterday = new Date();
                     yesterday.setDate(yesterday.getDate() - 1);
@@ -542,27 +564,22 @@ const DailyEntry = () => {
                     if (newDate === yesterdayDate && isWithinStaffEditWindow()) {
                       setSelectedDate(newDate);
                     } else {
-                      toast.error('🔒 Stafi nuk ka akses në datat e kaluara/ardhshme.');
-                      return;
+                      // Lejo navigimin por do shfaqet blloku i aksesit
+                      setSelectedDate(newDate);
                     }
                   } else {
                     setSelectedDate(newDate);
                   }
                 }}
                 className="w-auto"
-                title={hasElevatedAccess() ? "Zgjidhni datën" : "Stafi mund të zgjedhë vetëm datën e sotme"}
+                title="Zgjidhni datën"
               />
-              {!hasElevatedAccess() && (
-                <span className="text-xs text-muted-foreground hidden md:inline">
-                  (vetëm sot)
-                </span>
-              )}
             </div>
           </div>
         </div>
 
-        {/* Tabs - Only show if user has access to this date (admin, manager with dashboard, or staff for today) */}
-        {(!verifiedStaff || hasElevatedAccess() || !isFieldDisabled() || !(isPastDate() || isFutureDate())) && (
+        {/* Tabs - Show if user has access or view-only is unlocked */}
+        {(!verifiedStaff || hasElevatedAccess() || isViewOnlyUnlocked || !isFieldDisabled() || !(isPastDate() || isFutureDate())) && (
         <Tabs defaultValue="turn1" className="w-full" value={activeTurn} onValueChange={handleTurnChange}>
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="turn1" className="flex items-center gap-1">
@@ -773,6 +790,15 @@ const DailyEntry = () => {
           isOpen={showPasswordDialog}
           onClose={closePasswordDialog}
           onSubmit={validatePassword}
+        />
+
+        {/* View-Only Password Dialog */}
+        <AdminPasswordDialog
+          isOpen={showViewOnlyDialog}
+          onClose={closeViewOnlyDialog}
+          onSubmit={validateViewOnlyPassword}
+          title="👁️ Leje Shikimi"
+          description="Vendos fjalëkalimin e adminit për të lejuar stafin të shikojë datat e kaluara (vetëm lexim)"
         />
 
         {/* Staff PIN Verification Dialog */}
