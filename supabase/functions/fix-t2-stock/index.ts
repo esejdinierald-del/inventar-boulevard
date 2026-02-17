@@ -68,8 +68,8 @@ serve(async (req) => {
         const t1Data = turn1.products[productName];
         
         if (t1Data) {
-          const expectedStokFillim = t1Data.gjendje;
-          const currentStokFillim = t2Data.stokFillim;
+          // Formula: stokFillim + furnizime - shiriti
+          const expectedStokFillim = t1Data.stokFillim + t1Data.furnizime - t1Data.shiriti;
           
           if (currentStokFillim !== expectedStokFillim) {
             newT2Products[productName] = {

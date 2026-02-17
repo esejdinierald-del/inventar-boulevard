@@ -150,23 +150,12 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
             }
           }
           
-          // KRITIKE: Sinkronizo T2 stokFillim dhe mulliriFillim nga T1
-          // Përdor T1.gjendje nëse > 0, përndryshe llogarit teorikisht
+          // KRITIKE: Sinkronizo T2 stokFillim nga T1 me formulën: stokFillim + furnizime - shiriti
           const syncedT2Products = Object.fromEntries(
             Object.entries(migratedT2.products).map(([key, data]) => {
               const t1Data = migratedT1.products[key];
               if (t1Data) {
-                let newStokFillim: number;
-                if (t1Data.gjendje > 0) {
-                  // T1.gjendje e plotësuar - përdor vlerën reale
-                  newStokFillim = t1Data.gjendje;
-                } else if (t1Data.stokFillim > 0 || t1Data.furnizime > 0) {
-                  // T1 pa gjendje por ka stok - llogarit teorikisht
-                  newStokFillim = CalculationService.calculateNewStock(t1Data);
-                } else {
-                  // Asnjë të dhënë - mbaj vlerën ekzistuese ose 0
-                  newStokFillim = data.stokFillim || 0;
-                }
+                const newStokFillim = CalculationService.calculateNewStock(t1Data);
                 return [key, { ...data, stokFillim: newStokFillim }];
               }
               return [key, data];
@@ -294,7 +283,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     if (isInitialLoad.current) return;
     
     const syncAndPropagate = async () => {
-      console.log('🔄 Syncing T1 → T2 (gjendje if filled, otherwise calculated)');
+      console.log('🔄 Syncing T1 → T2 (formula: stokFillim + furnizime - shiriti)');
       setTurn2(prev => {
         const newT2 = {
           ...prev,
@@ -302,21 +291,9 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
             Object.entries(prev.products).map(([key, data]) => {
               const t1Data = turn1.products[key];
               if (t1Data) {
-                // KRITIKE: Nëse T1.gjendje > 0, përdor atë (vlera reale e numëruar)
-                // Nëse T1.gjendje = 0 por ka stokFillim, llogarit teorikisht
-                let newStokFillim: number;
-                if (t1Data.gjendje > 0) {
-                  // Gjendje e plotësuar - përdor vlerën reale
-                  newStokFillim = t1Data.gjendje;
-                  console.log(`  ${key}: T1.gjendje = ${t1Data.gjendje} → T2.stokFillim (vlera reale)`);
-                } else if (t1Data.stokFillim > 0 || t1Data.furnizime > 0) {
-                  // Gjendje e pa-plotësuar por ka stok - llogarit teorikisht
-                  newStokFillim = CalculationService.calculateNewStock(t1Data);
-                  console.log(`  ${key}: T1 teorik (${t1Data.stokFillim} + ${t1Data.furnizime} - ${t1Data.shiriti}) = ${newStokFillim} → T2.stokFillim`);
-                } else {
-                  // Asnjë të dhënë - mbaj 0
-                  newStokFillim = 0;
-                }
+                // GJITHMONË përdor formulën: stokFillim + furnizime - shiriti
+                const newStokFillim = CalculationService.calculateNewStock(t1Data);
+                console.log(`  ${key}: T1 (${t1Data.stokFillim} + ${t1Data.furnizime} - ${t1Data.shiriti}) = ${newStokFillim} → T2.stokFillim`);
                 return [key, { ...data, stokFillim: newStokFillim }];
               }
               return [key, data];
