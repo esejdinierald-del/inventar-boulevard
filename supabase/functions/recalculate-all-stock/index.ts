@@ -23,13 +23,10 @@ interface TurnData {
 }
 
 /**
- * Llogarit stokun për turnin/ditën tjetër:
- * - Nëse gjendje > 0 (numërim fizik), përdor gjendjen
- * - Përndryshe llogarit teorikisht: stokFillim + furnizime - shiriti
+ * Llogarit stokun e propaguar për turnin/ditën tjetër:
+ * stokFillim + furnizime - shiriti
  */
-function calculateStockForNextTurn(p: ProductData): number {
-  if (p.gjendje > 0) return p.gjendje;
-  if (p.stokFillim === 0 && p.furnizime === 0) return 0;
+function calculatePropagatedStock(p: ProductData): number {
   return p.stokFillim + p.furnizime - p.shiriti;
 }
 
@@ -77,7 +74,7 @@ serve(async (req) => {
           for (const [name, data] of Object.entries(t1.products)) {
             const prevT2Data = prevT2.products[name];
             if (prevT2Data) {
-              const expectedStock = calculateStockForNextTurn(prevT2Data);
+              const expectedStock = calculatePropagatedStock(prevT2Data);
               if (data.stokFillim !== expectedStock) {
                 (t1.products[name] as ProductData).stokFillim = expectedStock;
                 t1Changed = true;
@@ -96,11 +93,11 @@ serve(async (req) => {
         }
       }
 
-      // 2. Përditëso T2.stokFillim nga T1 (gjendje nëse > 0, përndryshe teorike)
+      // 2. Përditëso T2.stokFillim nga T1 me formulën stokFillim + furnizime - shiriti
       for (const [name, data] of Object.entries(t2.products)) {
         const t1Data = t1.products[name];
         if (t1Data) {
-          const expectedStock = calculateStockForNextTurn(t1Data);
+          const expectedStock = calculatePropagatedStock(t1Data);
           if (data.stokFillim !== expectedStock) {
             (t2.products[name] as ProductData).stokFillim = expectedStock;
             t2Changed = true;
@@ -135,7 +132,7 @@ serve(async (req) => {
       // 3. Përditëso next_day_stock për ditën tjetër
       const nextDayStock: Record<string, number> = {};
       for (const [name, data] of Object.entries(t2.products)) {
-        nextDayStock[name] = calculateStockForNextTurn(data as ProductData);
+        nextDayStock[name] = calculatePropagatedStock(data as ProductData);
       }
       const mulliriNext = t2.mulliriPerfund > 0 ? t2.mulliriPerfund : t1.mulliriPerfund;
 
