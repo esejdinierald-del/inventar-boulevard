@@ -47,7 +47,7 @@ export class StockPropagationService {
       const calculatedStock: { [key: string]: number } = {};
       Object.entries(sourceT2.products).forEach(([productName, data]) => {
         const productData = data as ProductData;
-        calculatedStock[productName] = CalculationService.calculateStockForNextTurn(productData);
+        calculatedStock[productName] = CalculationService.calculateNewStock(productData);
       });
 
       // Llogarit mulliri për ditën tjetër (T2 nëse > 0, përndryshe T1)
@@ -108,7 +108,7 @@ export class StockPropagationService {
           previousStock = {};
           Object.entries(updatedT2.products).forEach(([productName, data]) => {
             const productData = data as ProductData;
-            previousStock[productName] = CalculationService.calculateStockForNextTurn(productData);
+            previousStock[productName] = CalculationService.calculateNewStock(productData);
           });
 
           previousMulliri = updatedT2.mulliriPerfund > 0 

@@ -61,14 +61,14 @@ serve(async (req) => {
       const skipped: string[] = [];
       let hasChanges = false;
 
-      // Për çdo produkt në T2, vendos stokFillim = T1.gjendje
+      // Për çdo produkt në T2, vendos stokFillim = T1.stokFillim + T1.furnizime - T1.shiriti
       const newT2Products: { [key: string]: ProductData } = {};
       
       for (const [productName, t2Data] of Object.entries(turn2.products)) {
         const t1Data = turn1.products[productName];
         
         if (t1Data) {
-          // Formula: stokFillim + furnizime - shiriti
+          const currentStokFillim = t2Data.stokFillim;
           const expectedStokFillim = t1Data.stokFillim + t1Data.furnizime - t1Data.shiriti;
           
           if (currentStokFillim !== expectedStokFillim) {
