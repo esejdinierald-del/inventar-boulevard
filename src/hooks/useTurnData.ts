@@ -343,21 +343,12 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
         nextDay.setDate(nextDay.getDate() + 1);
         const nextDayDate = nextDay.toISOString().split('T')[0];
 
-        console.log(`💾 Saving to ${nextDayDate}:`, nextDayStock);
-        await StorageService.setStockForDate(nextDayDate, nextDayStock);
-        
-        // KRITIKE: Nëse T2 mulliriPerfund është 0, përdor T1 mulliriPerfund
+        // KRITIKE: Përdor ruajtje atomike - stock DHE mulliri bashkë
         const mulliriForNextDay = turn2.mulliriPerfund > 0 ? turn2.mulliriPerfund : turn1.mulliriPerfund;
-        console.log(`🔄 Saving mulliri for next day: T2 mulliriPerfund = ${turn2.mulliriPerfund}, T1 mulliriPerfund = ${turn1.mulliriPerfund}, using: ${mulliriForNextDay}`);
+        console.log(`💾 Saving stock & mulliri atomically to ${nextDayDate}:`, { stock: nextDayStock, mulliri: mulliriForNextDay });
         
-        // Vetëm ruaj nëse vlera është > 0, përndryshe lëre null që të kontrollohet dita e mëparshme
-        if (mulliriForNextDay > 0) {
-          await StorageService.setMulliriForDate(nextDayDate, mulliriForNextDay);
-          console.log(`✅ Next day mulliri saved for ${nextDayDate}: ${mulliriForNextDay}`);
-        } else {
-          console.log(`⏭️ Skipping mulliri save for ${nextDayDate} (value is 0)`);
-        }
-        console.log(`✅ Next day stock saved for ${nextDayDate}`);
+        await StorageService.setStockAndMulliriForDate(nextDayDate, nextDayStock, mulliriForNextDay);
+        console.log(`✅ Next day stock & mulliri saved for ${nextDayDate}`);
 
         // KRITIKE: Nëse është datë e kaluar, propago ndryshimet në të gjitha datat pasardhëse
         if (isPastDate) {
