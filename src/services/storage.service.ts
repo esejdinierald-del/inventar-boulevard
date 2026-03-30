@@ -230,21 +230,91 @@ export class StorageService {
         
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        // KRITIKE: Mos krijo rresht me stock_data bosh!
+        // Prit që setStockForDate ta krijojë rreshtin me të dhëna reale.
+        // Vetëm ruaj në localStorage si fallback derisa stock_data të jetë gati.
+        console.log(`⏳ next_day_stock nuk ekziston për ${date} - duke pritur stock_data para krijimit`);
+        // Provo përsëri pas 500ms duke kontrolluar nëse rreshti u krijua nga setStockForDate
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const { data: retryExisting } = await supabase
           .from('next_day_stock')
-          .insert({
-            stock_date: date,
-            mulliri_fillim: value,
-            stock_data: {}
-          });
+          .select('id')
+          .eq('stock_date', date)
+          .maybeSingle();
         
-        if (error) throw error;
+        if (retryExisting) {
+          const { error } = await supabase
+            .from('next_day_stock')
+            .update({
+              mulliri_fillim: value,
+              updated_at: new Date().toISOString()
+            })
+            .eq('stock_date', date);
+          if (error) throw error;
+        } else {
+          // Nëse ende nuk ekziston, krijo me stock_data bosh si fallback
+          const { error } = await supabase
+            .from('next_day_stock')
+            .insert({
+              stock_date: date,
+              mulliri_fillim: value,
+              stock_data: {}
+            });
+          if (error) throw error;
+        }
       }
       
       this.setItem(`mulliri_fillim_${date}`, value.toString());
     } catch (error) {
       console.error('Error saving mulliri:', error);
       this.setItem(`mulliri_fillim_${date}`, value.toString());
+    }
+  }
+
+  /**
+   * Ruaj stokun DHE mulliri-n në një operacion të vetëm atomik
+   * Kjo parandalon race condition midis setStockForDate dhe setMulliriForDate
+   */
+  static async setStockAndMulliriForDate(
+    date: string, 
+    stock: { [key: string]: number }, 
+    mulliri: number
+  ): Promise<void> {
+    try {
+      const { data: existing } = await supabase
+        .from('next_day_stock')
+        .select('id')
+        .eq('stock_date', date)
+        .maybeSingle();
+      
+      if (existing) {
+        const { error } = await supabase
+          .from('next_day_stock')
+          .update({
+            stock_data: stock,
+            mulliri_fillim: mulliri,
+            updated_at: new Date().toISOString()
+          })
+          .eq('stock_date', date);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('next_day_stock')
+          .insert({
+            stock_date: date,
+            stock_data: stock,
+            mulliri_fillim: mulliri
+          });
+        if (error) throw error;
+      }
+      
+      this.setItem(`stock_${date}`, stock);
+      this.setItem(`mulliri_fillim_${date}`, mulliri.toString());
+      console.log(`✅ Stock & mulliri saved atomically for ${date}`);
+    } catch (error) {
+      console.error('Error saving stock & mulliri:', error);
+      this.setItem(`stock_${date}`, stock);
+      this.setItem(`mulliri_fillim_${date}`, mulliri.toString());
     }
   }
 
