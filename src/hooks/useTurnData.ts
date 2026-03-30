@@ -451,8 +451,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     nextDay.setDate(nextDay.getDate() + 1);
     const nextDayDate = nextDay.toISOString().split('T')[0];
 
-    await StorageService.setStockForDate(nextDayDate, nextDayStock);
-    await StorageService.setMulliriForDate(nextDayDate, turn2.mulliriPerfund);
+    const mulliriForNextDay = turn2.mulliriPerfund > 0 ? turn2.mulliriPerfund : turn1.mulliriPerfund;
+    await StorageService.setStockAndMulliriForDate(nextDayDate, nextDayStock, mulliriForNextDay);
   }, [turn1, turn2, selectedDate, saveCurrentDay]);
 
   // Load data from previous day
