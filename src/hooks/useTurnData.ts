@@ -598,6 +598,29 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     }
   }, [applyAlcoholicDrinksImmediately]);
 
+  // KRITIKE: Forco ruajtjen e stokut për ditën tjetër - thirret kur kyçet turni
+  const forceSaveNextDayStock = useCallback(async () => {
+    try {
+      console.log('🔒 Force saving next day stock on turn lock...');
+      const nextDayStock = Object.fromEntries(
+        Object.entries(turn2.products).map(([key, data]) => {
+          const calculatedStock = CalculationService.calculateNewStock(data);
+          return [key, calculatedStock];
+        })
+      );
+
+      const nextDay = new Date(selectedDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const nextDayDate = nextDay.toISOString().split('T')[0];
+      const mulliriForNextDay = turn2.mulliriPerfund > 0 ? turn2.mulliriPerfund : turn1.mulliriPerfund;
+
+      await StorageService.setStockAndMulliriForDate(nextDayDate, nextDayStock, mulliriForNextDay);
+      console.log(`✅ Force saved next day stock for ${nextDayDate}`, { stock: nextDayStock, mulliri: mulliriForNextDay });
+    } catch (error) {
+      console.error('❌ Error force saving next day stock:', error);
+    }
+  }, [turn1, turn2, selectedDate]);
+
   // Memoized calculations
   const totalXhiro = useMemo(
     () => CalculationService.calculateTotalXhiro(turn1, turn2),
@@ -617,6 +640,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     loadFromPreviousDay,
     handleReceiptDataT1,
     handleReceiptDataT2,
+    forceSaveNextDayStock,
     totalXhiro,
     saveStatus,
   };
