@@ -50,6 +50,7 @@ const DailyEntry = () => {
     loadFromPreviousDay,
     handleReceiptDataT1,
     handleReceiptDataT2,
+    forceSaveNextDayStock,
     totalXhiro,
     saveStatus,
   } = useTurnData({ products, coffeeTypes, selectedDate });
