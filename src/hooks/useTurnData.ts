@@ -343,21 +343,12 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
         nextDay.setDate(nextDay.getDate() + 1);
         const nextDayDate = nextDay.toISOString().split('T')[0];
 
-        console.log(`💾 Saving to ${nextDayDate}:`, nextDayStock);
-        await StorageService.setStockForDate(nextDayDate, nextDayStock);
-        
-        // KRITIKE: Nëse T2 mulliriPerfund është 0, përdor T1 mulliriPerfund
+        // KRITIKE: Përdor ruajtje atomike - stock DHE mulliri bashkë
         const mulliriForNextDay = turn2.mulliriPerfund > 0 ? turn2.mulliriPerfund : turn1.mulliriPerfund;
-        console.log(`🔄 Saving mulliri for next day: T2 mulliriPerfund = ${turn2.mulliriPerfund}, T1 mulliriPerfund = ${turn1.mulliriPerfund}, using: ${mulliriForNextDay}`);
+        console.log(`💾 Saving stock & mulliri atomically to ${nextDayDate}:`, { stock: nextDayStock, mulliri: mulliriForNextDay });
         
-        // Vetëm ruaj nëse vlera është > 0, përndryshe lëre null që të kontrollohet dita e mëparshme
-        if (mulliriForNextDay > 0) {
-          await StorageService.setMulliriForDate(nextDayDate, mulliriForNextDay);
-          console.log(`✅ Next day mulliri saved for ${nextDayDate}: ${mulliriForNextDay}`);
-        } else {
-          console.log(`⏭️ Skipping mulliri save for ${nextDayDate} (value is 0)`);
-        }
-        console.log(`✅ Next day stock saved for ${nextDayDate}`);
+        await StorageService.setStockAndMulliriForDate(nextDayDate, nextDayStock, mulliriForNextDay);
+        console.log(`✅ Next day stock & mulliri saved for ${nextDayDate}`);
 
         // KRITIKE: Nëse është datë e kaluar, propago ndryshimet në të gjitha datat pasardhëse
         if (isPastDate) {
@@ -460,8 +451,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     nextDay.setDate(nextDay.getDate() + 1);
     const nextDayDate = nextDay.toISOString().split('T')[0];
 
-    await StorageService.setStockForDate(nextDayDate, nextDayStock);
-    await StorageService.setMulliriForDate(nextDayDate, turn2.mulliriPerfund);
+    const mulliriForNextDay = turn2.mulliriPerfund > 0 ? turn2.mulliriPerfund : turn1.mulliriPerfund;
+    await StorageService.setStockAndMulliriForDate(nextDayDate, nextDayStock, mulliriForNextDay);
   }, [turn1, turn2, selectedDate, saveCurrentDay]);
 
   // Load data from previous day
@@ -607,6 +598,29 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     }
   }, [applyAlcoholicDrinksImmediately]);
 
+  // KRITIKE: Forco ruajtjen e stokut për ditën tjetër - thirret kur kyçet turni
+  const forceSaveNextDayStock = useCallback(async () => {
+    try {
+      console.log('🔒 Force saving next day stock on turn lock...');
+      const nextDayStock = Object.fromEntries(
+        Object.entries(turn2.products).map(([key, data]) => {
+          const calculatedStock = CalculationService.calculateNewStock(data);
+          return [key, calculatedStock];
+        })
+      );
+
+      const nextDay = new Date(selectedDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const nextDayDate = nextDay.toISOString().split('T')[0];
+      const mulliriForNextDay = turn2.mulliriPerfund > 0 ? turn2.mulliriPerfund : turn1.mulliriPerfund;
+
+      await StorageService.setStockAndMulliriForDate(nextDayDate, nextDayStock, mulliriForNextDay);
+      console.log(`✅ Force saved next day stock for ${nextDayDate}`, { stock: nextDayStock, mulliri: mulliriForNextDay });
+    } catch (error) {
+      console.error('❌ Error force saving next day stock:', error);
+    }
+  }, [turn1, turn2, selectedDate]);
+
   // Memoized calculations
   const totalXhiro = useMemo(
     () => CalculationService.calculateTotalXhiro(turn1, turn2),
@@ -626,6 +640,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     loadFromPreviousDay,
     handleReceiptDataT1,
     handleReceiptDataT2,
+    forceSaveNextDayStock,
     totalXhiro,
     saveStatus,
   };

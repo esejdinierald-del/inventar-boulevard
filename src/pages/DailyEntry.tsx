@@ -50,6 +50,7 @@ const DailyEntry = () => {
     loadFromPreviousDay,
     handleReceiptDataT1,
     handleReceiptDataT2,
+    forceSaveNextDayStock,
     totalXhiro,
     saveStatus,
   } = useTurnData({ products, coffeeTypes, selectedDate });
@@ -428,6 +429,9 @@ const DailyEntry = () => {
     // Ruaj të dhënat para printimit
     await handleSave();
     
+    // KRITIKE: Forco ruajtjen e stokut për ditën tjetër para kyçjes
+    await forceSaveNextDayStock();
+    
     // Kyç turnin
     if (verifiedStaff) {
       await lockTurn(currentTurnNumber as 1 | 2, verifiedStaff);
@@ -435,7 +439,7 @@ const DailyEntry = () => {
     
     // Printo
     window.print();
-  }, [activeTurn, verifiedStaff, handleSave, lockTurn]);
+  }, [activeTurn, verifiedStaff, handleSave, lockTurn, forceSaveNextDayStock]);
 
   // Unlock handler (admin only)
   const handleUnlockTurn = useCallback(async (turnNumber: 1 | 2) => {
