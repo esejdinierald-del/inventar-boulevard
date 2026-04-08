@@ -221,21 +221,20 @@ export const InvoiceMappingStep = ({
         <Button onClick={onBack} variant="outline">
           ← Kthehu
         </Button>
-        {isAdmin ? (
-          <Button onClick={onSave} className="flex-1">
+        {isAdmin && (
+          <Button onClick={onSave} variant="outline" className="flex-1">
             <Save className="mr-2 h-4 w-4" />
             Ruaj Mapimin
           </Button>
-        ) : (
-          <Button 
-            onClick={onApply} 
-            className="flex-1"
-            disabled={mappedCount === 0}
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            Apliko Furnizime ({mappedCount})
-          </Button>
         )}
+        <Button 
+          onClick={onApply} 
+          className="flex-1"
+          disabled={mappedCount === 0}
+        >
+          <Upload className="mr-2 h-4 w-4" />
+          Apliko Furnizime ({mappedCount})
+        </Button>
       </div>
     </div>
   );

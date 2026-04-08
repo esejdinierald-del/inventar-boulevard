@@ -341,11 +341,13 @@ const DailyEntry = () => {
       console.log(`Applying ${quantity} of ${item.name} (type: ${item.type}) to ${activeTurn}`);
       
       if (item.type === 'product') {
-        // Update product furnizime in active turn
+        // ADD to existing furnizime (not replace)
         if (activeTurn === 'turn1') {
-          updateTurn1Product(item.name, 'furnizime', quantity);
+          const currentFurnizime = turn1.products[item.name]?.furnizime || 0;
+          updateTurn1Product(item.name, 'furnizime', currentFurnizime + quantity);
         } else {
-          updateTurn2Product(item.name, 'furnizime', quantity);
+          const currentFurnizime = turn2.products[item.name]?.furnizime || 0;
+          updateTurn2Product(item.name, 'furnizime', currentFurnizime + quantity);
         }
       } else if (item.type === 'coffee') {
         // Kafeja mbahet në copa - furnizimet janë kg kafe të bluar, jo copa
@@ -410,7 +412,7 @@ const DailyEntry = () => {
         toast.success(`${successCount} pije alkoolike u përditësuan me sukses!`);
       }
     }
-  }, [updateTurn1Product, updateTurn2Product, activeTurn]);
+  }, [updateTurn1Product, updateTurn2Product, activeTurn, turn1, turn2]);
 
   // Save handler
   const handleSave = useCallback(async () => {
