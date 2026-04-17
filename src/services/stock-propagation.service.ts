@@ -185,12 +185,26 @@ export class StockPropagationService {
   ): TurnData {
     const updatedProducts: { [key: string]: ProductData } = {};
     
+    // 1. Përditëso produktet ekzistuese me stokun e ri
     Object.entries(t1.products).forEach(([productName, data]) => {
       const productData = data as ProductData;
       updatedProducts[productName] = {
         ...productData,
         stokFillim: newStock[productName] ?? productData.stokFillim
       };
+    });
+
+    // 2. Shto produktet që ekzistojnë në newStock por jo në T1 aktual
+    // (rastet kur produkti u shtua më vonë dhe ka humbur propagimin)
+    Object.entries(newStock).forEach(([productName, stock]) => {
+      if (!updatedProducts[productName]) {
+        updatedProducts[productName] = {
+          stokFillim: stock,
+          furnizime: 0,
+          gjendje: 0,
+          shiriti: 0,
+        };
+      }
     });
 
     return {
