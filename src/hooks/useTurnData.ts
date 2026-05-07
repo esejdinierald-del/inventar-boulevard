@@ -364,41 +364,37 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     return () => clearTimeout(timeoutId);
   }, [turn2, turn1.mulliriPerfund, selectedDate]);
 
-  // Update product in turn
+  // Update product in turn — siguron strukturë të plotë ProductData edhe për produkte të reja
+  const EMPTY_PRODUCT: ProductData = { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 };
+
   const updateTurn1Product = useCallback((product: string, field: keyof ProductData, value: number) => {
     console.log(`📝 Updating T1 ${product}.${field} = ${value}`);
-    setTurn1(prev => {
-      const updated = {
-        ...prev,
-        products: {
-          ...prev.products,
-          [product]: {
-            ...prev.products[product],
-            [field]: value
-          }
+    setTurn1(prev => ({
+      ...prev,
+      products: {
+        ...prev.products,
+        [product]: {
+          ...EMPTY_PRODUCT,
+          ...(prev.products[product] || {}),
+          [field]: value
         }
-      };
-      console.log('📝 New T1 state:', updated);
-      return updated;
-    });
+      }
+    }));
   }, []);
 
   const updateTurn2Product = useCallback((product: string, field: keyof ProductData, value: number) => {
     console.log(`📝 Updating T2 ${product}.${field} = ${value}`);
-    setTurn2(prev => {
-      const updated = {
-        ...prev,
-        products: {
-          ...prev.products,
-          [product]: {
-            ...prev.products[product],
-            [field]: value
-          }
+    setTurn2(prev => ({
+      ...prev,
+      products: {
+        ...prev.products,
+        [product]: {
+          ...EMPTY_PRODUCT,
+          ...(prev.products[product] || {}),
+          [field]: value
         }
-      };
-      console.log('📝 New T2 state:', updated);
-      return updated;
-    });
+      }
+    }));
   }, []);
 
   // Sync mulliri from T1 to T2
