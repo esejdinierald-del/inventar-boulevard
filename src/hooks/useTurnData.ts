@@ -150,18 +150,14 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
             }
           }
           
-          // KRITIKE: Sinkronizo T2 stokFillim nga T1 me formulën: stokFillim + furnizime - shiriti
-          const syncedT2Products = Object.fromEntries(
-            Object.entries(migratedT2.products).map(([key, data]) => {
-              const t1Data = migratedT1.products[key];
-              if (t1Data) {
-                const newStokFillim = CalculationService.calculateNewStock(t1Data);
-                return [key, { ...data, stokFillim: newStokFillim }];
-              }
-              return [key, data];
-            })
-          );
-          
+          // KRITIKE: Sinkronizo T2 stokFillim nga T1 — përfshi edhe produktet që mungojnë në T2
+          const syncedT2Products: { [key: string]: ProductData } = { ...migratedT2.products };
+          Object.entries(migratedT1.products).forEach(([key, t1Data]) => {
+            const newStokFillim = CalculationService.calculateNewStock(t1Data);
+            const existing = syncedT2Products[key] || { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 };
+            syncedT2Products[key] = { ...existing, stokFillim: newStokFillim };
+          });
+
           const syncedT2 = {
             ...migratedT2,
             products: syncedT2Products,
@@ -285,20 +281,19 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     const syncAndPropagate = async () => {
       console.log('🔄 Syncing T1 → T2 (formula: stokFillim + furnizime - shiriti)');
       setTurn2(prev => {
+        const merged: { [key: string]: ProductData } = { ...prev.products };
+
+        // Iterate mbi të gjitha produktet që ekzistojnë në T1 (përfshirë ato të reja)
+        Object.entries(turn1.products).forEach(([key, t1Data]) => {
+          const newStokFillim = CalculationService.calculateNewStock(t1Data);
+          const existing = merged[key] || { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 };
+          merged[key] = { ...existing, stokFillim: newStokFillim };
+          console.log(`  ${key}: T1 (${t1Data.stokFillim} + ${t1Data.furnizime} - ${t1Data.shiriti}) = ${newStokFillim} → T2.stokFillim`);
+        });
+
         const newT2 = {
           ...prev,
-          products: Object.fromEntries(
-            Object.entries(prev.products).map(([key, data]) => {
-              const t1Data = turn1.products[key];
-              if (t1Data) {
-                // GJITHMONË përdor formulën: stokFillim + furnizime - shiriti
-                const newStokFillim = CalculationService.calculateNewStock(t1Data);
-                console.log(`  ${key}: T1 (${t1Data.stokFillim} + ${t1Data.furnizime} - ${t1Data.shiriti}) = ${newStokFillim} → T2.stokFillim`);
-                return [key, { ...data, stokFillim: newStokFillim }];
-              }
-              return [key, data];
-            })
-          ),
+          products: merged,
           mulliriFillim: turn1.mulliriPerfund
         };
         console.log(`📊 Auto-sync T2 mulliriFillim = T1 mulliriPerfund (${turn1.mulliriPerfund})`);
@@ -364,41 +359,37 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     return () => clearTimeout(timeoutId);
   }, [turn2, turn1.mulliriPerfund, selectedDate]);
 
-  // Update product in turn
+  // Update product in turn — siguron strukturë të plotë ProductData edhe për produkte të reja
+  const EMPTY_PRODUCT: ProductData = { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 };
+
   const updateTurn1Product = useCallback((product: string, field: keyof ProductData, value: number) => {
     console.log(`📝 Updating T1 ${product}.${field} = ${value}`);
-    setTurn1(prev => {
-      const updated = {
-        ...prev,
-        products: {
-          ...prev.products,
-          [product]: {
-            ...prev.products[product],
-            [field]: value
-          }
+    setTurn1(prev => ({
+      ...prev,
+      products: {
+        ...prev.products,
+        [product]: {
+          ...EMPTY_PRODUCT,
+          ...(prev.products[product] || {}),
+          [field]: value
         }
-      };
-      console.log('📝 New T1 state:', updated);
-      return updated;
-    });
+      }
+    }));
   }, []);
 
   const updateTurn2Product = useCallback((product: string, field: keyof ProductData, value: number) => {
     console.log(`📝 Updating T2 ${product}.${field} = ${value}`);
-    setTurn2(prev => {
-      const updated = {
-        ...prev,
-        products: {
-          ...prev.products,
-          [product]: {
-            ...prev.products[product],
-            [field]: value
-          }
+    setTurn2(prev => ({
+      ...prev,
+      products: {
+        ...prev.products,
+        [product]: {
+          ...EMPTY_PRODUCT,
+          ...(prev.products[product] || {}),
+          [field]: value
         }
-      };
-      console.log('📝 New T2 state:', updated);
-      return updated;
-    });
+      }
+    }));
   }, []);
 
   // Sync mulliri from T1 to T2
