@@ -150,18 +150,14 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
             }
           }
           
-          // KRITIKE: Sinkronizo T2 stokFillim nga T1 me formulën: stokFillim + furnizime - shiriti
-          const syncedT2Products = Object.fromEntries(
-            Object.entries(migratedT2.products).map(([key, data]) => {
-              const t1Data = migratedT1.products[key];
-              if (t1Data) {
-                const newStokFillim = CalculationService.calculateNewStock(t1Data);
-                return [key, { ...data, stokFillim: newStokFillim }];
-              }
-              return [key, data];
-            })
-          );
-          
+          // KRITIKE: Sinkronizo T2 stokFillim nga T1 — përfshi edhe produktet që mungojnë në T2
+          const syncedT2Products: { [key: string]: ProductData } = { ...migratedT2.products };
+          Object.entries(migratedT1.products).forEach(([key, t1Data]) => {
+            const newStokFillim = CalculationService.calculateNewStock(t1Data);
+            const existing = syncedT2Products[key] || { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 };
+            syncedT2Products[key] = { ...existing, stokFillim: newStokFillim };
+          });
+
           const syncedT2 = {
             ...migratedT2,
             products: syncedT2Products,
