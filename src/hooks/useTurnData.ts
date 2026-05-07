@@ -285,20 +285,19 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     const syncAndPropagate = async () => {
       console.log('🔄 Syncing T1 → T2 (formula: stokFillim + furnizime - shiriti)');
       setTurn2(prev => {
+        const merged: { [key: string]: ProductData } = { ...prev.products };
+
+        // Iterate mbi të gjitha produktet që ekzistojnë në T1 (përfshirë ato të reja)
+        Object.entries(turn1.products).forEach(([key, t1Data]) => {
+          const newStokFillim = CalculationService.calculateNewStock(t1Data);
+          const existing = merged[key] || { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 };
+          merged[key] = { ...existing, stokFillim: newStokFillim };
+          console.log(`  ${key}: T1 (${t1Data.stokFillim} + ${t1Data.furnizime} - ${t1Data.shiriti}) = ${newStokFillim} → T2.stokFillim`);
+        });
+
         const newT2 = {
           ...prev,
-          products: Object.fromEntries(
-            Object.entries(prev.products).map(([key, data]) => {
-              const t1Data = turn1.products[key];
-              if (t1Data) {
-                // GJITHMONË përdor formulën: stokFillim + furnizime - shiriti
-                const newStokFillim = CalculationService.calculateNewStock(t1Data);
-                console.log(`  ${key}: T1 (${t1Data.stokFillim} + ${t1Data.furnizime} - ${t1Data.shiriti}) = ${newStokFillim} → T2.stokFillim`);
-                return [key, { ...data, stokFillim: newStokFillim }];
-              }
-              return [key, data];
-            })
-          ),
+          products: merged,
           mulliriFillim: turn1.mulliriPerfund
         };
         console.log(`📊 Auto-sync T2 mulliriFillim = T1 mulliriPerfund (${turn1.mulliriPerfund})`);
