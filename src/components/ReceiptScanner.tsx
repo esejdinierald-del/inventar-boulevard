@@ -104,63 +104,75 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
         
         // Load saved mapping from Supabase
         const mapping = await StorageService.getProductMapping() || {};
-        
+
+        // Helper: normalizo për matching (lowercase, trim, collapse spaces)
+        const norm = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
+
+        // Helper: kërko mapping me toleranca - exact, case-insensitive, partial includes
+        const findMapping = (itemName: string) => {
+          // 1. Exact
+          if (mapping[itemName]) return mapping[itemName];
+          // 2. Case-insensitive / trim
+          const target = norm(itemName);
+          for (const [key, val] of Object.entries(mapping)) {
+            if (norm(key) === target) return val;
+          }
+          // 3. Partial includes në të dy drejtimet (handle truncation nga POS)
+          for (const [key, val] of Object.entries(mapping)) {
+            const k = norm(key);
+            if (k.length >= 4 && (target.includes(k) || k.includes(target))) return val;
+          }
+          return null;
+        };
+
         data.items.forEach((item: { name: string; quantity: number }, index: number) => {
           text += `${item.name.padEnd(15)} ${item.quantity}\n`;
-          
-          // Use saved mapping if available
-          if (mapping[item.name]) {
-            // Handle both old format (string) and new format (object)
-            const mappingValue = mapping[item.name];
-            if (typeof mappingValue === 'string') {
-              // Old format - assume it's a product with quantity 1
-              setMappedData(prev => ({
-                ...prev,
-                [index.toString()]: { type: 'product', name: mappingValue, quantity: 1 }
-              }));
-            } else {
-              // New format - ensure quantity exists
-              setMappedData(prev => ({
-                ...prev,
-                [index.toString()]: { ...mappingValue, quantity: mappingValue.quantity || 1 }
-              }));
-            }
-          } else {
-            // Try smart matching for products
-            const matchedProduct = products.find(p => 
-              p.toLowerCase().includes(item.name.toLowerCase()) ||
-              item.name.toLowerCase().includes(p.toLowerCase())
-            );
-            if (matchedProduct) {
-              setMappedData(prev => ({
-                ...prev,
-                [index.toString()]: { type: 'product', name: matchedProduct, quantity: 1 }
-              }));
-            } else {
-              // Try smart matching for coffee types
-              const matchedCoffee = coffeeTypes.find(c => 
-                c.toLowerCase().includes(item.name.toLowerCase()) ||
-                item.name.toLowerCase().includes(c.toLowerCase())
-              );
-              if (matchedCoffee) {
-                setMappedData(prev => ({
-                  ...prev,
-                  [index.toString()]: { type: 'coffee', name: matchedCoffee, quantity: 1 }
-                }));
-              } else {
-                // Try smart matching for alcoholic drinks
-                const matchedDrink = alcoholicDrinks.find(d => 
-                  d.toLowerCase().includes(item.name.toLowerCase()) ||
-                  item.name.toLowerCase().includes(d.toLowerCase())
-                );
-                if (matchedDrink) {
-                  setMappedData(prev => ({
-                    ...prev,
-                    [index.toString()]: { type: 'alcoholic_drink', name: matchedDrink, quantity: 1 }
-                  }));
-                }
-              }
-            }
+
+          const found = findMapping(item.name);
+          if (found) {
+            const mappingValue = typeof found === 'string'
+              ? { type: 'product' as const, name: found, quantity: 1 }
+              : { ...found, quantity: found.quantity || 1 };
+            setMappedData(prev => ({
+              ...prev,
+              [index.toString()]: mappingValue
+            }));
+            return;
+          }
+
+          // Fallback: smart matching kundrejt listave (case-insensitive, partial)
+          const itemNorm = norm(item.name);
+          const matchedProduct = products.find(p => {
+            const pn = norm(p);
+            return pn.includes(itemNorm) || itemNorm.includes(pn);
+          });
+          if (matchedProduct) {
+            setMappedData(prev => ({
+              ...prev,
+              [index.toString()]: { type: 'product', name: matchedProduct, quantity: 1 }
+            }));
+            return;
+          }
+          const matchedCoffee = coffeeTypes.find(c => {
+            const cn = norm(c);
+            return cn.includes(itemNorm) || itemNorm.includes(cn);
+          });
+          if (matchedCoffee) {
+            setMappedData(prev => ({
+              ...prev,
+              [index.toString()]: { type: 'coffee', name: matchedCoffee, quantity: 1 }
+            }));
+            return;
+          }
+          const matchedDrink = alcoholicDrinks.find(d => {
+            const dn = norm(d);
+            return dn.includes(itemNorm) || itemNorm.includes(dn);
+          });
+          if (matchedDrink) {
+            setMappedData(prev => ({
+              ...prev,
+              [index.toString()]: { type: 'alcoholic_drink', name: matchedDrink, quantity: 1 }
+            }));
           }
         });
         
