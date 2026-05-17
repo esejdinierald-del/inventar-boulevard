@@ -77,6 +77,9 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
   const [turn2, setTurn2] = useState<TurnData>(createEmptyTurnData);
   const isInitialLoad = useRef(true);
   const loadCompleteCounter = useRef(0); // Tracks how many times data was loaded
+  // KRITIKE: Track cilat produkte në T2.stokFillim u redaktuan manualisht
+  // që auto-sync T1→T2 të mos i mbishkruajë
+  const t2ManuallyEditedStokFillim = useRef<Set<string>>(new Set());
 
   // Load data for current date on mount and when date changes
   useEffect(() => {
@@ -273,22 +276,26 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     return () => clearTimeout(timeoutId);
   }, [turn1, turn2, selectedDate, setSaveStatus]);
 
-  // Auto-sync T1 stock to T2 when T1 changes AND propagate if past date
-  // KRITIKE: Përdor T1.gjendje nëse > 0, përndryshe llogarit teorikisht
+  // Auto-sync T1 stock to T2 when T1 changes
+  // KRITIKE: Përdor calculateStockForNextTurn (respekton T1.gjendje), dhe NUK
+  // mbishkruan produktet që u redaktuan manualisht në T2
   useEffect(() => {
     if (isInitialLoad.current) return;
     
     const syncAndPropagate = async () => {
-      console.log('🔄 Syncing T1 → T2 (formula: stokFillim + furnizime - shiriti)');
+      console.log('🔄 Syncing T1 → T2 (respekton T1.gjendje, ruan manual T2 edits)');
       setTurn2(prev => {
         const merged: { [key: string]: ProductData } = { ...prev.products };
 
-        // Iterate mbi të gjitha produktet që ekzistojnë në T1 (përfshirë ato të reja)
         Object.entries(turn1.products).forEach(([key, t1Data]) => {
-          const newStokFillim = CalculationService.calculateNewStock(t1Data);
+          if (t2ManuallyEditedStokFillim.current.has(key)) {
+            console.log(`  ⏭️ ${key}: u redaktua manualisht në T2, NUK po e mbishkruaj`);
+            return;
+          }
+          const newStokFillim = CalculationService.calculateStockForNextTurn(t1Data);
           const existing = merged[key] || { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 };
           merged[key] = { ...existing, stokFillim: newStokFillim };
-          console.log(`  ${key}: T1 (${t1Data.stokFillim} + ${t1Data.furnizime} - ${t1Data.shiriti}) = ${newStokFillim} → T2.stokFillim`);
+          console.log(`  ${key}: T1 → T2.stokFillim = ${newStokFillim}`);
         });
 
         const newT2 = {
@@ -297,7 +304,6 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
           mulliriFillim: turn1.mulliriPerfund
         };
         console.log(`📊 Auto-sync T2 mulliriFillim = T1 mulliriPerfund (${turn1.mulliriPerfund})`);
-        console.log('✅ T1 → T2 sync complete');
         return newT2;
       });
     };
@@ -328,8 +334,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
         console.log('💾 Saving T2 stock for next day (T2 → Next Day T1)...');
         const nextDayStock = Object.fromEntries(
           Object.entries(turn2.products).map(([key, data]) => {
-            const calculatedStock = CalculationService.calculateNewStock(data);
-            console.log(`  📦 ${key}: stok=${data.stokFillim}+furn=${data.furnizime}-shir=${data.shiriti} → ${calculatedStock}`);
+            const calculatedStock = CalculationService.calculateStockForNextTurn(data);
+            console.log(`  📦 ${key}: stok=${data.stokFillim}+furn=${data.furnizime}-shir=${data.shiriti} gjendje=${data.gjendje} → ${calculatedStock}`);
             return [key, calculatedStock];
           })
         );
@@ -379,6 +385,11 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
 
   const updateTurn2Product = useCallback((product: string, field: keyof ProductData, value: number) => {
     console.log(`📝 Updating T2 ${product}.${field} = ${value}`);
+    // KRITIKE: Nëse stafi redakton manualisht stokFillim në T2, mos e mbishkruaj
+    // me auto-sync nga T1
+    if (field === 'stokFillim') {
+      t2ManuallyEditedStokFillim.current.add(product);
+    }
     setTurn2(prev => ({
       ...prev,
       products: {
@@ -433,7 +444,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     // Then prepare for next day
     const nextDayStock = Object.fromEntries(
       Object.entries(turn2.products).map(([key, data]) => {
-        const calculatedStock = CalculationService.calculateNewStock(data);
+        const calculatedStock = CalculationService.calculateStockForNextTurn(data);
         return [key, calculatedStock];
       })
     );
@@ -595,7 +606,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       console.log('🔒 Force saving next day stock on turn lock...');
       const nextDayStock = Object.fromEntries(
         Object.entries(turn2.products).map(([key, data]) => {
-          const calculatedStock = CalculationService.calculateNewStock(data);
+          const calculatedStock = CalculationService.calculateStockForNextTurn(data);
           return [key, calculatedStock];
         })
       );
