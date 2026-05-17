@@ -38,24 +38,30 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `Ju jeni një sistem OCR që lexon shiritat e shitjeve nga bar/restorant. 
-            Detyrë juaj është të ekstraktoni të dhënat në këtë format JSON:
+            content: `Ju jeni një sistem OCR specialist për shiritat e shitjeve nga bar/restorant shqiptar.
+            Detyra: ekstraktoni produktet dhe totalin në format JSON:
             {
-              "items": [
-                {"name": "emri i produktit", "quantity": sasia},
-                ...
-              ],
-              "total": totali_i_xhiros
+              "items": [{"name": "emri pastruar", "quantity": numri}, ...],
+              "total": totali_xhiro_si_numer
             }
-            Rregullat:
-            - Ekstraktoni vetëm emrin e produktit dhe sasinë (nga kolona "Sasia")
-            - Gjeni dhe ekstraktoni totalin e shiritit (zakonisht në fund me etiketë "Total", "Totali", "TOTALI", etj.)
-            - Totali duhet të jetë një numër (pa simbole valutore)
-            - Mos përfshini çmimet individuale të produkteve
-            - Emrat duhet të jenë SAKTËSISHT siç janë në shiriti
-            - Sasitë duhet të jenë numra të plotë
-            - Mos përfshini rreshtat e totaleve ose rreshtat që nuk janë produkte
-            - Ktheni VETËM JSON-in, asnjë tekst tjetër`
+
+            RREGULLA TË RREPTA:
+            1. EMRAT: 
+               - Pastroni hapësira të dyfishta dhe karaktere parazitare (*, ., :, #, numra serish/kodesh në fillim)
+               - P.sh. "01. DUVEL BELGIU *" → "DUVEL BELGIU"
+               - Nëse emri vazhdon në rresht tjetër, bashkojini në një emër të vetëm
+               - Ruani diakritikët shqip (ë, ç) saktë
+               - Mos shtoni asgjë që nuk është në shiriti
+            2. SASIA:
+               - Nga kolona "Sasia" / "Cope" / "Qty" — duhet numër (mund të jetë decimal për 0.5 etj.)
+               - Nëse shihet "x2", "2x", merrni 2
+            3. ÇFARË TË INJORONI:
+               - Rreshtat me "Total", "Totali", "Subtotal", "TVSH", "Tatim", "Tax", "Skonto", "Discount", "Cash", "Card"
+               - Rreshtat e header-it (datë, kohë, kasier, NIPT, adresë)
+               - Rreshtat bosh ose separatorë (---, ===)
+               - Çmimet individuale të produkteve (vetëm sasia interesa)
+            4. TOTALI: numri ngjitur me "Total"/"Totali"/"TOTALI" në fund. Pa simbole valutore.
+            5. FORMAT: vetëm JSON i pastër, pa shpjegime, pa markdown.`
           },
           {
             role: "user",
