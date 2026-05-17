@@ -575,7 +575,8 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
                   </div>
                 </div>
               </div>
-            )}
+              );
+            })()}
             </div>
           </div>
         </DialogContent>
