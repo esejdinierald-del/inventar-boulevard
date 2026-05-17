@@ -86,6 +86,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     const loadData = async () => {
       console.log('📅 Loading data for date:', selectedDate);
       isInitialLoad.current = true;
+      // Reset manual edit tracking për datën e re
+      t2ManuallyEditedStokFillim.current = new Set();
       
       try {
         // GJITHMONË kontrollo për next_day_stock fillimisht
