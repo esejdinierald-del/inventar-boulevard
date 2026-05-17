@@ -44,6 +44,7 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
   const [receiptTotal, setReceiptTotal] = useState<number | null>(null);
   const [showDifferenceWarning, setShowDifferenceWarning] = useState(false);
   const [differencesList, setDifferencesList] = useState<Array<{ product: string; dif: number }>>([]);
+  const [showOnlyUnmapped, setShowOnlyUnmapped] = useState(false);
 
   // Check if there are any differences in current turn
   const getDifferences = () => {
@@ -105,76 +106,88 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
         // Load saved mapping from Supabase
         const mapping = await StorageService.getProductMapping() || {};
 
-        // Helper: normalizo për matching (lowercase, trim, collapse spaces)
-        const norm = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
+        // Helper: normalizo për matching (lowercase, trim, collapse spaces, hiq pikë/yje)
+        const norm = (s: string) =>
+          s.toLowerCase().trim().replace(/[*.]+/g, ' ').replace(/\s+/g, ' ').trim();
 
-        // Helper: kërko mapping me toleranca - exact, case-insensitive, partial includes
+        // Pre-build normalized lookup për O(1) access dhe scoring
+        const normalizedMappings: Array<{ normKey: string; origKey: string; value: any }> = 
+          Object.entries(mapping).map(([k, v]) => ({ normKey: norm(k), origKey: k, value: v }));
+
+        // Helper: kërko mapping me scoring - më i gjati/specifiku fiton
         const findMapping = (itemName: string) => {
-          // 1. Exact
+          // 1. Exact match (case-sensitive)
           if (mapping[itemName]) return mapping[itemName];
-          // 2. Case-insensitive / trim
           const target = norm(itemName);
-          for (const [key, val] of Object.entries(mapping)) {
-            if (norm(key) === target) return val;
+          // 2. Normalized exact
+          const exactNorm = normalizedMappings.find(m => m.normKey === target);
+          if (exactNorm) return exactNorm.value;
+          // 3. Scoring: më i gjati që përmbahet fiton
+          let best: { score: number; value: any } | null = null;
+          for (const m of normalizedMappings) {
+            if (m.normKey.length < 4) continue;
+            let score = 0;
+            if (target.includes(m.normKey)) score = m.normKey.length;
+            else if (m.normKey.includes(target) && target.length >= 4) score = target.length - 1;
+            if (score > 0 && (!best || score > best.score)) {
+              best = { score, value: m.value };
+            }
           }
-          // 3. Partial includes në të dy drejtimet (handle truncation nga POS)
-          for (const [key, val] of Object.entries(mapping)) {
-            const k = norm(key);
-            if (k.length >= 4 && (target.includes(k) || k.includes(target))) return val;
-          }
-          return null;
+          return best?.value || null;
         };
+
+        // Smart matching helper për listat (products/coffee/drinks)
+        const findInList = (itemNorm: string, list: string[]) => {
+          let best: { score: number; name: string } | null = null;
+          for (const n of list) {
+            const nn = norm(n);
+            if (nn.length < 3) continue;
+            let score = 0;
+            if (nn === itemNorm) score = 1000;
+            else if (itemNorm.includes(nn)) score = nn.length;
+            else if (nn.includes(itemNorm) && itemNorm.length >= 4) score = itemNorm.length - 1;
+            if (score > 0 && (!best || score > best.score)) {
+              best = { score, name: n };
+            }
+          }
+          return best?.name || null;
+        };
+
+        // KRITIKE: Ndërto objekt lokal pastaj një setMappedData jashtë loop-it
+        // (shmang race conditions kur skanon foto të reja)
+        const newMappedData: { [key: string]: { type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink'; name: string; quantity: number } } = {};
 
         data.items.forEach((item: { name: string; quantity: number }, index: number) => {
           text += `${item.name.padEnd(15)} ${item.quantity}\n`;
 
           const found = findMapping(item.name);
           if (found) {
-            const mappingValue = typeof found === 'string'
+            newMappedData[index.toString()] = typeof found === 'string'
               ? { type: 'product' as const, name: found, quantity: 1 }
               : { ...found, quantity: found.quantity || 1 };
-            setMappedData(prev => ({
-              ...prev,
-              [index.toString()]: mappingValue
-            }));
             return;
           }
 
-          // Fallback: smart matching kundrejt listave (case-insensitive, partial)
+          // Fallback: smart matching kundrejt listave (scoring, jo first-match)
           const itemNorm = norm(item.name);
-          const matchedProduct = products.find(p => {
-            const pn = norm(p);
-            return pn.includes(itemNorm) || itemNorm.includes(pn);
-          });
+          const matchedProduct = findInList(itemNorm, products);
           if (matchedProduct) {
-            setMappedData(prev => ({
-              ...prev,
-              [index.toString()]: { type: 'product', name: matchedProduct, quantity: 1 }
-            }));
+            newMappedData[index.toString()] = { type: 'product', name: matchedProduct, quantity: 1 };
             return;
           }
-          const matchedCoffee = coffeeTypes.find(c => {
-            const cn = norm(c);
-            return cn.includes(itemNorm) || itemNorm.includes(cn);
-          });
+          const matchedCoffee = findInList(itemNorm, coffeeTypes);
           if (matchedCoffee) {
-            setMappedData(prev => ({
-              ...prev,
-              [index.toString()]: { type: 'coffee', name: matchedCoffee, quantity: 1 }
-            }));
+            newMappedData[index.toString()] = { type: 'coffee', name: matchedCoffee, quantity: 1 };
             return;
           }
-          const matchedDrink = alcoholicDrinks.find(d => {
-            const dn = norm(d);
-            return dn.includes(itemNorm) || itemNorm.includes(dn);
-          });
+          const matchedDrink = findInList(itemNorm, alcoholicDrinks);
           if (matchedDrink) {
-            setMappedData(prev => ({
-              ...prev,
-              [index.toString()]: { type: 'alcoholic_drink', name: matchedDrink, quantity: 1 }
-            }));
+            newMappedData[index.toString()] = { type: 'alcoholic_drink', name: matchedDrink, quantity: 1 };
           }
         });
+
+        // KRITIKE: Një setState i vetëm - mbishkruan plotësisht mapped data e vjetër
+        setMappedData(newMappedData);
         
         text += "------------------------\n";
         if (data.total) {
@@ -408,33 +421,65 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
             </div>
 
             {/* Product mapping section */}
-            {extractedText && (
+            {extractedText && (() => {
+              // Llogarit linjat e produkteve dhe statistikat (counter)
+              const lines = extractedText.split('\n');
+              const productLines: string[] = [];
+              let startCapturing = false;
+              for (const line of lines) {
+                if (line.includes('Emer') && line.includes('Sasia')) {
+                  startCapturing = true;
+                  continue;
+                }
+                if (startCapturing && line.trim() && !line.includes('---') && !line.includes('TOTALI')) {
+                  productLines.push(line);
+                }
+              }
+              const mappedCount = productLines.filter((_, i) => !!mappedData[i.toString()]).length;
+              const unmappedCount = productLines.length - mappedCount;
+
+              return (
               <div className="space-y-4 mt-6 pt-6 border-t">
-                <div>
-                  <Label className="text-base font-semibold">Hapi 2: Mapo Produktet (Opsionale)</Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    💡 Mapo vetëm produktet që dëshiron të gjurmosh. Të tjerët do të injiorohen.
-                  </p>
+                <div className="flex items-start justify-between gap-2 flex-wrap">
+                  <div>
+                    <Label className="text-base font-semibold">Hapi 2: Mapo Produktet (Opsionale)</Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      💡 Mapo vetëm produktet që dëshiron të gjurmosh. Të tjerët do të injiorohen.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="px-2 py-1 rounded bg-green-100 text-green-800 font-semibold">
+                      ✓ {mappedCount} të mapuar
+                    </span>
+                    {unmappedCount > 0 && (
+                      <span className="px-2 py-1 rounded bg-orange-100 text-orange-800 font-semibold">
+                        ⚠ {unmappedCount} pa mapuar
+                      </span>
+                    )}
+                  </div>
                 </div>
+
+                {unmappedCount > 0 && (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="filter-unmapped"
+                      checked={showOnlyUnmapped}
+                      onChange={(e) => setShowOnlyUnmapped(e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                    <label htmlFor="filter-unmapped" className="text-sm cursor-pointer">
+                      Shfaq vetëm artikujt e pa-mapuar ({unmappedCount})
+                    </label>
+                  </div>
+                )}
 
                 <div className="space-y-3 max-h-[400px] overflow-y-auto">
                     {(() => {
-                      // Only show product lines (skip headers and separators)
-                      const lines = extractedText.split('\n');
-                      const productLines: string[] = [];
-                      let startCapturing = false;
-                      
-                      for (const line of lines) {
-                        if (line.includes('Emer') && line.includes('Sasia')) {
-                          startCapturing = true;
-                          continue;
-                        }
-                        if (startCapturing && line.trim() && !line.includes('---') && !line.includes('TOTALI')) {
-                          productLines.push(line);
-                        }
-                      }
-                      
-                      return productLines.map((line, index) => {
+                      return productLines
+                        .map((line, index) => ({ line, index }))
+                        .filter(({ index }) => !showOnlyUnmapped || !mappedData[index.toString()])
+                        .map(({ line, index }) => {
                         const mapping = mappedData[index.toString()];
                         const isMapped = !!mapping;
                         const currentValue = mapping ? `${mapping.type}:${mapping.name}` : "";
@@ -530,7 +575,8 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
                   </div>
                 </div>
               </div>
-            )}
+              );
+            })()}
             </div>
           </div>
         </DialogContent>
