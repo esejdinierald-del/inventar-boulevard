@@ -421,33 +421,65 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
             </div>
 
             {/* Product mapping section */}
-            {extractedText && (
+            {extractedText && (() => {
+              // Llogarit linjat e produkteve dhe statistikat (counter)
+              const lines = extractedText.split('\n');
+              const productLines: string[] = [];
+              let startCapturing = false;
+              for (const line of lines) {
+                if (line.includes('Emer') && line.includes('Sasia')) {
+                  startCapturing = true;
+                  continue;
+                }
+                if (startCapturing && line.trim() && !line.includes('---') && !line.includes('TOTALI')) {
+                  productLines.push(line);
+                }
+              }
+              const mappedCount = productLines.filter((_, i) => !!mappedData[i.toString()]).length;
+              const unmappedCount = productLines.length - mappedCount;
+
+              return (
               <div className="space-y-4 mt-6 pt-6 border-t">
-                <div>
-                  <Label className="text-base font-semibold">Hapi 2: Mapo Produktet (Opsionale)</Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    💡 Mapo vetëm produktet që dëshiron të gjurmosh. Të tjerët do të injiorohen.
-                  </p>
+                <div className="flex items-start justify-between gap-2 flex-wrap">
+                  <div>
+                    <Label className="text-base font-semibold">Hapi 2: Mapo Produktet (Opsionale)</Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      💡 Mapo vetëm produktet që dëshiron të gjurmosh. Të tjerët do të injiorohen.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="px-2 py-1 rounded bg-green-100 text-green-800 font-semibold">
+                      ✓ {mappedCount} të mapuar
+                    </span>
+                    {unmappedCount > 0 && (
+                      <span className="px-2 py-1 rounded bg-orange-100 text-orange-800 font-semibold">
+                        ⚠ {unmappedCount} pa mapuar
+                      </span>
+                    )}
+                  </div>
                 </div>
+
+                {unmappedCount > 0 && (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="filter-unmapped"
+                      checked={showOnlyUnmapped}
+                      onChange={(e) => setShowOnlyUnmapped(e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                    <label htmlFor="filter-unmapped" className="text-sm cursor-pointer">
+                      Shfaq vetëm artikujt e pa-mapuar ({unmappedCount})
+                    </label>
+                  </div>
+                )}
 
                 <div className="space-y-3 max-h-[400px] overflow-y-auto">
                     {(() => {
-                      // Only show product lines (skip headers and separators)
-                      const lines = extractedText.split('\n');
-                      const productLines: string[] = [];
-                      let startCapturing = false;
-                      
-                      for (const line of lines) {
-                        if (line.includes('Emer') && line.includes('Sasia')) {
-                          startCapturing = true;
-                          continue;
-                        }
-                        if (startCapturing && line.trim() && !line.includes('---') && !line.includes('TOTALI')) {
-                          productLines.push(line);
-                        }
-                      }
-                      
-                      return productLines.map((line, index) => {
+                      return productLines
+                        .map((line, index) => ({ line, index }))
+                        .filter(({ index }) => !showOnlyUnmapped || !mappedData[index.toString()])
+                        .map(({ line, index }) => {
                         const mapping = mappedData[index.toString()];
                         const isMapped = !!mapping;
                         const currentValue = mapping ? `${mapping.type}:${mapping.name}` : "";
