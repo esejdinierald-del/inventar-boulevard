@@ -44,10 +44,11 @@ export class StockPropagationService {
       const sourceT1 = sourceEntry.turn1_data as unknown as TurnData;
       
       // Llogarit stokun e ri për secilin produkt
+      // KRITIKE: Përdor calculateStockForNextTurn që respekton gjendje (numërim fizik)
       const calculatedStock: { [key: string]: number } = {};
       Object.entries(sourceT2.products).forEach(([productName, data]) => {
         const productData = data as ProductData;
-        calculatedStock[productName] = CalculationService.calculateNewStock(productData);
+        calculatedStock[productName] = CalculationService.calculateStockForNextTurn(productData);
       });
 
       // Llogarit mulliri për ditën tjetër (T2 nëse > 0, përndryshe T1)
@@ -105,10 +106,11 @@ export class StockPropagationService {
           if (updateError) throw updateError;
 
           // Llogarit stokun e ri për ditën pasardhëse
+          // KRITIKE: Përdor calculateStockForNextTurn që respekton gjendje
           previousStock = {};
           Object.entries(updatedT2.products).forEach(([productName, data]) => {
             const productData = data as ProductData;
-            previousStock[productName] = CalculationService.calculateNewStock(productData);
+            previousStock[productName] = CalculationService.calculateStockForNextTurn(productData);
           });
 
           previousMulliri = updatedT2.mulliriPerfund > 0 
@@ -226,8 +228,8 @@ export class StockPropagationService {
       const t1Data = t1.products[productName] as ProductData;
       
       if (t1Data) {
-        // GJITHMONË përdor formulën: stokFillim + furnizime - shiriti
-        const newStokFillim = CalculationService.calculateNewStock(t1Data);
+        // KRITIKE: Respekto gjendje (numërim fizik) nëse > 0, përndryshe llogarit teorikisht
+        const newStokFillim = CalculationService.calculateStockForNextTurn(t1Data);
         updatedProducts[productName] = {
           ...productData,
           stokFillim: newStokFillim
