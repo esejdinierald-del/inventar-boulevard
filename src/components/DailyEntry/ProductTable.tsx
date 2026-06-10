@@ -127,8 +127,9 @@ export const ProductTable = ({
                     step="any"
                     value={data.stokFillim || ""}
                     onChange={(e) => onProductUpdate(product, 'stokFillim', Number(e.target.value))}
-                    className="w-20"
+                    className={`w-20 ${!isAdminUnlocked ? 'blur-sm opacity-40 select-none pointer-events-none' : ''}`}
                     disabled={!isAdminUnlocked}
+                    aria-hidden={!isAdminUnlocked}
                   />
                 </TableCell>
                 <TableCell>
