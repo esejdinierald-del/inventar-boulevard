@@ -184,7 +184,7 @@ export const ProductTable = ({
           {/* Total Row */}
           <TableRow className="bg-muted/50">
             <TableCell className="font-bold">TOTALI</TableCell>
-            <TableCell className="font-bold">
+            <TableCell className={`font-bold ${!isAdminUnlocked ? 'blur-sm opacity-40 select-none' : ''}`}>
               {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.stokFillim, 0)}
             </TableCell>
             <TableCell className="font-bold">
