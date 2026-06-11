@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProductList } from "@/hooks/useProductList";
 import { useTurnData } from "@/hooks/useTurnData";
 import { useTurnLock } from "@/hooks/useTurnLock";
+import { useGjendjeLock } from "@/hooks/useGjendjeLock";
 import { useKitchenProducts } from "@/hooks/useKitchenProducts";
 import { useAlcoholicDrinksList } from "@/hooks/useAlcoholicDrinksList";
 import { AlcoholicDrinksService } from "@/services/alcoholic-drinks.service";
@@ -37,6 +38,8 @@ const DailyEntry = () => {
   const { kitchenProducts } = useKitchenProducts();
   const { alcoholicDrinks } = useAlcoholicDrinksList();
   const { lockState, lockTurn, unlockTurn, isTurnLocked, getLockedBy } = useTurnLock(selectedDate);
+  const gjendjeT1 = useGjendjeLock(selectedDate, 1);
+  const gjendjeT2 = useGjendjeLock(selectedDate, 2);
   const {
     turn1,
     turn2,
@@ -635,6 +638,9 @@ const DailyEntry = () => {
               onShpenzimiAdd={addShpenzimiT1}
               onShpenzimiRemove={removeShpenzimiT1}
               onShpenzimiUpdate={updateShpenzimiT1}
+              gjendjeConfirmed={gjendjeT1.confirmed}
+              onConfirmGjendje={gjendjeT1.confirm}
+              onUnlockGjendje={gjendjeT1.unlock}
             />
           </TabsContent>
 
@@ -665,6 +671,9 @@ const DailyEntry = () => {
               onShpenzimiAdd={addShpenzimiT2}
               onShpenzimiRemove={removeShpenzimiT2}
               onShpenzimiUpdate={updateShpenzimiT2}
+              gjendjeConfirmed={gjendjeT2.confirmed}
+              onConfirmGjendje={gjendjeT2.confirm}
+              onUnlockGjendje={gjendjeT2.unlock}
             />
           </TabsContent>
         </Tabs>

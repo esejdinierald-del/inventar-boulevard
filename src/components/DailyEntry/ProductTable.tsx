@@ -10,6 +10,7 @@ interface ProductTableProps {
   turnProducts: { [key: string]: ProductData };
   isAdminUnlocked: boolean;
   isFieldDisabled: boolean;
+  gjendjeConfirmed?: boolean;
   onProductUpdate: (product: string, field: keyof ProductData, value: number) => void;
   onProductDelete?: (product: string) => void;
   onProductEdit?: (product: string) => void;
@@ -36,6 +37,7 @@ export const ProductTable = ({
   turnProducts,
   isAdminUnlocked,
   isFieldDisabled,
+  gjendjeConfirmed = false,
   onProductUpdate,
   onProductDelete,
   onProductEdit,
@@ -46,6 +48,8 @@ export const ProductTable = ({
   onSaveEdit,
   onCancelEdit,
 }: ProductTableProps) => {
+  // Pas konfirmimit të Gjendjes, kolona ngrin për stafin (vetëm admin mund të editojë).
+  const gjendjeLockedForStaff = gjendjeConfirmed && !isAdminUnlocked;
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -138,8 +142,9 @@ export const ProductTable = ({
                     step="any"
                     value={data.gjendje || ""}
                     onChange={(e) => onProductUpdate(product, 'gjendje', Number(e.target.value))}
-                    className="w-20"
-                    disabled={isGjendjeDisabled(isFieldDisabled)}
+                    className={`w-20 ${gjendjeLockedForStaff ? 'bg-muted/40' : ''}`}
+                    disabled={isGjendjeDisabled(isFieldDisabled) || gjendjeLockedForStaff}
+                    title={gjendjeLockedForStaff ? 'Gjendja u mbyll. Kërko admin për ta rihapur.' : undefined}
                   />
                 </TableCell>
                 <TableCell>
