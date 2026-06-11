@@ -314,8 +314,16 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
       <Button
         variant="outline"
         size="sm"
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          if (disabled) {
+            toast.warning(disabledReason || "Plotëso fillimisht Gjendjen dhe konfirmoje para ngarkimit të shiritit.");
+            return;
+          }
+          setIsOpen(true);
+        }}
         className="text-xs"
+        aria-disabled={disabled}
+        title={disabled ? (disabledReason || "Konfirmo Gjendjen fillimisht") : undefined}
       >
         <Camera className="h-3 w-3 mr-1" />
         📸 Ngarko Shiriti {turnName}
