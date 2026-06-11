@@ -638,6 +638,9 @@ const DailyEntry = () => {
               onShpenzimiAdd={addShpenzimiT1}
               onShpenzimiRemove={removeShpenzimiT1}
               onShpenzimiUpdate={updateShpenzimiT1}
+              gjendjeConfirmed={gjendjeT1.confirmed}
+              onConfirmGjendje={gjendjeT1.confirm}
+              onUnlockGjendje={gjendjeT1.unlock}
             />
           </TabsContent>
 
