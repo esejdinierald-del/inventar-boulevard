@@ -142,8 +142,9 @@ export const ProductTable = ({
                     step="any"
                     value={data.gjendje || ""}
                     onChange={(e) => onProductUpdate(product, 'gjendje', Number(e.target.value))}
-                    className="w-20"
-                    disabled={isGjendjeDisabled(isFieldDisabled)}
+                    className={`w-20 ${gjendjeLockedForStaff ? 'bg-muted/40' : ''}`}
+                    disabled={isGjendjeDisabled(isFieldDisabled) || gjendjeLockedForStaff}
+                    title={gjendjeLockedForStaff ? 'Gjendja u mbyll. Kërko admin për ta rihapur.' : undefined}
                   />
                 </TableCell>
                 <TableCell>
