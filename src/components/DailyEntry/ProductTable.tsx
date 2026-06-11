@@ -37,6 +37,7 @@ export const ProductTable = ({
   turnProducts,
   isAdminUnlocked,
   isFieldDisabled,
+  gjendjeConfirmed = false,
   onProductUpdate,
   onProductDelete,
   onProductEdit,
@@ -47,6 +48,8 @@ export const ProductTable = ({
   onSaveEdit,
   onCancelEdit,
 }: ProductTableProps) => {
+  // Pas konfirmimit të Gjendjes, kolona ngrin për stafin (vetëm admin mund të editojë).
+  const gjendjeLockedForStaff = gjendjeConfirmed && !isAdminUnlocked;
   return (
     <div className="overflow-x-auto">
       <Table>
