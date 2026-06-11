@@ -38,6 +38,9 @@ interface TurnSectionProps {
   onShpenzimiAdd: (shpenzimi: ShpenzimiData) => void;
   onShpenzimiRemove: (index: number) => void;
   onShpenzimiUpdate: (index: number, field: keyof ShpenzimiData, value: string | number) => void;
+  gjendjeConfirmed?: boolean;
+  onConfirmGjendje?: () => void;
+  onUnlockGjendje?: () => void;
 }
 
 export const TurnSection = ({
@@ -68,14 +71,69 @@ export const TurnSection = ({
   onShpenzimiAdd,
   onShpenzimiRemove,
   onShpenzimiUpdate,
+  gjendjeConfirmed = false,
+  onConfirmGjendje,
+  onUnlockGjendje,
 }: TurnSectionProps) => {
+  // Skaneri i shiritit hapet vetëm pasi staf të konfirmojë Gjendjen.
+  // Admin/menaxher e ka hapur gjithmonë (mund të punojë lirshëm).
+  const scannerDisabled = !isAdminUnlocked && !gjendjeConfirmed;
+
+  const handleConfirmGjendje = () => {
+    const hasAnyGjendje = Object.values(turnData.products).some(p => p && p.gjendje > 0);
+    if (!hasAnyGjendje) {
+      toast.warning("Plotëso fillimisht Gjendjen për produktet para se ta mbyllësh.");
+      return;
+    }
+    onConfirmGjendje?.();
+    toast.success("✓ Gjendja u mbyll. Tani mund të ngarkosh shiritin.");
+  };
+
   return (
     <div className="space-y-4">
       {/* Products Table */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
           <CardTitle>Produktet - Turni {turnName}</CardTitle>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            {/* Konfirmo Gjendjen (staf, kur ende s'është konfirmuar) */}
+            {!isAdminUnlocked && !gjendjeConfirmed && onConfirmGjendje && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleConfirmGjendje}
+                className="text-xs"
+                disabled={isFieldDisabled}
+              >
+                <CheckCircle2 className="h-3 w-3 mr-1" />
+                Mbyll Gjendjen & Hap Skanerin
+              </Button>
+            )}
+
+            {/* Treguesi që Gjendja është e mbyllur (staf) */}
+            {!isAdminUnlocked && gjendjeConfirmed && (
+              <span className="inline-flex items-center text-xs text-muted-foreground px-2">
+                <Lock className="h-3 w-3 mr-1" />
+                Gjendja e mbyllur
+              </span>
+            )}
+
+            {/* Zhblloko Gjendjen (vetëm admin, kur është konfirmuar) */}
+            {isAdminUnlocked && gjendjeConfirmed && onUnlockGjendje && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  onUnlockGjendje();
+                  toast.success("🔓 Gjendja u zhbllokua.");
+                }}
+                className="text-xs"
+              >
+                <UnlockKeyhole className="h-3 w-3 mr-1" />
+                Zhblloko Gjendjen
+              </Button>
+            )}
+
             <ReceiptScanner
               products={products}
               coffeeTypes={coffeeTypes}
@@ -84,6 +142,8 @@ export const TurnSection = ({
               turnName={turnName}
               turnData={turnData}
               calculateDif={CalculationService.calculateDif}
+              disabled={scannerDisabled}
+              disabledReason="Mbyll fillimisht Gjendjen (kliko 'Mbyll Gjendjen & Hap Skanerin') përpara se të ngarkosh shiritin."
             />
             {showCopyButton && onCopyToNextTurn && (
               <Button variant="outline" size="sm" onClick={onCopyToNextTurn} className="text-xs">
@@ -98,6 +158,7 @@ export const TurnSection = ({
             turnProducts={turnData.products}
             isAdminUnlocked={isAdminUnlocked}
             isFieldDisabled={isFieldDisabled}
+            gjendjeConfirmed={gjendjeConfirmed}
             onProductUpdate={onProductUpdate}
             onProductDelete={onProductDelete}
             onProductEdit={onProductEdit}
@@ -108,6 +169,7 @@ export const TurnSection = ({
             onSaveEdit={onSaveEdit}
             onCancelEdit={onCancelEdit}
           />
+
         </CardContent>
       </Card>
 
