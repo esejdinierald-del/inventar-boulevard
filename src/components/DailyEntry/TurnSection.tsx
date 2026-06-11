@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Lock, UnlockKeyhole, CheckCircle2 } from "lucide-react";
 import { TurnData, ProductData, ShpenzimiData } from "@/types/turn.types";
 import { ProductTable } from "./ProductTable";
 import { CoffeeTable } from "./CoffeeTable";
@@ -7,6 +8,7 @@ import { TurnExtras } from "./TurnExtras";
 import { ShpenzimiTable } from "./ShpenzimiTable";
 import { ReceiptScanner } from "@/components/ReceiptScanner";
 import { CalculationService } from "@/services/calculations";
+import { toast } from "sonner";
 
 interface TurnSectionProps {
   turnName: string;
