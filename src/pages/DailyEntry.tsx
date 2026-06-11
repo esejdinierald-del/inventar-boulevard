@@ -38,6 +38,8 @@ const DailyEntry = () => {
   const { kitchenProducts } = useKitchenProducts();
   const { alcoholicDrinks } = useAlcoholicDrinksList();
   const { lockState, lockTurn, unlockTurn, isTurnLocked, getLockedBy } = useTurnLock(selectedDate);
+  const gjendjeT1 = useGjendjeLock(selectedDate, 1);
+  const gjendjeT2 = useGjendjeLock(selectedDate, 2);
   const {
     turn1,
     turn2,
