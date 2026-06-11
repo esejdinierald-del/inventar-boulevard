@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProductList } from "@/hooks/useProductList";
 import { useTurnData } from "@/hooks/useTurnData";
 import { useTurnLock } from "@/hooks/useTurnLock";
+import { useGjendjeLock } from "@/hooks/useGjendjeLock";
 import { useKitchenProducts } from "@/hooks/useKitchenProducts";
 import { useAlcoholicDrinksList } from "@/hooks/useAlcoholicDrinksList";
 import { AlcoholicDrinksService } from "@/services/alcoholic-drinks.service";
