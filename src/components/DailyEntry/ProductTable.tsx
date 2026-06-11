@@ -10,6 +10,7 @@ interface ProductTableProps {
   turnProducts: { [key: string]: ProductData };
   isAdminUnlocked: boolean;
   isFieldDisabled: boolean;
+  gjendjeConfirmed?: boolean;
   onProductUpdate: (product: string, field: keyof ProductData, value: number) => void;
   onProductDelete?: (product: string) => void;
   onProductEdit?: (product: string) => void;
