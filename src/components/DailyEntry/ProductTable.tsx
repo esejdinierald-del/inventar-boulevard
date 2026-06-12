@@ -44,10 +44,12 @@ export const ProductTable = ({
   isFieldDisabled,
   gjendjeConfirmed = false,
   blurGjendje = false,
+  turnLocked = false,
   onProductUpdate,
   onProductDelete,
   onProductEdit,
   onProductAdd,
+  onConfirmGjendje,
   editingProduct,
   editedProductName,
   onEditedNameChange,
@@ -56,6 +58,24 @@ export const ProductTable = ({
 }: ProductTableProps) => {
   // Pas konfirmimit të Gjendjes, kolona ngrin për stafin (vetëm admin mund të editojë).
   const gjendjeLockedForStaff = gjendjeConfirmed && !isAdminUnlocked;
+  // Stok Fillim dhe Dif janë të sfumuara për staf:
+  //  - PARA konfirmimit të Gjendjes (që të mos deduktohet stoku mbrapsht), ose
+  //  - PAS kyçjes së turnit (që kolegët në datat e kaluara të mos i shohin).
+  const obscureForStaff = !isAdminUnlocked && (!gjendjeConfirmed || turnLocked);
+  const blurClass = obscureForStaff ? 'blur-sm opacity-40 select-none pointer-events-none' : '';
+  const showConfirmRow = !isAdminUnlocked && !gjendjeConfirmed && !turnLocked && !!onConfirmGjendje;
+  const totalColSpan = isAdminUnlocked ? 7 : 6;
+
+  const handleConfirmClick = () => {
+    const hasAnyGjendje = Object.values(turnProducts).some((p) => p && p.gjendje > 0);
+    if (!hasAnyGjendje) {
+      toast.warning("Plotëso fillimisht Gjendjen për produktet para se ta mbyllësh.");
+      return;
+    }
+    onConfirmGjendje?.();
+    toast.success("✓ Gjendja u mbyll. Tani mund të ngarkosh shiritin.");
+  };
+
   return (
     <div className="overflow-x-auto">
       <Table>
