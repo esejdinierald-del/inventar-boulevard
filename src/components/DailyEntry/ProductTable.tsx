@@ -215,7 +215,7 @@ export const ProductTable = ({
           {/* Total Row */}
           <TableRow className="bg-muted/50">
             <TableCell className="font-bold">TOTALI</TableCell>
-            <TableCell className={`font-bold ${!isAdminUnlocked ? 'blur-sm opacity-40 select-none' : ''}`}>
+            <TableCell className={`font-bold ${blurClass}`}>
               {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.stokFillim, 0)}
             </TableCell>
             <TableCell className={`font-bold ${blurGjendje ? 'blur-sm opacity-40 select-none' : ''}`}>
@@ -227,7 +227,7 @@ export const ProductTable = ({
             <TableCell className="font-bold text-success">
               {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.furnizime, 0)}
             </TableCell>
-            <TableCell className="font-bold">
+            <TableCell className={`font-bold ${blurClass}`}>
               {Object.values(turnProducts).filter(p => p).reduce(
                 (sum, p) => sum + CalculationService.calculateDif(p.stokFillim, p.furnizime, p.gjendje, p.shiriti),
                 0
@@ -235,6 +235,28 @@ export const ProductTable = ({
             </TableCell>
             {isAdminUnlocked && <TableCell></TableCell>}
           </TableRow>
+
+          {/* Konfirmo Gjendjen (staf, brenda tabelës nën kolonën Gjendje) */}
+          {showConfirmRow && (
+            <TableRow>
+              <TableCell colSpan={totalColSpan} className="bg-primary/5 py-3">
+                <div className="flex items-center justify-center">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleConfirmClick}
+                    disabled={isFieldDisabled}
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Konfirmo Gjendjen
+                  </Button>
+                </div>
+                <p className="text-center text-xs text-muted-foreground mt-2">
+                  Pas konfirmimit, Gjendja mbyllet dhe hapen kolonat Stok Fillim & Dif së bashku me skanerin e shiritit.
+                </p>
+              </TableCell>
+            </TableRow>
+          )}
           
           {/* Add Product Row */}
           {isAdminUnlocked && onProductAdd && (
