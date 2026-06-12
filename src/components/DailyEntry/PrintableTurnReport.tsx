@@ -177,23 +177,14 @@ export const PrintableTurnReport = ({
           <span>Xhiro Bruto:</span>
           <span>{turnData.xhiro.toLocaleString()} ALL</span>
         </div>
-        {totalShpenzime > 0 && (
-          <>
-            <div className="print-row text-negative">
-              <span>Shpenzime:</span>
-              <span>-{totalShpenzime.toLocaleString()} ALL</span>
-            </div>
-            <div className="print-row print-row-highlight">
-              <span className="font-bold">XHIRO NETO:</span>
-              <span className="font-bold">{xhiroNeto.toLocaleString()} ALL</span>
-            </div>
-          </>
-        )}
-        {totalShpenzime === 0 && (
-          <div className="xhiro-thermal">
-            {turnData.xhiro.toLocaleString()} ALL
-          </div>
-        )}
+        <div className={`print-row ${totalShpenzime > 0 ? "text-negative" : ""}`}>
+          <span>− Shpenzime:</span>
+          <span>-{totalShpenzime.toLocaleString()} ALL</span>
+        </div>
+        <div className="print-row print-row-highlight">
+          <span className="font-bold">= TOT:</span>
+          <span className="font-bold">{xhiroNeto.toLocaleString()} ALL</span>
+        </div>
         <div className="print-divider">================================</div>
       </div>
 
