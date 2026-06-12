@@ -676,6 +676,7 @@ const DailyEntry = () => {
               gjendjeConfirmed={gjendjeT2.confirmed}
               onConfirmGjendje={gjendjeT2.confirm}
               onUnlockGjendje={gjendjeT2.unlock}
+              hideXhiro={isPastDate() && !hasElevatedAccess()}
             />
           </TabsContent>
         </Tabs>
