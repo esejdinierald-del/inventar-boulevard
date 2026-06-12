@@ -75,42 +75,62 @@ export const PrintableTurnReport = ({
         <div className="print-divider">--------------------------------</div>
       </div>
 
-      {/* Produktet */}
-      <div className="print-section">
-        <div className="section-title">PRODUKTET</div>
-        <table className="thermal-table">
-          <thead>
-            <tr>
-              <th className="text-left">Prod</th>
-              <th>SF</th>
-              <th>Gj</th>
-              <th>Sh</th>
-              <th>Fu</th>
-              <th>Dif</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((product) => {
-              const data = turnData.products[product] || { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 };
-              const dif = CalculationService.calculateDif(data.stokFillim, data.furnizime, data.gjendje, data.shiriti);
-              const shortName = product.length > 12 ? product.substring(0, 11) + "." : product;
-              return (
-                <tr key={product}>
-                  <td className="text-left">{shortName}</td>
-                  <td>{data.stokFillim}</td>
-                  <td>{data.gjendje}</td>
-                  <td>{data.shiriti}</td>
-                  <td>{data.furnizime}</td>
-                  <td className={`font-bold ${dif < 0 ? "text-negative" : dif > 0 ? "text-positive" : ""}`}>
-                    {dif}
-                  </td>
+      {/* Produktet — vetëm me Dif ≠ 0 */}
+      {(() => {
+        const productsWithDif = products
+          .map((product) => {
+            const data = turnData.products[product] || { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 };
+            const dif = CalculationService.calculateDif(data.stokFillim, data.furnizime, data.gjendje, data.shiriti);
+            return { product, data, dif };
+          })
+          .filter(({ dif }) => dif !== 0);
+
+        if (productsWithDif.length === 0) {
+          return (
+            <div className="print-section">
+              <div className="section-title">PRODUKTET</div>
+              <div className="print-row"><span>Pa diferenca</span></div>
+              <div className="print-divider">--------------------------------</div>
+            </div>
+          );
+        }
+
+        return (
+          <div className="print-section">
+            <div className="section-title">PRODUKTET (Dif ≠ 0)</div>
+            <table className="thermal-table">
+              <thead>
+                <tr>
+                  <th className="text-left">Prod</th>
+                  <th>SF</th>
+                  <th>Gj</th>
+                  <th>Sh</th>
+                  <th>Fu</th>
+                  <th>Dif</th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        <div className="print-divider">--------------------------------</div>
-      </div>
+              </thead>
+              <tbody>
+                {productsWithDif.map(({ product, data, dif }) => {
+                  const shortName = product.length > 12 ? product.substring(0, 11) + "." : product;
+                  return (
+                    <tr key={product}>
+                      <td className="text-left">{shortName}</td>
+                      <td>{data.stokFillim}</td>
+                      <td>{data.gjendje}</td>
+                      <td>{data.shiriti}</td>
+                      <td>{data.furnizime}</td>
+                      <td className={`font-bold ${dif < 0 ? "text-negative" : "text-positive"}`}>
+                        {dif}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div className="print-divider">--------------------------------</div>
+          </div>
+        );
+      })()}
 
       {/* Kafe */}
       <div className="print-section">
