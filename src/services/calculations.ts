@@ -117,14 +117,22 @@ export class CalculationService {
    * Llogarit stokun për turnin/ditën tjetër.
    *
    * Logjika:
-   * 1. Nëse gjendje > 0 → përdor gjendjen (numërim fizik i bërë)
-   * 2. Nëse ka stok por pa gjendje → llogarit teorikisht
-   * 3. Nëse asnjë e dhënë → kthe 0
+   * - Nëse `gjendjeConfirmed === true` → BESO gjendjen e plotë (përfshi 0).
+   *   Stafi e ka konfirmuar numërimin fizik, kështu 0 do të thotë "produkti mbaroi"
+   *   jo "nuk u numërua".
+   * - Përndryshe (fallback i vjetër, për kompatibilitet me data të vjetra pa konfirmim):
+   *   - gjendje > 0 → përdor gjendjen
+   *   - stokFillim=0 && furnizime=0 → kthe 0
+   *   - ndryshe → llogarit teorikisht stokFillim + furnizime - shiriti
    *
    * KRITIKE: Kjo formulë duhet përdorur GJITHMONË kur propagohet stoku!
    * (në useTurnData.ts, StockPropagationService, fix-t2-stock edge function)
    */
-  static calculateStockForNextTurn(productData: ProductData): number {
+  static calculateStockForNextTurn(productData: ProductData, gjendjeConfirmed = false): number {
+    if (gjendjeConfirmed) {
+      // Numërimi fizik konfirmuar — beso vlerën edhe nëse është 0
+      return Math.max(0, productData.gjendje);
+    }
     if (productData.gjendje > 0) {
       return productData.gjendje;
     }
