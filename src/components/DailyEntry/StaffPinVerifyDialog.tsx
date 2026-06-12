@@ -40,6 +40,7 @@ export const StaffPinVerifyDialog = ({
   const [pin, setPin] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [mode, setMode] = useState<"staff" | "admin">("staff");
+  const navigate = useNavigate();
 
   const handleVerifyStaff = async () => {
     if (!pin || pin.length !== 4) {
