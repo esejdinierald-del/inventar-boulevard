@@ -33,7 +33,7 @@ const DailyEntry = () => {
   const [verifiedStaffData, setVerifiedStaffData] = useState<VerifiedStaffData | null>(null);
 
   // Custom hooks
-  const { isAdminUnlocked, isViewOnlyUnlocked, showPasswordDialog, showViewOnlyDialog, validatePassword, validateViewOnlyPassword, toggleAdminMode, requestViewOnly, closePasswordDialog, closeViewOnlyDialog, isWithinStaffEditWindow, unlockAdmin } = useAuth();
+  const { isAdminUnlocked, isViewOnlyUnlocked, showPasswordDialog, showViewOnlyDialog, validatePassword, validateViewOnlyPassword, toggleAdminMode, requestViewOnly, closePasswordDialog, closeViewOnlyDialog, isWithinStaffEditWindow, isWithinT2Window, unlockAdmin } = useAuth();
   const { products, coffeeTypes, addProduct: originalAddProduct, deleteProduct: originalDeleteProduct, updateProduct, addCoffeeType: originalAddCoffeeType, deleteCoffeeType: originalDeleteCoffeeType } = useProductList();
   const { kitchenProducts } = useKitchenProducts();
   const { alcoholicDrinks } = useAlcoholicDrinksList();
