@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lock, UnlockKeyhole, CheckCircle2 } from "lucide-react";
+import { Lock, UnlockKeyhole } from "lucide-react";
 import { TurnData, ProductData, ShpenzimiData } from "@/types/turn.types";
 import { ProductTable } from "./ProductTable";
 import { CoffeeTable } from "./CoffeeTable";
