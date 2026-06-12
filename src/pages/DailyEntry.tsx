@@ -424,7 +424,7 @@ const DailyEntry = () => {
         toast.success(`${successCount} pije alkoolike u përditësuan me sukses!`);
       }
     }
-  }, [updateTurn1Product, updateTurn2Product, activeTurn, turn1, turn2]);
+  }, [updateTurn1Product, updateTurn2Product, activeTurn, turn1, turn2, isTurnLocked]);
 
   // Save handler
   const handleSave = useCallback(async () => {
