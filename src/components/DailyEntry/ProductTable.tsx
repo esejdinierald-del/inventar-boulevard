@@ -194,7 +194,7 @@ export const ProductTable = ({
             <TableCell className={`font-bold ${!isAdminUnlocked ? 'blur-sm opacity-40 select-none' : ''}`}>
               {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.stokFillim, 0)}
             </TableCell>
-            <TableCell className="font-bold">
+            <TableCell className={`font-bold ${blurGjendje ? 'blur-sm opacity-40 select-none' : ''}`}>
               {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.gjendje, 0)}
             </TableCell>
             <TableCell className="font-bold text-primary">
