@@ -698,7 +698,10 @@ const DailyEntry = () => {
               const totalShpenzimeT2 = (turn2.shpenzime || []).reduce((sum, s) => sum + (s.vlera || 0), 0);
               const totalShpenzime = totalShpenzimeT1 + totalShpenzimeT2;
               const xhiroNeto = totalXhiro - totalShpenzime;
-              
+              const hideXhiroSummary = isPastDate() && !hasElevatedAccess();
+              const blurXhiro = hideXhiroSummary ? 'blur-sm opacity-40 select-none print:blur-none print:opacity-100' : '';
+              const fmt = (n: number) => hideXhiroSummary ? '░░░░' : n.toLocaleString();
+
               return (
                 <>
                   {/* Llogaritja: Bruto - Shpenzime = Neto */}
@@ -707,15 +710,15 @@ const DailyEntry = () => {
                     <div className="grid gap-4 md:grid-cols-3 print:grid-cols-3">
                       <div className="space-y-1 print:border-r print:border-gray-300 print:pr-4">
                         <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro Bruto</p>
-                        <p className="text-2xl font-bold print:text-3xl">{totalXhiro.toLocaleString()} ALL</p>
+                        <p className={`text-2xl font-bold print:text-3xl ${blurXhiro}`}>{fmt(totalXhiro)} ALL</p>
                       </div>
                       <div className="space-y-1 print:border-r print:border-gray-300 print:px-4">
                         <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro T1</p>
-                        <p className="text-xl font-semibold">{turn1.xhiro.toLocaleString()} ALL</p>
+                        <p className={`text-xl font-semibold ${blurXhiro}`}>{fmt(turn1.xhiro)} ALL</p>
                       </div>
                       <div className="space-y-1 print:pl-4">
                         <p className="text-sm text-muted-foreground print:text-gray-600">Xhiro T2</p>
-                        <p className="text-xl font-semibold">{turn2.xhiro.toLocaleString()} ALL</p>
+                        <p className={`text-xl font-semibold ${blurXhiro}`}>{fmt(turn2.xhiro)} ALL</p>
                       </div>
                     </div>
                     
@@ -740,11 +743,11 @@ const DailyEntry = () => {
                     {/* Formula finale: Bruto - Shpenzime = Neto */}
                     <div className="pt-4 border-t bg-muted/30 rounded-lg p-4 print:bg-gray-100">
                       <div className="flex flex-wrap items-center justify-center gap-2 text-lg md:text-xl font-semibold">
-                        <span>{totalXhiro.toLocaleString()}</span>
+                        <span className={blurXhiro}>{fmt(totalXhiro)}</span>
                         <span className="text-muted-foreground">−</span>
                         <span className="text-destructive">{totalShpenzime.toLocaleString()}</span>
                         <span className="text-muted-foreground">=</span>
-                        <span className="text-primary text-2xl font-bold">{xhiroNeto.toLocaleString()} ALL</span>
+                        <span className={`text-primary text-2xl font-bold ${blurXhiro}`}>{fmt(xhiroNeto)} ALL</span>
                       </div>
                       <p className="text-center text-sm text-muted-foreground mt-2">Bruto − Shpenzime = Xhiro Neto</p>
                     </div>
