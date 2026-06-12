@@ -84,37 +84,12 @@ export const TurnSection = ({
   const scannerDisabled = !isAdminUnlocked && !gjendjeConfirmed;
 
   return (
-
-  const handleConfirmGjendje = () => {
-    const hasAnyGjendje = Object.values(turnData.products).some(p => p && p.gjendje > 0);
-    if (!hasAnyGjendje) {
-      toast.warning("Plotëso fillimisht Gjendjen për produktet para se ta mbyllësh.");
-      return;
-    }
-    onConfirmGjendje?.();
-    toast.success("✓ Gjendja u mbyll. Tani mund të ngarkosh shiritin.");
-  };
-
-  return (
     <div className="space-y-4">
       {/* Products Table */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
           <CardTitle>Produktet - Turni {turnName}</CardTitle>
           <div className="flex gap-2 flex-wrap">
-            {/* Konfirmo Gjendjen (staf, kur ende s'është konfirmuar) */}
-            {!isAdminUnlocked && !gjendjeConfirmed && onConfirmGjendje && (
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleConfirmGjendje}
-                className="text-xs"
-                disabled={isFieldDisabled}
-              >
-                <CheckCircle2 className="h-3 w-3 mr-1" />
-                Mbyll Gjendjen & Hap Skanerin
-              </Button>
-            )}
 
             {/* Treguesi që Gjendja është e mbyllur (staf) */}
             {!isAdminUnlocked && gjendjeConfirmed && (
