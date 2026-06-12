@@ -39,6 +39,7 @@ export const ProductTable = ({
   isAdminUnlocked,
   isFieldDisabled,
   gjendjeConfirmed = false,
+  blurGjendje = false,
   onProductUpdate,
   onProductDelete,
   onProductEdit,
