@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      alcohol_deductions: {
+        Row: {
+          applied_quantity: number
+          drink_name: string
+          entry_date: string
+          source: string
+          turn_number: number
+          updated_at: string
+        }
+        Insert: {
+          applied_quantity?: number
+          drink_name: string
+          entry_date: string
+          source?: string
+          turn_number: number
+          updated_at?: string
+        }
+        Update: {
+          applied_quantity?: number
+          drink_name?: string
+          entry_date?: string
+          source?: string
+          turn_number?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       alcoholic_drinks_inventory: {
         Row: {
           created_at: string | null
@@ -209,6 +236,27 @@ export type Database = {
           notes?: string | null
           product_name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      gjendje_locks: {
+        Row: {
+          confirmed_at: string
+          confirmed_by: string | null
+          entry_date: string
+          turn_number: number
+        }
+        Insert: {
+          confirmed_at?: string
+          confirmed_by?: string | null
+          entry_date: string
+          turn_number: number
+        }
+        Update: {
+          confirmed_at?: string
+          confirmed_by?: string | null
+          entry_date?: string
+          turn_number?: number
         }
         Relationships: []
       }
