@@ -11,6 +11,7 @@ interface ProductTableProps {
   isAdminUnlocked: boolean;
   isFieldDisabled: boolean;
   gjendjeConfirmed?: boolean;
+  blurGjendje?: boolean;
   onProductUpdate: (product: string, field: keyof ProductData, value: number) => void;
   onProductDelete?: (product: string) => void;
   onProductEdit?: (product: string) => void;
@@ -38,6 +39,7 @@ export const ProductTable = ({
   isAdminUnlocked,
   isFieldDisabled,
   gjendjeConfirmed = false,
+  blurGjendje = false,
   onProductUpdate,
   onProductDelete,
   onProductEdit,
@@ -142,7 +144,7 @@ export const ProductTable = ({
                     step="any"
                     value={data.gjendje || ""}
                     onChange={(e) => onProductUpdate(product, 'gjendje', Number(e.target.value))}
-                    className={`w-20 ${gjendjeLockedForStaff ? 'bg-muted/40' : ''}`}
+                    className={`w-20 ${gjendjeLockedForStaff ? 'bg-muted/40' : ''} ${blurGjendje ? 'blur-sm opacity-40 select-none' : ''}`}
                     disabled={isGjendjeDisabled(isFieldDisabled) || gjendjeLockedForStaff}
                     title={gjendjeLockedForStaff ? 'Gjendja u mbyll. Kërko admin për ta rihapur.' : undefined}
                   />
@@ -192,7 +194,7 @@ export const ProductTable = ({
             <TableCell className={`font-bold ${!isAdminUnlocked ? 'blur-sm opacity-40 select-none' : ''}`}>
               {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.stokFillim, 0)}
             </TableCell>
-            <TableCell className="font-bold">
+            <TableCell className={`font-bold ${blurGjendje ? 'blur-sm opacity-40 select-none' : ''}`}>
               {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.gjendje, 0)}
             </TableCell>
             <TableCell className="font-bold text-primary">

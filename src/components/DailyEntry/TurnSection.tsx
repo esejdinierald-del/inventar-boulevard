@@ -41,6 +41,7 @@ interface TurnSectionProps {
   gjendjeConfirmed?: boolean;
   onConfirmGjendje?: () => void;
   onUnlockGjendje?: () => void;
+  blurGjendje?: boolean;
 }
 
 export const TurnSection = ({
@@ -74,6 +75,7 @@ export const TurnSection = ({
   gjendjeConfirmed = false,
   onConfirmGjendje,
   onUnlockGjendje,
+  blurGjendje = false,
 }: TurnSectionProps) => {
   // Skaneri i shiritit hapet vetëm pasi staf të konfirmojë Gjendjen.
   // Admin/menaxher e ka hapur gjithmonë (mund të punojë lirshëm).
@@ -159,6 +161,7 @@ export const TurnSection = ({
             isAdminUnlocked={isAdminUnlocked}
             isFieldDisabled={isFieldDisabled}
             gjendjeConfirmed={gjendjeConfirmed}
+            blurGjendje={blurGjendje}
             onProductUpdate={onProductUpdate}
             onProductDelete={onProductDelete}
             onProductEdit={onProductEdit}

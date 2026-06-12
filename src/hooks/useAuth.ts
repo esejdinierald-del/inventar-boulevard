@@ -52,6 +52,15 @@ export const useAuth = () => {
     return totalMinutes < STAFF_EDIT_WINDOW_MINUTES;
   }, []);
 
+  // Kontrollo nëse jemi brenda orëve të turnit 2 (17:00 - 04:00)
+  // Përdoret për të sfumuar Gjendjen e T1 që të mos shihet nga stafi T2
+  const isWithinT2Window = useCallback((): boolean => {
+    const now = new Date();
+    const hours = now.getHours();
+    // 17:00 - 23:59 ose 00:00 - 04:00
+    return hours >= 17 || hours < 4;
+  }, []);
+
   const validatePassword = useCallback((password: string): boolean => {
     if (password === ADMIN_PASSWORD || password === SECRET_PASSWORD) {
       setIsAdminUnlocked(true);
@@ -115,6 +124,7 @@ export const useAuth = () => {
     closePasswordDialog,
     closeViewOnlyDialog,
     isWithinStaffEditWindow,
+    isWithinT2Window,
     unlockAdmin,
   };
 };
