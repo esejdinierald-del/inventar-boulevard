@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lock, UnlockKeyhole, CheckCircle2 } from "lucide-react";
+import { Lock, UnlockKeyhole } from "lucide-react";
 import { TurnData, ProductData, ShpenzimiData } from "@/types/turn.types";
 import { ProductTable } from "./ProductTable";
 import { CoffeeTable } from "./CoffeeTable";
@@ -42,6 +42,7 @@ interface TurnSectionProps {
   onConfirmGjendje?: () => void;
   onUnlockGjendje?: () => void;
   blurGjendje?: boolean;
+  hideXhiro?: boolean;
 }
 
 export const TurnSection = ({
@@ -76,20 +77,11 @@ export const TurnSection = ({
   onConfirmGjendje,
   onUnlockGjendje,
   blurGjendje = false,
+  hideXhiro = false,
 }: TurnSectionProps) => {
   // Skaneri i shiritit hapet vetëm pasi staf të konfirmojë Gjendjen.
   // Admin/menaxher e ka hapur gjithmonë (mund të punojë lirshëm).
   const scannerDisabled = !isAdminUnlocked && !gjendjeConfirmed;
-
-  const handleConfirmGjendje = () => {
-    const hasAnyGjendje = Object.values(turnData.products).some(p => p && p.gjendje > 0);
-    if (!hasAnyGjendje) {
-      toast.warning("Plotëso fillimisht Gjendjen për produktet para se ta mbyllësh.");
-      return;
-    }
-    onConfirmGjendje?.();
-    toast.success("✓ Gjendja u mbyll. Tani mund të ngarkosh shiritin.");
-  };
 
   return (
     <div className="space-y-4">
@@ -98,19 +90,6 @@ export const TurnSection = ({
         <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
           <CardTitle>Produktet - Turni {turnName}</CardTitle>
           <div className="flex gap-2 flex-wrap">
-            {/* Konfirmo Gjendjen (staf, kur ende s'është konfirmuar) */}
-            {!isAdminUnlocked && !gjendjeConfirmed && onConfirmGjendje && (
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleConfirmGjendje}
-                className="text-xs"
-                disabled={isFieldDisabled}
-              >
-                <CheckCircle2 className="h-3 w-3 mr-1" />
-                Mbyll Gjendjen & Hap Skanerin
-              </Button>
-            )}
 
             {/* Treguesi që Gjendja është e mbyllur (staf) */}
             {!isAdminUnlocked && gjendjeConfirmed && (
@@ -162,10 +141,12 @@ export const TurnSection = ({
             isFieldDisabled={isFieldDisabled}
             gjendjeConfirmed={gjendjeConfirmed}
             blurGjendje={blurGjendje}
+            turnLocked={isTurnLocked}
             onProductUpdate={onProductUpdate}
             onProductDelete={onProductDelete}
             onProductEdit={onProductEdit}
             onProductAdd={onProductAdd}
+            onConfirmGjendje={onConfirmGjendje}
             editingProduct={editingProduct}
             editedProductName={editedProductName}
             onEditedNameChange={onEditedNameChange}
@@ -208,6 +189,7 @@ export const TurnSection = ({
             mulliriPerfundDisabled={isTurnLocked}
             onUpdate={onTurnUpdate}
             onMulliriPerfundUpdate={onMulliriPerfundUpdate}
+            hideXhiro={hideXhiro}
           />
         </CardContent>
       </Card>

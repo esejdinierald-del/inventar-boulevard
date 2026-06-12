@@ -642,6 +642,7 @@ const DailyEntry = () => {
               onConfirmGjendje={gjendjeT1.confirm}
               onUnlockGjendje={gjendjeT1.unlock}
               blurGjendje={!isAdminUnlocked && isWithinT2Window()}
+              hideXhiro={isPastDate() && !hasElevatedAccess()}
             />
           </TabsContent>
 
@@ -675,6 +676,7 @@ const DailyEntry = () => {
               gjendjeConfirmed={gjendjeT2.confirmed}
               onConfirmGjendje={gjendjeT2.confirm}
               onUnlockGjendje={gjendjeT2.unlock}
+              hideXhiro={isPastDate() && !hasElevatedAccess()}
             />
           </TabsContent>
         </Tabs>

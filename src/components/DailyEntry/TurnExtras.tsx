@@ -11,6 +11,7 @@ interface TurnExtrasProps {
   isFieldDisabled: boolean;
   mulliriFillimDisabled?: boolean;
   mulliriPerfundDisabled?: boolean;
+  hideXhiro?: boolean;
   onUpdate: (field: keyof TurnData, value: number) => void;
   onMulliriPerfundUpdate?: (value: number) => void;
 }
@@ -22,6 +23,7 @@ export const TurnExtras = ({
   isFieldDisabled,
   mulliriFillimDisabled = false,
   mulliriPerfundDisabled = false,
+  hideXhiro = false,
   onUpdate,
   onMulliriPerfundUpdate,
 }: TurnExtrasProps) => {
@@ -32,6 +34,8 @@ export const TurnExtras = ({
     totalCoffee
   );
 
+  const obscureXhiro = hideXhiro && !isAdminUnlocked;
+
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <div className="space-y-2">
@@ -39,13 +43,19 @@ export const TurnExtras = ({
         <Input
           type="number"
           step="any"
-          value={turnData.xhiro || ""}
+          value={obscureXhiro ? "" : (turnData.xhiro || "")}
           onChange={(e) => onUpdate('xhiro', Number(e.target.value))}
           disabled={true}
-          className="bg-muted/50"
+          className={`bg-muted/50 ${obscureXhiro ? 'blur-sm opacity-40 select-none pointer-events-none' : ''}`}
           title="Xhiro ngarkohet vetëm nga skaneri i shiritit"
+          placeholder={obscureXhiro ? "░░░░ ALL" : undefined}
+          aria-hidden={obscureXhiro}
         />
-        <p className="text-xs text-muted-foreground">📸 Ngarkohet automatikisht nga skaneri i shiritit</p>
+        <p className="text-xs text-muted-foreground">
+          {obscureXhiro
+            ? "🔒 Xhiro e datave të kaluara është e fshehur për stafin"
+            : "📸 Ngarkohet automatikisht nga skaneri i shiritit"}
+        </p>
       </div>
 
       <div className="space-y-2">
