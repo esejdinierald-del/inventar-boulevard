@@ -11,6 +11,7 @@ interface ProductTableProps {
   isAdminUnlocked: boolean;
   isFieldDisabled: boolean;
   gjendjeConfirmed?: boolean;
+  blurGjendje?: boolean;
   onProductUpdate: (product: string, field: keyof ProductData, value: number) => void;
   onProductDelete?: (product: string) => void;
   onProductEdit?: (product: string) => void;

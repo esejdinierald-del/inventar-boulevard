@@ -161,6 +161,7 @@ export const TurnSection = ({
             isAdminUnlocked={isAdminUnlocked}
             isFieldDisabled={isFieldDisabled}
             gjendjeConfirmed={gjendjeConfirmed}
+            blurGjendje={blurGjendje}
             onProductUpdate={onProductUpdate}
             onProductDelete={onProductDelete}
             onProductEdit={onProductEdit}
