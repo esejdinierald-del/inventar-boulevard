@@ -1,11 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Lock, Shield } from "lucide-react";
+import { Lock, Shield, Home } from "lucide-react";
 
 const ADMIN_PASSWORD = "1983";
 const SECRET_PASSWORD = "23061983";
@@ -39,6 +40,7 @@ export const StaffPinVerifyDialog = ({
   const [pin, setPin] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [mode, setMode] = useState<"staff" | "admin">("staff");
+  const navigate = useNavigate();
 
   const handleVerifyStaff = async () => {
     if (!pin || pin.length !== 4) {
@@ -200,6 +202,17 @@ export const StaffPinVerifyDialog = ({
               disabled={isVerifying || (mode === "staff" ? pin.length !== 4 : pin.length < 4)}
             >
               {isVerifying ? 'Duke verifikuar...' : 'Verifiko'}
+            </Button>
+          </div>
+          <div className="pt-2 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/')}
+              className="w-full gap-2"
+            >
+              <Home className="h-4 w-4" />
+              Kthehu te Dashboard
             </Button>
           </div>
         </div>
