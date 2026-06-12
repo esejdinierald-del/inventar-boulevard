@@ -14,10 +14,12 @@ interface ProductTableProps {
   isFieldDisabled: boolean;
   gjendjeConfirmed?: boolean;
   blurGjendje?: boolean;
+  turnLocked?: boolean;
   onProductUpdate: (product: string, field: keyof ProductData, value: number) => void;
   onProductDelete?: (product: string) => void;
   onProductEdit?: (product: string) => void;
   onProductAdd?: (productName: string) => boolean | Promise<boolean>;
+  onConfirmGjendje?: () => void;
   editingProduct: string | null;
   editedProductName: string;
   onEditedNameChange: (name: string) => void;
