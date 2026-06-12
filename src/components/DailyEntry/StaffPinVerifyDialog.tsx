@@ -204,6 +204,17 @@ export const StaffPinVerifyDialog = ({
               {isVerifying ? 'Duke verifikuar...' : 'Verifiko'}
             </Button>
           </div>
+          <div className="pt-2 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/')}
+              className="w-full gap-2"
+            >
+              <Home className="h-4 w-4" />
+              Kthehu te Dashboard
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
