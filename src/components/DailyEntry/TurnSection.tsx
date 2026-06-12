@@ -41,6 +41,7 @@ interface TurnSectionProps {
   gjendjeConfirmed?: boolean;
   onConfirmGjendje?: () => void;
   onUnlockGjendje?: () => void;
+  blurGjendje?: boolean;
 }
 
 export const TurnSection = ({
