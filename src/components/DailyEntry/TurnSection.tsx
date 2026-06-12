@@ -75,6 +75,7 @@ export const TurnSection = ({
   gjendjeConfirmed = false,
   onConfirmGjendje,
   onUnlockGjendje,
+  blurGjendje = false,
 }: TurnSectionProps) => {
   // Skaneri i shiritit hapet vetëm pasi staf të konfirmojë Gjendjen.
   // Admin/menaxher e ka hapur gjithmonë (mund të punojë lirshëm).
