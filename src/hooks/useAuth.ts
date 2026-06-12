@@ -124,6 +124,7 @@ export const useAuth = () => {
     closePasswordDialog,
     closeViewOnlyDialog,
     isWithinStaffEditWindow,
+    isWithinT2Window,
     unlockAdmin,
   };
 };
