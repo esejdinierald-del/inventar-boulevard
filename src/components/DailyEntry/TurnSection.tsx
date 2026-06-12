@@ -189,6 +189,7 @@ export const TurnSection = ({
             mulliriPerfundDisabled={isTurnLocked}
             onUpdate={onTurnUpdate}
             onMulliriPerfundUpdate={onMulliriPerfundUpdate}
+            hideXhiro={hideXhiro}
           />
         </CardContent>
       </Card>
