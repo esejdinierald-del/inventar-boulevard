@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CheckCircle2 } from "lucide-react";
 import { ProductData } from "@/types/turn.types";
 import { CalculationService } from "@/services/calculations";
 import { AddProductRow } from "./AddProductRow";
+import { toast } from "sonner";
 
 interface ProductTableProps {
   products: string[];
