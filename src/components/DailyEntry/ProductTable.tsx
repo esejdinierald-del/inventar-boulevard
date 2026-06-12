@@ -193,7 +193,7 @@ export const ProductTable = ({
                     disabled={isFurnizimeDisabled(isFieldDisabled)}
                   />
                 </TableCell>
-                <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
+                <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'} ${blurClass}`}>
                   {dif}
                 </TableCell>
                 {isAdminUnlocked && onProductDelete && (
