@@ -42,13 +42,19 @@ export class StockPropagationService {
       // 2. Llogarit stokun përfundimtar të T2 për datën fillestare
       const sourceT2 = sourceEntry.turn2_data as unknown as TurnData;
       const sourceT1 = sourceEntry.turn1_data as unknown as TurnData;
-      
+
+      // Lexo nëse gjendja e T2 është konfirmuar për fromDate
+      const sourceT2Confirmed = await this.isGjendjeConfirmed(fromDate, 2);
+
       // Llogarit stokun e ri për secilin produkt
-      // KRITIKE: Përdor calculateStockForNextTurn që respekton gjendje (numërim fizik)
+      // KRITIKE: Përdor calculateStockForNextTurn që respekton gjendjen e konfirmuar
       const calculatedStock: { [key: string]: number } = {};
       Object.entries(sourceT2.products).forEach(([productName, data]) => {
         const productData = data as ProductData;
-        calculatedStock[productName] = CalculationService.calculateStockForNextTurn(productData);
+        calculatedStock[productName] = CalculationService.calculateStockForNextTurn(
+          productData,
+          sourceT2Confirmed
+        );
       });
 
       // Llogarit mulliri për ditën tjetër (T2 nëse > 0, përndryshe T1)
@@ -80,6 +86,10 @@ export class StockPropagationService {
         if (entryError) throw entryError;
 
         if (existingEntry) {
+          // Lexo statusin e konfirmimit për këtë datë (T1 + T2)
+          const t1Confirmed = await this.isGjendjeConfirmed(dateStr, 1);
+          const t2Confirmed = await this.isGjendjeConfirmed(dateStr, 2);
+
           // Përditëso T1 stokFillim dhe mulliriFillim
           const updatedT1 = this.updateT1WithNewStock(
             existingEntry.turn1_data as unknown as TurnData,
@@ -90,7 +100,8 @@ export class StockPropagationService {
           // Rillogarit T2 stokFillim bazuar në T1 të përditësuar
           const updatedT2 = this.updateT2FromT1(
             existingEntry.turn2_data as unknown as TurnData,
-            updatedT1
+            updatedT1,
+            t1Confirmed
           );
 
           // Ruaj ndryshimet
@@ -106,11 +117,14 @@ export class StockPropagationService {
           if (updateError) throw updateError;
 
           // Llogarit stokun e ri për ditën pasardhëse
-          // KRITIKE: Përdor calculateStockForNextTurn që respekton gjendje
+          // KRITIKE: Përdor calculateStockForNextTurn me flagun e konfirmimit
           previousStock = {};
           Object.entries(updatedT2.products).forEach(([productName, data]) => {
             const productData = data as ProductData;
-            previousStock[productName] = CalculationService.calculateStockForNextTurn(productData);
+            previousStock[productName] = CalculationService.calculateStockForNextTurn(
+              productData,
+              t2Confirmed
+            );
           });
 
           previousMulliri = updatedT2.mulliriPerfund > 0 
@@ -217,10 +231,11 @@ export class StockPropagationService {
   }
 
   /**
-   * Përditëso T2 stokFillim bazuar në T1.gjendje (nëse plotësuar) ose llogaritje teorike
-   * KRITIKE: Nëse gjendje > 0 përdor atë, përndryshe llogarit stokFillim + furnizime - shiriti
+   * Përditëso T2 stokFillim bazuar në T1.gjendje (nëse plotësuar/konfirmuar)
+   * ose llogaritje teorike.
+   * KRITIKE: Nëse `t1Confirmed=true`, beso gjendjen edhe nëse është 0.
    */
-  private static updateT2FromT1(t2: TurnData, t1: TurnData): TurnData {
+  private static updateT2FromT1(t2: TurnData, t1: TurnData, t1Confirmed = false): TurnData {
     const updatedProducts: { [key: string]: ProductData } = {};
     
     Object.entries(t2.products).forEach(([productName, data]) => {
@@ -228,8 +243,7 @@ export class StockPropagationService {
       const t1Data = t1.products[productName] as ProductData;
       
       if (t1Data) {
-        // KRITIKE: Respekto gjendje (numërim fizik) nëse > 0, përndryshe llogarit teorikisht
-        const newStokFillim = CalculationService.calculateStockForNextTurn(t1Data);
+        const newStokFillim = CalculationService.calculateStockForNextTurn(t1Data, t1Confirmed);
         updatedProducts[productName] = {
           ...productData,
           stokFillim: newStokFillim
@@ -244,5 +258,27 @@ export class StockPropagationService {
       products: updatedProducts,
       mulliriFillim: t1.mulliriPerfund
     };
+  }
+
+  /**
+   * Lexon nga `gjendje_locks` nëse gjendja për (datë, turn) është konfirmuar nga stafi.
+   */
+  private static async isGjendjeConfirmed(entryDate: string, turnNumber: 1 | 2): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('gjendje_locks')
+        .select('entry_date')
+        .eq('entry_date', entryDate)
+        .eq('turn_number', turnNumber)
+        .maybeSingle();
+      if (error) {
+        console.error('isGjendjeConfirmed error:', error);
+        return false;
+      }
+      return !!data;
+    } catch (e) {
+      console.error('isGjendjeConfirmed exception:', e);
+      return false;
+    }
   }
 }

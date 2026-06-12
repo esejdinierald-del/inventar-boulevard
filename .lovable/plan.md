@@ -1,60 +1,97 @@
 ## Qëllimi
-1. Sfumim dinamik për "Stok Fillim" + "Dif" sipas gjendjes së Gjendjes/turn lock.
-2. Buton "Konfirmo Gjendjen" brenda tabelës, poshtë kolonës Gjendje.
-3. Fsheh Xhiron e datave të kaluara nga stafi (vetëm admin/menaxher e sheh).
 
-## 1) Sfumim Stok Fillim + Dif (staf)
+Zgjidh 4 rreziqet financiare të identifikuara nga auditi:
+1. Zbritje e dyfishtë e alkoolit kur ringarkohet shiriti
+2. "Konfirmo Gjendjen" vlen vetëm në pajisjen e stafit (mund të anashkalohet)
+3. Furnizimet futen edhe në turne të kyçura
+4. `gjendje = 0` trajtohet si "nuk u numërua" → infloft stokun e nesërm
 
-Rrjedha:
-```text
-Hap turnin   → Stok Fillim ░  | Gjendje [ ] | Shiriti — | Dif ░
-Konfirmo     → Stok Fillim ✓  | Gjendje 🔒  | Shiriti ✓ | Dif ✓
-Kyç turnin   → Stok Fillim ░  | Gjendje 🔒  | Shiriti ✓ | Dif ░
+## Ndryshime në bazë (migration — i bërë në mesazhin paraardhës)
+
+Dy tabela të reja:
+
+- **`alcohol_deductions`** — Regjistër i sasive të alkoolit të zbritura për (datë, turn, pije). Lejon llogaritjen e delta-s mes ringarkimeve dhe pengon dublimin.
+- **`gjendje_locks`** — Konfirmimi i Gjendjes ruhet në server (jo localStorage). Vlen për çdo pajisje.
+
+Të dy: RLS aktive, lexim publik, shkrim nga `authenticated`.
+
+## Ndryshime në kod
+
+### A. `src/hooks/useGjendjeLock.ts` — rishkruhet
+
+- Lexon statusin nga `gjendje_locks` për `(selectedDate, turnNumber)`.
+- `confirm(staffName)` → upsert në server, ruan emrin e stafit dhe kohën.
+- `unlock()` → fshin rreshtin nga serveri.
+- Mban edhe cache në localStorage për përgjigje optimiste (UX).
+- Eksporton `confirmedBy` shtesë (kush e ka konfirmuar).
+
+### B. `src/hooks/useTurnData.ts` — idempotence e alkoolit
+
+`applyAlcoholicDrinksImmediately(data, turnNumber)`:
+
+1. Lexo nga `alcohol_deductions` zbritjet e mëparshme për `(selectedDate, turnNumber)`.
+2. Për çdo pije në input të ri: `delta = saMeRiu - saIshteAplikuarMëParë`.
+3. Përditëso `alcoholic_drinks_inventory` me delta-n (jo me shumën totale).
+4. Upsert në `alcohol_deductions` me sasinë e re. Fshi rreshtat që nuk janë më në input.
+5. Kjo bën që ringarkimi i të njëjtit shirit të mos zbresë dy herë; një shirit i korrigjuar shton/heq vetëm diferencën.
+
+`handleReceiptDataT1` thërret me `turnNumber=1`, `handleReceiptDataT2` me `turnNumber=2`.
+
+### C. `src/pages/DailyEntry.tsx` — mbrojtja e turneve të kyçura
+
+Në fillim të `handleApplySupplies`:
+
+```ts
+const currentTurnNumber = activeTurn === 'turn1' ? 1 : 2;
+if (isTurnLocked(currentTurnNumber)) {
+  toast.error('Turni është i kyçur. Zhblloko nga admin para se të aplikosh furnizime.');
+  return;
+}
 ```
 
-### `src/components/DailyEntry/ProductTable.tsx`
-- Prop e re `turnLocked: boolean`.
-- Flag i vetëm: `obscureForStaff = !isAdminUnlocked && (!gjendjeConfirmed || turnLocked)`.
-- Apliko `blur-sm opacity-40 select-none pointer-events-none` te:
-  - Inputi "Stok Fillim" për çdo rresht + qeliza TOTALI e saj.
-  - Qeliza "Dif" për çdo rresht + qeliza TOTALI e Dif.
-- Hiq blur-in aktual gjithmonë-aktiv te Stok Fillim (tani vjen nga `obscureForStaff`).
-- Rresht i ri brenda `<TableBody>` poshtë rreshtit TOTALI, vetëm për staf kur `!gjendjeConfirmed && !turnLocked`:
-  - `<TableRow>` me `colSpan` të plotë me butonin `✓ Konfirmo Gjendjen`.
-  - Validim ekzistues: kërkon të paktën një produkt me `gjendje > 0`.
+E njëjta mbrojtje për butonin që nis `InvoiceMappingManager` — disable kur turni aktiv është i kyçur.
 
-### `src/components/DailyEntry/TurnSection.tsx`
-- I kalon `ProductTable`: `turnLocked={isTurnLocked}` + `onConfirmGjendje`.
-- Heq butonin e dyfishtë "Mbyll Gjendjen & Hap Skanerin" nga header (mbetet vetëm brenda tabelës).
-- Mban shenjën "🔒 Gjendja e mbyllur" dhe butonin admin "Zhblloko Gjendjen".
+Përditëso edhe thirrjen `gjendjeT1.confirm(verifiedStaff)` / `gjendjeT2.confirm(verifiedStaff)` për të ruajtur emrin e stafit në server.
 
-## 2) Fshehja e Xhiros për datat e kaluara (staf)
+### D. `src/services/calculations.ts` — fix gjendje=0
 
-### `src/components/DailyEntry/TurnExtras.tsx`
-- Prop e re `hideXhiro?: boolean`.
-- Kur `hideXhiro && !isAdminUnlocked`:
-  - Inputi i Xhiros zëvendësohet me një placeholder `░░░░ ALL` (ose `blur-sm opacity-40 select-none pointer-events-none` mbi vlerën aktuale + input i mbyllur).
-- Asnjë ndryshim te llogaritjet — vetëm prezantim.
+```ts
+calculateStockForNextTurn(productData, gjendjeConfirmed = false): number {
+  if (gjendjeConfirmed) {
+    // Numërimi fizik konfirmuar → beso vlerën edhe nëse është 0
+    return Math.max(0, productData.gjendje);
+  }
+  // Fallback i vjetër (kompatibël prapa)
+  if (productData.gjendje > 0) return productData.gjendje;
+  if (productData.stokFillim === 0 && productData.furnizime === 0) return 0;
+  return productData.stokFillim + productData.furnizime - productData.shiriti;
+}
+```
 
-### `src/pages/DailyEntry.tsx`
-- Llogarit `isPastDate = selectedDate < todayISO` (krahasim string YYYY-MM-DD).
-- Kalo `hideXhiro={isPastDate && !isAdminUnlocked}` te të dy `TurnSection` (T1 + T2).
-- Përcillet më pas te `TurnExtras` përmes `TurnSection` me prop të ri `hideXhiro`.
+### E. Thread `gjendjeConfirmed` te thirrjet
 
-### `src/components/DailyEntry/TurnSection.tsx`
-- Prop i ri `hideXhiro?: boolean` → kalohet te `TurnExtras`.
+- `useTurnData` pranon prop të reja `gjendjeConfirmedT1`, `gjendjeConfirmedT2`. `DailyEntry` ia kalon nga hook-et `gjendjeT1.confirmed`, `gjendjeT2.confirmed`.
+- T1→T2 sync (rreshti 297): kalo `gjendjeConfirmedT1`.
+- T2→ditë tjetër (rreshti 339, 449, 611): kalo `gjendjeConfirmedT2`.
+- `StockPropagationService.propagateFromDate`: para se të iterojë, lexon `gjendje_locks` për çdo datë në cikël dhe ia kalon `calculateStockForNextTurn`. Default false nëse mungon rresht (sjellja e vjetër).
 
-Admin/menaxher e sheh Xhiron e çdo date pa kufizim. Data e sotme dhe e djeshme (brenda dritares ekzistuese) mbeten të dukshme për stafin.
+### F. Testet ekzistuese
 
-## Pa ndryshime në
-- `useGjendjeLock.ts`, `useTurnLock.ts`, `calculations.ts`.
-- Logjika financiare / propagimi i stokut.
-- Skaneri (vazhdon të varet vetëm nga `gjendjeConfirmed`).
+`src/services/calculations.test.ts` — shtoj raste:
+- `gjendjeConfirmed=true, gjendje=0` → kthen 0 (jo teorik)
+- `gjendjeConfirmed=false, gjendje=0, stok=5` → kthen sjelljen e vjetër
 
-## Testim manual
-1. Staf, datë e sotme, turn i pa filluar → Stok Fillim + Dif sfumuar; Xhiro e dukshme.
-2. Vendos Gjendje + kliko "Konfirmo Gjendjen" → Stok Fillim + Dif të qarta; Gjendja e ngrirë; skaneri i hapur.
-3. Mbyll + print "Kyç turnin" → Stok Fillim + Dif sfumohen sërish.
-4. Staf zgjedh një datë të kaluar → Xhiro sfumuar/zëvendësuar; Stok Fillim + Dif sfumuar (turni i kyçur).
-5. Admin (1983) → gjithçka e dukshme në çdo datë; butoni "Zhblloko Gjendjen" funksionon.
-6. `npm test` → testet e CalculationService qëndrojnë jeshile (asnjë ndryshim formule).
+## Çfarë NUK ndryshohet
+
+- UI vizuale e faqes mbetet e njëjtë.
+- Logjika e Dif (`shiriti+gjendje-stokFillim-furnizime`) e paprekur.
+- Asnjë ndryshim te coffee, kitchen, expenses, pin verification.
+- Asnjë prekje e tabelave të tjera apo policy-ve ekzistuese.
+
+## Verifikimi
+
+1. Re-ngarko të njëjtin shirit dy herë në T1 → inventari i alkoolit zbret VETËM një herë (i pari).
+2. Korrigjo shiritin (ndrysho sasinë e një pije) → diferenca aplikohet, jo shuma e plotë.
+3. Konfirmo gjendjen në një pajisje → hap të njëjtën datë në incognito → gjendja shfaqet e kyçur (e ngarkuar nga serveri).
+4. Printo & kyç T1 → provo "Ngarko Furnizime" → del toast error, nuk shtohet asgjë.
+5. Vendos `gjendje=0` për një produkt, konfirmo gjendjen → ditën tjetër `stokFillim` për atë produkt = 0 (jo teorik).
