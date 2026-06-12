@@ -641,6 +641,7 @@ const DailyEntry = () => {
               gjendjeConfirmed={gjendjeT1.confirmed}
               onConfirmGjendje={gjendjeT1.confirm}
               onUnlockGjendje={gjendjeT1.unlock}
+              blurGjendje={!isAdminUnlocked && isWithinT2Window()}
             />
           </TabsContent>
 
