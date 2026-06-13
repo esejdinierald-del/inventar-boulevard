@@ -7,7 +7,7 @@ interface AdminPasswordDialogProps {
   isOpen: boolean;
   onClose: () => void;
   /** Called with admin email + password. Validation is done by the parent (Supabase Auth). */
-  onSubmit: (email: string, password: string) => void | Promise<void>;
+  onSubmit: (email: string, password: string) => unknown | Promise<unknown>;
   title?: string;
   description?: string;
   isBusy?: boolean;
