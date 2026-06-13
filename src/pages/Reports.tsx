@@ -507,10 +507,10 @@ const Reports = () => {
           <tbody>
             ${monthlyData.filter(d => d.sales > 0).map(d => `
               <tr>
-                <td>${d.day}</td>
-                <td class="text-right">${d.t1.toLocaleString()} ALL</td>
-                <td class="text-right">${d.t2.toLocaleString()} ALL</td>
-                <td class="text-right">${d.sales.toLocaleString()} ALL</td>
+                <td>${escHtml(d.day)}</td>
+                <td class="text-right">${(Number(d.t1) || 0).toLocaleString()} ALL</td>
+                <td class="text-right">${(Number(d.t2) || 0).toLocaleString()} ALL</td>
+                <td class="text-right">${(Number(d.sales) || 0).toLocaleString()} ALL</td>
               </tr>
             `).join('')}
             <tr class="total-row">
