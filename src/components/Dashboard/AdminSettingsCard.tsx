@@ -163,6 +163,35 @@ export const AdminSettingsCard = () => {
             <Save className="h-4 w-4 mr-2" />
             {isSaving ? "Duke ruajtur..." : "Ruaj Fjalëkalimin"}
           </Button>
+
+          <div className="pt-4 border-t mt-4">
+            <Label className="text-base font-semibold">Rillogarit Stokun</Label>
+            <p className="text-xs text-muted-foreground mb-3">
+              Propaganon stokun fillestar të T1/T2 dhe next_day_stock në të gjitha datat sipas formulës zyrtare.
+              Nuk ndryshon shiritin, furnizimet, gjendjen apo xhiron.
+            </p>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" disabled={isRecalculating} className="w-full">
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isRecalculating ? "animate-spin" : ""}`} />
+                  {isRecalculating ? "Duke rillogaritur..." : "Rillogarit Gjithçka"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Konfirmo rillogaritjen</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Do të rillogaritet stoku fillestar i T1/T2 dhe next_day_stock për të gjitha datat ekzistuese.
+                    Hyrjet manuale (shirit, furnizime, gjendje, xhiro, shpenzime) nuk preken. Vazhdo?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Anulo</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleRecalculateStock}>Po, rillogarit</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
       </CardContent>
     </Card>
