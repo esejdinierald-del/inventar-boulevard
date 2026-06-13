@@ -485,10 +485,10 @@ const Reports = () => {
           <tbody>
             ${topProducts.map(p => `
               <tr>
-                <td>${p.name}</td>
-                <td class="text-right">${p.quantity}</td>
-                <td class="text-right">${p.cost.toLocaleString()} ALL</td>
-                <td class="text-right">${p.avgDaily.toFixed(1)}</td>
+                <td>${escHtml(p.name)}</td>
+                <td class="text-right">${Number(p.quantity) || 0}</td>
+                <td class="text-right">${(Number(p.cost) || 0).toLocaleString()} ALL</td>
+                <td class="text-right">${(Number(p.avgDaily) || 0).toFixed(1)}</td>
               </tr>
             `).join('')}
           </tbody>
