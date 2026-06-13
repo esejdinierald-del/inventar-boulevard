@@ -58,7 +58,7 @@ export const StaffTurnPinsManager = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('staff_turn_pins')
-        .select('*')
+        .select('id, staff_name, turn_number, is_active, is_manager, permissions')
         .order('turn_number', { ascending: true })
         .order('staff_name', { ascending: true });
 
