@@ -575,18 +575,31 @@ const Reports = () => {
       <div className="space-y-6">
         {!isUnlocked && (
           <Card className="border-warning">
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 space-y-3">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Lock className="h-4 w-4 text-warning" />
+                Hyr me llogarinë e adminit për të parë raportet
+              </div>
+              <Input
+                type="email"
+                autoComplete="username"
+                placeholder="Email-i i adminit"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
               <div className="flex items-center gap-4">
-                <Lock className="h-5 w-5 text-warning" />
                 <Input
                   type="password"
-                  placeholder="Fut fjalëkalimin për të parë raportet"
+                  autoComplete="current-password"
+                  placeholder="Fjalëkalimi"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
                   className="flex-1"
                 />
-                <Button onClick={handleUnlock}>Zhblloko</Button>
+                <Button onClick={handleUnlock} disabled={isAuthenticating}>
+                  {isAuthenticating ? "..." : "Zhblloko"}
+                </Button>
               </div>
             </CardContent>
           </Card>
