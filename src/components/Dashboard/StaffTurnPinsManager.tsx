@@ -118,7 +118,7 @@ export const StaffTurnPinsManager = () => {
     setEditingPin(pin);
     setFormData({
       staff_name: pin.staff_name,
-      pin: pin.pin,
+      pin: '', // require admin to retype PIN; cannot be read back from server
       is_active: pin.is_active,
       is_manager: pin.is_manager,
       permissions: pin.permissions || {
