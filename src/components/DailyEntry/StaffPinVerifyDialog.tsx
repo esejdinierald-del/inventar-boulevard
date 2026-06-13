@@ -8,8 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Lock, Shield, Home } from "lucide-react";
 
-const ADMIN_PASSWORD = "1983";
-const SECRET_PASSWORD = "23061983";
+// Hardcoded admin passwords removed — admin login now uses Supabase Auth + has_role.
 
 export interface StaffPermissions {
   dashboard: boolean;
