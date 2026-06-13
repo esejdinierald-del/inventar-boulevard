@@ -77,7 +77,7 @@ export const StaffTurnPinsManager = () => {
         return {
           id: item.id,
           staff_name: item.staff_name,
-          pin: item.pin,
+          pin: '', // PIN is not readable from client; admin must retype on edit
           turn_number: item.turn_number,
           is_active: item.is_active,
           is_manager: item.is_manager,
