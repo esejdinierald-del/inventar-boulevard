@@ -52,11 +52,7 @@ export const StaffPinVerifyDialog = ({
       setIsVerifying(true);
 
       const { data, error } = await supabase
-        .from('staff_turn_pins')
-        .select('*')
-        .eq('pin', pin)
-        .eq('is_active', true)
-        .maybeSingle();
+        .rpc('verify_staff_pin', { _pin: pin });
 
       if (error) {
         console.error('Error verifying PIN:', error);
@@ -64,7 +60,8 @@ export const StaffPinVerifyDialog = ({
         return;
       }
 
-      if (!data) {
+      const row = Array.isArray(data) ? data[0] : data;
+      if (!row) {
         toast.error("PIN i gabuar ose jo aktiv");
         setPin("");
         return;
