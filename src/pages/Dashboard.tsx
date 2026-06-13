@@ -110,7 +110,7 @@ const Dashboard = () => {
 
         setStaffUser(row.staff_name, true, permissions);
         setIsUnlocked(true);
-        toast.success(`Mirësevini, ${data.staff_name}!`);
+        toast.success(`Mirësevini, ${row.staff_name}!`);
       } catch (err) {
         console.error('Error verifying PIN:', err);
         toast.error("Gabim në verifikimin e PIN-it");
