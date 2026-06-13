@@ -270,14 +270,22 @@ const Expenses = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <Input
+                type="email"
+                autoComplete="username"
+                placeholder="Email-i i adminit"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <Input
                 type="password"
-                placeholder="Fut fjalëkalimin"
+                autoComplete="current-password"
+                placeholder="Fjalëkalimi"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
               />
-              <Button onClick={handleUnlock} className="w-full">
-                Hyr
+              <Button onClick={handleUnlock} className="w-full" disabled={isAuthenticating}>
+                {isAuthenticating ? "Duke verifikuar..." : "Hyr"}
               </Button>
             </CardContent>
           </Card>
