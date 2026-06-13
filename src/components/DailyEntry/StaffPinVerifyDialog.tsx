@@ -68,7 +68,7 @@ export const StaffPinVerifyDialog = ({
       }
 
       // Parse permissions from the database
-      const perms = data.permissions as unknown;
+      const perms = row.permissions as unknown;
       const defaultPerms: StaffPermissions = {
         dashboard: false,
         products: false,
@@ -81,18 +81,18 @@ export const StaffPinVerifyDialog = ({
         : defaultPerms;
 
       const staffData: VerifiedStaffData = {
-        name: data.staff_name,
-        isManager: data.is_manager,
+        name: row.staff_name,
+        isManager: row.is_manager,
         permissions
       };
 
-      if (data.is_manager) {
-        toast.success(`Mirë se erdhe, Menaxher ${data.staff_name}!`);
+      if (row.is_manager) {
+        toast.success(`Mirë se erdhe, Menaxher ${row.staff_name}!`);
       } else {
-        toast.success(`Mirë se erdhe, ${data.staff_name}!`);
+        toast.success(`Mirë se erdhe, ${row.staff_name}!`);
       }
       
-      onVerified(data.staff_name, staffData);
+      onVerified(row.staff_name, staffData);
       setPin("");
       onOpenChange(false);
     } catch (err) {
