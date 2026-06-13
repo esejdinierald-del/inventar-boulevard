@@ -500,6 +500,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      verify_staff_pin: {
+        Args: { _pin: string }
+        Returns: {
+          id: string
+          is_manager: boolean
+          permissions: Json
+          staff_name: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "staff"

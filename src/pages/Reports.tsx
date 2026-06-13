@@ -15,6 +15,15 @@ interface ProductPrices {
   [key: string]: number;
 }
 
+/** Escape HTML to prevent XSS when interpolating untrusted DB strings into document.write. */
+const escHtml = (s: unknown): string =>
+  String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 const Reports = () => {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [password, setPassword] = useState("");
@@ -476,10 +485,10 @@ const Reports = () => {
           <tbody>
             ${topProducts.map(p => `
               <tr>
-                <td>${p.name}</td>
-                <td class="text-right">${p.quantity}</td>
-                <td class="text-right">${p.cost.toLocaleString()} ALL</td>
-                <td class="text-right">${p.avgDaily.toFixed(1)}</td>
+                <td>${escHtml(p.name)}</td>
+                <td class="text-right">${Number(p.quantity) || 0}</td>
+                <td class="text-right">${(Number(p.cost) || 0).toLocaleString()} ALL</td>
+                <td class="text-right">${(Number(p.avgDaily) || 0).toFixed(1)}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -498,10 +507,10 @@ const Reports = () => {
           <tbody>
             ${monthlyData.filter(d => d.sales > 0).map(d => `
               <tr>
-                <td>${d.day}</td>
-                <td class="text-right">${d.t1.toLocaleString()} ALL</td>
-                <td class="text-right">${d.t2.toLocaleString()} ALL</td>
-                <td class="text-right">${d.sales.toLocaleString()} ALL</td>
+                <td>${escHtml(d.day)}</td>
+                <td class="text-right">${(Number(d.t1) || 0).toLocaleString()} ALL</td>
+                <td class="text-right">${(Number(d.t2) || 0).toLocaleString()} ALL</td>
+                <td class="text-right">${(Number(d.sales) || 0).toLocaleString()} ALL</td>
               </tr>
             `).join('')}
             <tr class="total-row">
