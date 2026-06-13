@@ -26,7 +26,9 @@ const escHtml = (s: unknown): string =>
 
 const Reports = () => {
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [topProducts, setTopProducts] = useState<any[]>([]);
@@ -45,13 +47,45 @@ const Reports = () => {
   });
   const printRef = useRef<HTMLDivElement>(null);
 
-  const handleUnlock = () => {
-    const secretPassword = "23061983";
-    if (password === "1983" || password === secretPassword) {
+  // Auto-unlock if an admin session already exists
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || user.is_anonymous) return;
+      const { data: isAdmin } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
+      if (isAdmin === true) setIsUnlocked(true);
+    })();
+  }, []);
+
+  const handleUnlock = async () => {
+    if (!email || !password) {
+      toast.error("Plotëso email-in dhe fjalëkalimin");
+      return;
+    }
+    try {
+      setIsAuthenticating(true);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (error || !data.user) {
+        toast.error("Email ose fjalëkalim i pavlefshëm");
+        return;
+      }
+      const { data: isAdmin } = await supabase.rpc('has_role', { _user_id: data.user.id, _role: 'admin' });
+      if (!isAdmin) {
+        await supabase.auth.signOut();
+        toast.error("Kjo llogari nuk ka të drejta admini");
+        return;
+      }
       setIsUnlocked(true);
+      setPassword("");
       toast.success("Raportet u zhbllokuan");
-    } else {
-      toast.error("Fjalëkalimi është i gabuar");
+    } catch (err) {
+      console.error('Admin login error:', err);
+      toast.error("Gabim gjatë hyrjes");
+    } finally {
+      setIsAuthenticating(false);
     }
   };
 
