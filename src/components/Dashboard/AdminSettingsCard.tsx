@@ -36,6 +36,29 @@ export const AdminSettingsCard = () => {
     })();
   }, []);
 
+  const [isRecalculating, setIsRecalculating] = useState(false);
+
+  const handleRecalculateStock = async () => {
+    setIsRecalculating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("recalculate-all-stock");
+      if (error) {
+        toast.error(`Gabim: ${error.message}`);
+        return;
+      }
+      if (data?.success) {
+        toast.success(data.message ?? "Rillogaritja përfundoi");
+      } else {
+        toast.error(data?.error ?? "Gabim i panjohur");
+      }
+    } catch (err) {
+      console.error("Recalculate error:", err);
+      toast.error("Gabim gjatë rillogaritjes");
+    } finally {
+      setIsRecalculating(false);
+    }
+  };
+
   const handleChangePassword = async () => {
     if (!adminEmail) {
       toast.error("Nuk je i loguar si admin. Bëj logout dhe hyr përsëri.");
