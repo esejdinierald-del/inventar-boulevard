@@ -37,6 +37,8 @@ export const StaffPinVerifyDialog = ({
   onAdminVerified,
 }: StaffPinVerifyDialogProps) => {
   const [pin, setPin] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [mode, setMode] = useState<"staff" | "admin">("staff");
   const navigate = useNavigate();
@@ -102,15 +104,40 @@ export const StaffPinVerifyDialog = ({
     }
   };
 
-  const handleVerifyAdmin = () => {
-    if (pin === ADMIN_PASSWORD || pin === SECRET_PASSWORD) {
+  const handleVerifyAdmin = async () => {
+    if (!adminEmail || !adminPassword) {
+      toast.error("Plotëso email-in dhe fjalëkalimin");
+      return;
+    }
+    try {
+      setIsVerifying(true);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: adminEmail.trim(),
+        password: adminPassword,
+      });
+      if (error || !data.user) {
+        toast.error("Email ose fjalëkalim i pavlefshëm");
+        return;
+      }
+      const { data: isAdmin } = await supabase.rpc('has_role', {
+        _user_id: data.user.id,
+        _role: 'admin',
+      });
+      if (!isAdmin) {
+        await supabase.auth.signOut();
+        toast.error("Kjo llogari nuk ka të drejta admini");
+        return;
+      }
       toast.success("Admin u hap me sukses!");
-      setPin("");
+      setAdminEmail("");
+      setAdminPassword("");
       onOpenChange(false);
       onAdminVerified?.();
-    } else {
-      toast.error("Fjalëkalimi është gabim!");
-      setPin("");
+    } catch (err) {
+      console.error('Admin login error:', err);
+      toast.error("Gabim gjatë hyrjes së adminit");
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -124,6 +151,8 @@ export const StaffPinVerifyDialog = ({
 
   const switchMode = () => {
     setPin("");
+    setAdminEmail("");
+    setAdminPassword("");
     setMode(mode === "staff" ? "admin" : "staff");
   };
 
