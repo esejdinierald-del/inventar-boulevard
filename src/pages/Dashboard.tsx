@@ -357,20 +357,38 @@ const Dashboard = () => {
                 </Button>
               </div>
               
-              <div className="flex items-center gap-4">
-                <Lock className="h-5 w-5 text-warning" />
-                <Input
-                  type="password"
-                  autoComplete="current-password"
-                  inputMode={loginMode === 'manager' ? 'numeric' : undefined}
-                  maxLength={loginMode === 'manager' ? 4 : undefined}
-                  placeholder={loginMode === 'admin' ? "Fut fjalëkalimin e Admin" : "Fut PIN-in 4-shifror"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
-                  className="flex-1"
-                />
-                <Button onClick={handleUnlock}>Zhblloko</Button>
+              <div className="space-y-2">
+                {loginMode === 'admin' && (
+                  <div className="flex items-center gap-4">
+                    <User className="h-5 w-5 text-warning" />
+                    <Input
+                      type="email"
+                      autoComplete="username"
+                      placeholder="Email-i i adminit"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
+                      className="flex-1"
+                    />
+                  </div>
+                )}
+                <div className="flex items-center gap-4">
+                  <Lock className="h-5 w-5 text-warning" />
+                  <Input
+                    type="password"
+                    autoComplete="current-password"
+                    inputMode={loginMode === 'manager' ? 'numeric' : undefined}
+                    maxLength={loginMode === 'manager' ? 4 : undefined}
+                    placeholder={loginMode === 'admin' ? "Fjalëkalimi" : "Fut PIN-in 4-shifror"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
+                    className="flex-1"
+                  />
+                  <Button onClick={handleUnlock} disabled={isAuthenticating}>
+                    {isAuthenticating ? "..." : "Zhblloko"}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
