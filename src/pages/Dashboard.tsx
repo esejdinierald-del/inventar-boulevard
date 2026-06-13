@@ -93,26 +93,22 @@ const Dashboard = () => {
       
       try {
         const { data, error } = await supabase
-          .from('staff_turn_pins')
-          .select('staff_name, is_manager, permissions')
-          .eq('pin', password)
-          .eq('is_active', true)
-          .eq('is_manager', true)
-          .single();
+          .rpc('verify_staff_pin', { _pin: password });
 
-        if (error || !data) {
+        const row = Array.isArray(data) ? data[0] : data;
+        if (error || !row || !row.is_manager) {
           toast.error("PIN i pavlefshëm ose nuk është menaxher");
           return;
         }
 
-        const permissions = data.permissions as unknown as ManagerPermissions;
+        const permissions = row.permissions as unknown as ManagerPermissions;
         
         if (!permissions.dashboard) {
           toast.error("Nuk keni të drejtë të hyni në Dashboard");
           return;
         }
 
-        setStaffUser(data.staff_name, true, permissions);
+        setStaffUser(row.staff_name, true, permissions);
         setIsUnlocked(true);
         toast.success(`Mirësevini, ${data.staff_name}!`);
       } catch (err) {
