@@ -73,18 +73,31 @@ const ManualAdmin = () => {
               </div>
               <CardTitle className="text-2xl">Manual për Administratorët</CardTitle>
               <p className="text-muted-foreground mt-2">
-                Ky manual është i mbrojtur. Fut fjalëkalimin e administratorit për të vazhduar.
+                Ky manual është i mbrojtur. Hyr me llogarinë e adminit për të vazhduar.
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="admin-manual-email">Email</Label>
                 <Input
+                  id="admin-manual-email"
+                  type="email"
+                  autoComplete="username"
+                  placeholder="admin@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="admin-manual-password">Fjalëkalimi</Label>
+                <Input
+                  id="admin-manual-password"
                   type="password"
-                  placeholder="Fut fjalëkalimin..."
+                  autoComplete="current-password"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  autoFocus
                 />
               </div>
               <div className="flex gap-2">
@@ -92,9 +105,9 @@ const ManualAdmin = () => {
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Mbrapa
                 </Button>
-                <Button className="flex-1" onClick={handleUnlock}>
+                <Button className="flex-1" onClick={handleUnlock} disabled={isAuthenticating}>
                   <Lock className="mr-2 h-4 w-4" />
-                  Hap Manualin
+                  {isAuthenticating ? "Duke verifikuar..." : "Hap Manualin"}
                 </Button>
               </div>
             </CardContent>
