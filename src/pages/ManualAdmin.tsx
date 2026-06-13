@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,34 +6,60 @@ import { Printer, Unlock, AlertCircle, XCircle, Lock, ShieldCheck, LockKeyhole, 
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-
-const ADMIN_PASSWORD = "1983";
-const SECRET_PASSWORD = "23061983";
+import { supabase } from "@/integrations/supabase/client";
 
 const ManualAdmin = () => {
   const navigate = useNavigate();
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  
-  const handlePrint = () => {
-    window.print();
-  };
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  const handleUnlock = () => {
-    if (password === ADMIN_PASSWORD || password === SECRET_PASSWORD) {
+  // Auto-unlock if an admin session already exists
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || user.is_anonymous) return;
+      const { data: isAdmin } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
+      if (isAdmin === true) setIsUnlocked(true);
+    })();
+  }, []);
+
+  const handlePrint = () => window.print();
+
+  const handleUnlock = async () => {
+    if (!email || !password) {
+      toast.error("Plotëso email-in dhe fjalëkalimin");
+      return;
+    }
+    try {
+      setIsAuthenticating(true);
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (error || !data.user) {
+        toast.error("Email ose fjalëkalim i pavlefshëm");
+        return;
+      }
+      const { data: isAdmin } = await supabase.rpc('has_role', { _user_id: data.user.id, _role: 'admin' });
+      if (!isAdmin) {
+        await supabase.auth.signOut();
+        toast.error("Kjo llogari nuk ka të drejta admini");
+        return;
+      }
       setIsUnlocked(true);
       toast.success("Manuali u hap me sukses!");
-    } else {
-      toast.error("Fjalëkalimi është gabim!");
+    } catch (err) {
+      console.error('Admin login error:', err);
+      toast.error("Gabim gjatë hyrjes");
+    } finally {
+      setIsAuthenticating(false);
+      setPassword("");
     }
-    setPassword("");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleUnlock();
-    }
+    if (e.key === "Enter") handleUnlock();
   };
 
   if (!isUnlocked) {
@@ -47,18 +73,31 @@ const ManualAdmin = () => {
               </div>
               <CardTitle className="text-2xl">Manual për Administratorët</CardTitle>
               <p className="text-muted-foreground mt-2">
-                Ky manual është i mbrojtur. Fut fjalëkalimin e administratorit për të vazhduar.
+                Ky manual është i mbrojtur. Hyr me llogarinë e adminit për të vazhduar.
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="admin-manual-email">Email</Label>
                 <Input
+                  id="admin-manual-email"
+                  type="email"
+                  autoComplete="username"
+                  placeholder="admin@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="admin-manual-password">Fjalëkalimi</Label>
+                <Input
+                  id="admin-manual-password"
                   type="password"
-                  placeholder="Fut fjalëkalimin..."
+                  autoComplete="current-password"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  autoFocus
                 />
               </div>
               <div className="flex gap-2">
@@ -66,9 +105,9 @@ const ManualAdmin = () => {
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Mbrapa
                 </Button>
-                <Button className="flex-1" onClick={handleUnlock}>
+                <Button className="flex-1" onClick={handleUnlock} disabled={isAuthenticating}>
                   <Lock className="mr-2 h-4 w-4" />
-                  Hap Manualin
+                  {isAuthenticating ? "Duke verifikuar..." : "Hap Manualin"}
                 </Button>
               </div>
             </CardContent>

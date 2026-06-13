@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,45 +7,68 @@ import { Settings, Save } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
+/**
+ * Lets the signed-in admin update their Supabase Auth password.
+ * Replaces the legacy localStorage-based password change.
+ */
 export const AdminSettingsCard = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [adminEmail, setAdminEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && !user.is_anonymous) setAdminEmail(user.email ?? null);
+    })();
+  }, []);
 
   const handleChangePassword = async () => {
-    // Validim
+    if (!adminEmail) {
+      toast.error("Nuk je i loguar si admin. Bëj logout dhe hyr përsëri.");
+      return;
+    }
     if (!currentPassword || !newPassword || !confirmPassword) {
       toast.error("Plotëso të gjitha fushat");
       return;
     }
-
-    if (currentPassword !== "1983") {
-      toast.error("Fjalëkalimi aktual është i gabuar");
+    if (newPassword.length < 6) {
+      toast.error("Fjalëkalimi i ri duhet të ketë të paktën 6 karaktere");
       return;
     }
-
-    if (newPassword.length < 4) {
-      toast.error("Fjalëkalimi i ri duhet të jetë të paktën 4 karaktere");
-      return;
-    }
-
     if (newPassword !== confirmPassword) {
       toast.error("Fjalëkalimi i ri dhe konfirmimi nuk përputhen");
       return;
     }
 
     setIsSaving(true);
-    
-    // Për tani, ruajmë në localStorage
-    // Në të ardhmen mund të përdoret Supabase Edge Function
     try {
-      localStorage.setItem('admin_password', newPassword);
+      // Re-verify current password by signing in again.
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: adminEmail,
+        password: currentPassword,
+      });
+      if (signInError) {
+        toast.error("Fjalëkalimi aktual është i gabuar");
+        return;
+      }
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (updateError) {
+        toast.error(`Gabim: ${updateError.message}`);
+        return;
+      }
+
       toast.success("Fjalëkalimi u ndryshua me sukses!");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-    } catch (error) {
+    } catch (err) {
+      console.error('Password change error:', err);
       toast.error("Gabim gjatë ndryshimit të fjalëkalimit");
     } finally {
       setIsSaving(false);
@@ -60,7 +83,7 @@ export const AdminSettingsCard = () => {
           <CardTitle>Cilësimet e Adminit</CardTitle>
         </div>
         <p className="text-sm text-muted-foreground">
-          Ndrysho fjalëkalimin e adminit për Dashboard
+          Ndrysho fjalëkalimin e llogarisë admin {adminEmail ? `(${adminEmail})` : ""}
         </p>
       </CardHeader>
       <CardContent>
@@ -70,19 +93,21 @@ export const AdminSettingsCard = () => {
             <Input
               id="current-password"
               type="password"
+              autoComplete="current-password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="****"
+              placeholder="••••••••"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="new-password">Fjalëkalimi i Ri</Label>
+            <Label htmlFor="new-password">Fjalëkalimi i Ri (min. 6 karaktere)</Label>
             <Input
               id="new-password"
               type="password"
+              autoComplete="new-password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="****"
+              placeholder="••••••••"
             />
           </div>
           <div className="space-y-2">
@@ -90,14 +115,15 @@ export const AdminSettingsCard = () => {
             <Input
               id="confirm-password"
               type="password"
+              autoComplete="new-password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="****"
+              placeholder="••••••••"
             />
           </div>
-          <Button 
-            onClick={handleChangePassword} 
-            disabled={isSaving}
+          <Button
+            onClick={handleChangePassword}
+            disabled={isSaving || !adminEmail}
             className="w-full"
           >
             <Save className="h-4 w-4 mr-2" />

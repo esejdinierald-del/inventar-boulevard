@@ -39,7 +39,9 @@ const Expenses = () => {
   const { kitchenProducts } = useKitchenProducts();
   const { alcoholicDrinks } = useAlcoholicDrinksList();
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -59,16 +61,45 @@ const Expenses = () => {
     }
   }, [isUnlocked]);
 
-  const handleUnlock = () => {
-    const secretPassword = "23061983";
-    if (password === "1983" || password === secretPassword) {
-      setIsUnlocked(true);
-      toast({ title: "Qasje e autorizuar" });
-    } else {
-      toast({
-        title: "Fjalëkalim i gabuar",
-        variant: "destructive",
+  // Auto-unlock if an admin session already exists
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || user.is_anonymous) return;
+      const { data: isAdmin } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
+      if (isAdmin === true) setIsUnlocked(true);
+    })();
+  }, []);
+
+  const handleUnlock = async () => {
+    if (!email || !password) {
+      toast({ title: "Plotëso email-in dhe fjalëkalimin", variant: "destructive" });
+      return;
+    }
+    try {
+      setIsAuthenticating(true);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
       });
+      if (error || !data.user) {
+        toast({ title: "Email ose fjalëkalim i pavlefshëm", variant: "destructive" });
+        return;
+      }
+      const { data: isAdmin } = await supabase.rpc('has_role', { _user_id: data.user.id, _role: 'admin' });
+      if (!isAdmin) {
+        await supabase.auth.signOut();
+        toast({ title: "Kjo llogari nuk ka të drejta admini", variant: "destructive" });
+        return;
+      }
+      setIsUnlocked(true);
+      setPassword("");
+      toast({ title: "Qasje e autorizuar" });
+    } catch (err) {
+      console.error('Admin login error:', err);
+      toast({ title: "Gabim gjatë hyrjes", variant: "destructive" });
+    } finally {
+      setIsAuthenticating(false);
     }
   };
 
@@ -239,14 +270,22 @@ const Expenses = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <Input
+                type="email"
+                autoComplete="username"
+                placeholder="Email-i i adminit"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <Input
                 type="password"
-                placeholder="Fut fjalëkalimin"
+                autoComplete="current-password"
+                placeholder="Fjalëkalimi"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
               />
-              <Button onClick={handleUnlock} className="w-full">
-                Hyr
+              <Button onClick={handleUnlock} className="w-full" disabled={isAuthenticating}>
+                {isAuthenticating ? "Duke verifikuar..." : "Hyr"}
               </Button>
             </CardContent>
           </Card>

@@ -23,8 +23,7 @@ interface ReceiptProduct {
   originalName: string;
 }
 
-const ADMIN_PASSWORD = "1983";
-const SECRET_PASSWORD = "23061983";
+// Hardcoded admin passwords removed — authentication now goes through Supabase Auth + has_role.
 
 export const ProductMappingManager = ({ products, coffeeTypes, kitchenProducts, alcoholicDrinks = [] }: ProductMappingManagerProps) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -168,14 +167,26 @@ export const ProductMappingManager = ({ products, coffeeTypes, kitchenProducts, 
     }
   };
 
-  const handlePasswordSubmit = async (password: string) => {
-    if (password === ADMIN_PASSWORD || password === SECRET_PASSWORD) {
+  const handlePasswordSubmit = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error || !data.user) {
+        toast.error("Email ose fjalëkalim i pavlefshëm");
+        return;
+      }
+      const { data: isAdmin } = await supabase.rpc('has_role', { _user_id: data.user.id, _role: 'admin' });
+      if (!isAdmin) {
+        await supabase.auth.signOut();
+        toast.error("Kjo llogari nuk ka të drejta admini");
+        return;
+      }
       setShowPasswordDialog(false);
       await loadSavedMapping();
       setIsOpen(true);
       toast.success("Admin u verifikua!");
-    } else {
-      toast.error("Fjalëkalimi është gabim!");
+    } catch (err) {
+      console.error('Admin verify error:', err);
+      toast.error("Gabim gjatë verifikimit");
     }
   };
 
