@@ -137,7 +137,7 @@ export const ProductTable = ({
 
             return (
               <TableRow key={product}>
-                <TableCell className="font-medium">
+                <TableCell className={`font-medium ${blurClass}`}>
                   {isAdminUnlocked && editingProduct === product ? (
                     <div className="flex items-center gap-2">
                       <Input
@@ -166,9 +166,10 @@ export const ProductTable = ({
                     onChange={(e) => onProductUpdate(product, 'stokFillim', Number(e.target.value))}
                     className="w-20"
                     disabled={!isAdminUnlocked}
+                    tabIndex={isBlurred ? -1 : 0}
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell className={blurClass}>
                   <Input
                     type="number"
                     step="any"
@@ -176,9 +177,10 @@ export const ProductTable = ({
                     onChange={(e) => onProductUpdate(product, 'gjendje', Number(e.target.value))}
                     className="w-20"
                     disabled={isGjendjeDisabled(isFieldDisabled) || (gjendjeUploaded && !isAdminUnlocked)}
+                    tabIndex={isBlurred ? -1 : 0}
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell className={blurClass}>
                   <Input
                     type="number"
                     step="any"
@@ -186,9 +188,10 @@ export const ProductTable = ({
                     onChange={(e) => onProductUpdate(product, 'shiriti', Number(e.target.value))}
                     className="w-20"
                     disabled={!isAdminUnlocked}
+                    tabIndex={isBlurred ? -1 : 0}
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell className={blurClass}>
                   <Input
                     type="number"
                     step="any"
@@ -196,6 +199,7 @@ export const ProductTable = ({
                     onChange={(e) => onProductUpdate(product, 'furnizime', Number(e.target.value))}
                     className="w-20 bg-success/10"
                     disabled={isFurnizimeDisabled(isFieldDisabled)}
+                    tabIndex={isBlurred ? -1 : 0}
                   />
                 </TableCell>
                 <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'} ${blurClass}`}>
