@@ -1,26 +1,37 @@
-## Problemi
-Pas printit, `gjendjeUploaded` rikthehet në `false`, por në `ProductTable.tsx` `blurClass` aplikohet vetëm te kolonat **Stok Fillim**, **Dif** dhe totalet. Kolonat **Gjendje**, **Shirit**, **Furnizime** nuk sfumohen, kështu që një staf që hyn me PIN tjetër në T2 mund t'i shohë vlerat e T1.
+## Çfarë ndryshon
 
-## Ndryshimet
+Kur **stafi** shkruan një numër në kolonën **Furnizime** të një produkti, ajo vlerë (delta) i shtohet automatikisht **Stok Fillimit** të të njëjtit turn. Dif rillogaritet sakt menjëherë.
 
-**Skedari i vetëm:** `src/components/DailyEntry/ProductTable.tsx`
+### Shembulli yt (B52, T1)
+- Para: stokFillim=10, gjendje=7, shirit=13, furnizime=0 → Dif = 13+7−10 = **10** (mungesë)
+- Stafi shkruan furnizime=**10** (10 copë kanë ardhur)
+- Pas: stokFillim=**20**, gjendje=7, shirit=13, furnizime=10 → Dif = 13+7−20 = **0** ✅
 
-1. Aplikoj `blurClass` te `<TableCell>` për:
-   - kolonën **Gjendje** (rresht ~171)
-   - kolonën **Shirit** (rresht ~181)
-   - kolonën **Furnizime** (rresht ~191)
-   - kolonën e **emrit të produktit** (rresht ~140) — që edhe rreshti i plotë të duket i sfumuar uniformisht
+(Formula aktuale `Dif = shirit + gjendje − stokFillim` tashmë e injoron `furnizime` — shih `CalculationService.calculateDif`. Pra mjafton që sasia të hyjë te stokFillim.)
 
-2. Shtoj `tabIndex={-1}` te të gjitha Input-et brenda qelizave të sfumuara, që të mos jenë të fokusueshme me Tab kur `isBlurred` është true.
+## Si funksionon teknikisht
 
-3. `pointer-events-none` te `blurClass` tashmë bllokon klikimet, kështu që staf-i s'mund të hapë/modifikojë vlerat e fshehura.
+**Skedari kryesor: `src/hooks/useTurnData.ts`**
 
-## Sjellja pas rregullimit
-- **Para "Ngarko Gjendjen"**: i gjithë rreshti (stok, gjendje, shirit, furnizime, dif) sfumohet → staf-i sheh vetëm butonin "Ngarko Gjendjen".
-- **Pas konfirmimit të Gjendjes**: rreshti zhsfumohet, staf-i punon normalisht.
-- **Pas Print & Lock**: `gjendjeUploaded[turn] = false` → i gjithë rreshti i atij turni sfumohet përsëri. Edhe nëse hyn staf tjetër me PIN, nuk i sheh vlerat.
-- **Admin**: gjithmonë i sheh (sepse `isBlurred = !isAdminUnlocked && !gjendjeUploaded`).
+Te funksionet `updateTurn1Product` dhe `updateTurn2Product`, kur `field === 'furnizime'`:
+1. Llogarit `delta = newValue − oldFurnizime`
+2. Përditëso produktin me: `furnizime = newValue`, `stokFillim = oldStokFillim + delta`
+3. Ruaj në DB si zakonisht (debounced save ekzistues).
+
+Për fushat e tjera (`stokFillim`, `gjendje`, `shiriti`) → sjellje pa ndryshim.
+
+### Pse delta dhe jo thjesht +newValue?
+Që nëse stafi gabon dhe e korrigjon (p.sh. shkruan 10, pastaj e ndryshon në 8), Stok Fillimi të zbresë me 2, jo të shtohet edhe 8 sipër.
+
+### Aplikimi nga faturat (admin → `handleApplySupplies` në `DailyEntry.tsx`)
+Aktualisht thërret `updateTurnXProduct(name, 'furnizime', current + qty)`. Meqë logjika e re e trajton automatikisht këtë rast (delta = qty → stokFillim += qty), **nuk duhet ndryshim shtesë** te `DailyEntry.tsx`. Faturat e adminit do të shtojnë te stokFillim njësoj.
 
 ## Pa prekur
-- Logjikën e ruajtjes, formulën Dif, propagimin e stokut, mapimet, furnizimet, fjalëkalimet ose RLS.
-- `TurnSection.tsx`, `DailyEntry.tsx`, edge functions.
+- Formula e Dif (mbetet `shirit + gjendje − stokFillim`).
+- Pijet alkoolike (inventar global në Dashboard).
+- Kafe, kuzhinë, mapimet, RLS, edge functions.
+- Propagimi i stokut në turnin/ditën tjetër (përdor `stokFillim`/`gjendje`, që tashmë janë të sakta).
+- Historiku ekzistues — vlerat e vjetra mbeten ashtu siç janë ruajtur.
+
+## Konfirmim i shpejtë
+A doni që kolona **Furnizime** të mbetet e dukshme me numrin e shkruar (për gjurmim sa furnizim hyri sot), apo të bëhet `0` pasi delta i kalon Stok Fillimit? Rekomandimi im: **mbaje të dukshme** — stafi sheh sa shtoi, dhe printi/historiku ruan gjurmën.
