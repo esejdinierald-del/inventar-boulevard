@@ -215,7 +215,7 @@ export const ProductTable = ({
                 <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'} ${blurClass}`}>
                   {dif}
                 </TableCell>
-                <TableCell className={`text-xs ${blurClass} ${dif !== 0 ? 'text-warning font-medium' : 'text-muted-foreground'}`}>
+                <TableCell className={`text-xs ${dif !== 0 ? 'text-warning font-medium' : 'text-muted-foreground'}`}>
                   {dif !== 0 ? formatDifStart(difStartDates[product]) : '—'}
                 </TableCell>
                 {isAdminUnlocked && onProductDelete && (
