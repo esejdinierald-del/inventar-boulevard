@@ -107,6 +107,7 @@ export const TurnSection = ({
             isAdminUnlocked={isAdminUnlocked}
             isFieldDisabled={isFieldDisabled}
             gjendjeUploaded={gjendjeUploaded}
+            gjendjeLockedByPrint={gjendjeLockedByPrint}
             onConfirmGjendje={onConfirmGjendje}
             onUnlockGjendje={onUnlockGjendje}
             onProductUpdate={onProductUpdate}
