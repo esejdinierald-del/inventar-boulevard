@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lock, UnlockKeyhole } from "lucide-react";
 import { TurnData, ProductData, ShpenzimiData } from "@/types/turn.types";
 import { ProductTable } from "./ProductTable";
 import { CoffeeTable } from "./CoffeeTable";
@@ -8,7 +7,6 @@ import { TurnExtras } from "./TurnExtras";
 import { ShpenzimiTable } from "./ShpenzimiTable";
 import { ReceiptScanner } from "@/components/ReceiptScanner";
 import { CalculationService } from "@/services/calculations";
-import { toast } from "sonner";
 
 interface TurnSectionProps {
   turnName: string;
@@ -38,11 +36,6 @@ interface TurnSectionProps {
   onShpenzimiAdd: (shpenzimi: ShpenzimiData) => void;
   onShpenzimiRemove: (index: number) => void;
   onShpenzimiUpdate: (index: number, field: keyof ShpenzimiData, value: string | number) => void;
-  gjendjeConfirmed?: boolean;
-  onConfirmGjendje?: () => void;
-  onUnlockGjendje?: () => void;
-  blurGjendje?: boolean;
-  hideXhiro?: boolean;
 }
 
 export const TurnSection = ({
@@ -73,48 +66,14 @@ export const TurnSection = ({
   onShpenzimiAdd,
   onShpenzimiRemove,
   onShpenzimiUpdate,
-  gjendjeConfirmed = false,
-  onConfirmGjendje,
-  onUnlockGjendje,
-  blurGjendje = false,
-  hideXhiro = false,
 }: TurnSectionProps) => {
-  // Skaneri i shiritit hapet vetëm pasi staf të konfirmojë Gjendjen.
-  // Admin/menaxher e ka hapur gjithmonë (mund të punojë lirshëm).
-  const scannerDisabled = !isAdminUnlocked && !gjendjeConfirmed;
-
   return (
     <div className="space-y-4">
       {/* Products Table */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Produktet - Turni {turnName}</CardTitle>
-          <div className="flex gap-2 flex-wrap">
-
-            {/* Treguesi që Gjendja është e mbyllur (staf) */}
-            {!isAdminUnlocked && gjendjeConfirmed && (
-              <span className="inline-flex items-center text-xs text-muted-foreground px-2">
-                <Lock className="h-3 w-3 mr-1" />
-                Gjendja e mbyllur
-              </span>
-            )}
-
-            {/* Zhblloko Gjendjen (vetëm admin, kur është konfirmuar) */}
-            {isAdminUnlocked && gjendjeConfirmed && onUnlockGjendje && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  onUnlockGjendje();
-                  toast.success("🔓 Gjendja u zhbllokua.");
-                }}
-                className="text-xs"
-              >
-                <UnlockKeyhole className="h-3 w-3 mr-1" />
-                Zhblloko Gjendjen
-              </Button>
-            )}
-
+          <div className="flex gap-2">
             <ReceiptScanner
               products={products}
               coffeeTypes={coffeeTypes}
@@ -123,8 +82,6 @@ export const TurnSection = ({
               turnName={turnName}
               turnData={turnData}
               calculateDif={CalculationService.calculateDif}
-              disabled={scannerDisabled}
-              disabledReason="Mbyll fillimisht Gjendjen (kliko 'Mbyll Gjendjen & Hap Skanerin') përpara se të ngarkosh shiritin."
             />
             {showCopyButton && onCopyToNextTurn && (
               <Button variant="outline" size="sm" onClick={onCopyToNextTurn} className="text-xs">
@@ -139,21 +96,16 @@ export const TurnSection = ({
             turnProducts={turnData.products}
             isAdminUnlocked={isAdminUnlocked}
             isFieldDisabled={isFieldDisabled}
-            gjendjeConfirmed={gjendjeConfirmed}
-            blurGjendje={blurGjendje}
-            turnLocked={isTurnLocked}
             onProductUpdate={onProductUpdate}
             onProductDelete={onProductDelete}
             onProductEdit={onProductEdit}
             onProductAdd={onProductAdd}
-            onConfirmGjendje={onConfirmGjendje}
             editingProduct={editingProduct}
             editedProductName={editedProductName}
             onEditedNameChange={onEditedNameChange}
             onSaveEdit={onSaveEdit}
             onCancelEdit={onCancelEdit}
           />
-
         </CardContent>
       </Card>
 
@@ -189,7 +141,6 @@ export const TurnSection = ({
             mulliriPerfundDisabled={isTurnLocked}
             onUpdate={onTurnUpdate}
             onMulliriPerfundUpdate={onMulliriPerfundUpdate}
-            hideXhiro={hideXhiro}
           />
         </CardContent>
       </Card>

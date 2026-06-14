@@ -1,25 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckCircle2 } from "lucide-react";
 import { ProductData } from "@/types/turn.types";
 import { CalculationService } from "@/services/calculations";
 import { AddProductRow } from "./AddProductRow";
-import { toast } from "sonner";
 
 interface ProductTableProps {
   products: string[];
   turnProducts: { [key: string]: ProductData };
   isAdminUnlocked: boolean;
   isFieldDisabled: boolean;
-  gjendjeConfirmed?: boolean;
-  blurGjendje?: boolean;
-  turnLocked?: boolean;
   onProductUpdate: (product: string, field: keyof ProductData, value: number) => void;
   onProductDelete?: (product: string) => void;
   onProductEdit?: (product: string) => void;
   onProductAdd?: (productName: string) => boolean | Promise<boolean>;
-  onConfirmGjendje?: () => void;
   editingProduct: string | null;
   editedProductName: string;
   onEditedNameChange: (name: string) => void;
@@ -42,40 +36,16 @@ export const ProductTable = ({
   turnProducts,
   isAdminUnlocked,
   isFieldDisabled,
-  gjendjeConfirmed = false,
-  blurGjendje = false,
-  turnLocked = false,
   onProductUpdate,
   onProductDelete,
   onProductEdit,
   onProductAdd,
-  onConfirmGjendje,
   editingProduct,
   editedProductName,
   onEditedNameChange,
   onSaveEdit,
   onCancelEdit,
 }: ProductTableProps) => {
-  // Pas konfirmimit të Gjendjes, kolona ngrin për stafin (vetëm admin mund të editojë).
-  const gjendjeLockedForStaff = gjendjeConfirmed && !isAdminUnlocked;
-  // Stok Fillim dhe Dif janë të sfumuara për staf:
-  //  - PARA konfirmimit të Gjendjes (që të mos deduktohet stoku mbrapsht), ose
-  //  - PAS kyçjes së turnit (që kolegët në datat e kaluara të mos i shohin).
-  const obscureForStaff = !isAdminUnlocked && (!gjendjeConfirmed || turnLocked);
-  const blurClass = obscureForStaff ? 'blur-sm opacity-40 select-none pointer-events-none' : '';
-  const showConfirmRow = !isAdminUnlocked && !gjendjeConfirmed && !turnLocked && !!onConfirmGjendje;
-  const totalColSpan = isAdminUnlocked ? 7 : 6;
-
-  const handleConfirmClick = () => {
-    const hasAnyGjendje = Object.values(turnProducts).some((p) => p && p.gjendje > 0);
-    if (!hasAnyGjendje) {
-      toast.warning("Plotëso fillimisht Gjendjen për produktet para se ta mbyllësh.");
-      return;
-    }
-    onConfirmGjendje?.();
-    toast.success("✓ Gjendja u mbyll. Tani mund të ngarkosh shiritin.");
-  };
-
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -157,9 +127,9 @@ export const ProductTable = ({
                     step="any"
                     value={data.stokFillim || ""}
                     onChange={(e) => onProductUpdate(product, 'stokFillim', Number(e.target.value))}
-                    className={`w-20 ${blurClass}`}
+                    className={`w-20 ${!isAdminUnlocked ? 'blur-sm opacity-40 select-none pointer-events-none' : ''}`}
                     disabled={!isAdminUnlocked}
-                    aria-hidden={obscureForStaff}
+                    aria-hidden={!isAdminUnlocked}
                   />
                 </TableCell>
                 <TableCell>
@@ -168,9 +138,8 @@ export const ProductTable = ({
                     step="any"
                     value={data.gjendje || ""}
                     onChange={(e) => onProductUpdate(product, 'gjendje', Number(e.target.value))}
-                    className={`w-20 ${gjendjeLockedForStaff ? 'bg-muted/40' : ''} ${blurGjendje ? 'blur-sm opacity-40 select-none' : ''}`}
-                    disabled={isGjendjeDisabled(isFieldDisabled) || gjendjeLockedForStaff}
-                    title={gjendjeLockedForStaff ? 'Gjendja u mbyll. Kërko admin për ta rihapur.' : undefined}
+                    className="w-20"
+                    disabled={isGjendjeDisabled(isFieldDisabled)}
                   />
                 </TableCell>
                 <TableCell>
@@ -193,7 +162,7 @@ export const ProductTable = ({
                     disabled={isFurnizimeDisabled(isFieldDisabled)}
                   />
                 </TableCell>
-                <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'} ${blurClass}`}>
+                <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
                   {dif}
                 </TableCell>
                 {isAdminUnlocked && onProductDelete && (
@@ -215,10 +184,10 @@ export const ProductTable = ({
           {/* Total Row */}
           <TableRow className="bg-muted/50">
             <TableCell className="font-bold">TOTALI</TableCell>
-            <TableCell className={`font-bold ${blurClass}`}>
+            <TableCell className={`font-bold ${!isAdminUnlocked ? 'blur-sm opacity-40 select-none' : ''}`}>
               {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.stokFillim, 0)}
             </TableCell>
-            <TableCell className={`font-bold ${blurGjendje ? 'blur-sm opacity-40 select-none' : ''}`}>
+            <TableCell className="font-bold">
               {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.gjendje, 0)}
             </TableCell>
             <TableCell className="font-bold text-primary">
@@ -227,7 +196,7 @@ export const ProductTable = ({
             <TableCell className="font-bold text-success">
               {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.furnizime, 0)}
             </TableCell>
-            <TableCell className={`font-bold ${blurClass}`}>
+            <TableCell className="font-bold">
               {Object.values(turnProducts).filter(p => p).reduce(
                 (sum, p) => sum + CalculationService.calculateDif(p.stokFillim, p.furnizime, p.gjendje, p.shiriti),
                 0
@@ -235,28 +204,6 @@ export const ProductTable = ({
             </TableCell>
             {isAdminUnlocked && <TableCell></TableCell>}
           </TableRow>
-
-          {/* Konfirmo Gjendjen (staf, brenda tabelës nën kolonën Gjendje) */}
-          {showConfirmRow && (
-            <TableRow>
-              <TableCell colSpan={totalColSpan} className="bg-primary/5 py-3">
-                <div className="flex items-center justify-center">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleConfirmClick}
-                    disabled={isFieldDisabled}
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Konfirmo Gjendjen
-                  </Button>
-                </div>
-                <p className="text-center text-xs text-muted-foreground mt-2">
-                  Pas konfirmimit, Gjendja mbyllet dhe hapen kolonat Stok Fillim & Dif së bashku me skanerin e shiritit.
-                </p>
-              </TableCell>
-            </TableRow>
-          )}
           
           {/* Add Product Row */}
           {isAdminUnlocked && onProductAdd && (

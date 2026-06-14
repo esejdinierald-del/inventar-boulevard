@@ -32,11 +32,9 @@ interface ReceiptScannerProps {
     };
   };
   calculateDif: (stokFillim: number, furnizime: number, gjendje: number, shiriti: number) => number;
-  disabled?: boolean;
-  disabledReason?: string;
 }
 
-export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], onDataExtracted, turnName, turnData, calculateDif, disabled = false, disabledReason }: ReceiptScannerProps) => {
+export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], onDataExtracted, turnName, turnData, calculateDif }: ReceiptScannerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -314,16 +312,8 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
       <Button
         variant="outline"
         size="sm"
-        onClick={() => {
-          if (disabled) {
-            toast.warning(disabledReason || "Plotëso fillimisht Gjendjen dhe konfirmoje para ngarkimit të shiritit.");
-            return;
-          }
-          setIsOpen(true);
-        }}
+        onClick={() => setIsOpen(true)}
         className="text-xs"
-        aria-disabled={disabled}
-        title={disabled ? (disabledReason || "Konfirmo Gjendjen fillimisht") : undefined}
       >
         <Camera className="h-3 w-3 mr-1" />
         📸 Ngarko Shiriti {turnName}
