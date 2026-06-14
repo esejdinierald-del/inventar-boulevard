@@ -386,11 +386,6 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
 
   const updateTurn2Product = useCallback((product: string, field: keyof ProductData, value: number) => {
     console.log(`📝 Updating T2 ${product}.${field} = ${value}`);
-    // KRITIKE: Nëse stafi redakton manualisht stokFillim në T2, mos e mbishkruaj
-    // me auto-sync nga T1. Furnizime po ashtu prek stokFillim, prandaj e shenjojmë.
-    if (field === 'stokFillim' || field === 'furnizime') {
-      t2ManuallyEditedStokFillim.current.add(product);
-    }
     setTurn2(prev => {
       const existing = { ...EMPTY_PRODUCT, ...(prev.products[product] || {}) };
       const next: ProductData = { ...existing, [field]: value };
