@@ -15,6 +15,8 @@ interface ProductTableProps {
   gjendjeUploaded?: boolean;
   /** Thirret kur stafi shtyp "Ngarko Gjendjen". */
   onConfirmGjendje?: () => void;
+  /** Thirret nga admini për të riaktivizuar stafin (zhbllokon kolonën Gjendje). */
+  onUnlockGjendje?: () => void;
   onProductUpdate: (product: string, field: keyof ProductData, value: number) => void;
   onProductDelete?: (product: string) => void;
   onProductEdit?: (product: string) => void;
