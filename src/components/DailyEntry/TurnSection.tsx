@@ -55,6 +55,7 @@ export const TurnSection = ({
   isTurnLocked = false,
   gjendjeUploaded = true,
   onConfirmGjendje,
+  onUnlockGjendje,
   onProductUpdate,
   onCoffeeUpdate,
   onTurnUpdate,
