@@ -120,22 +120,20 @@ export class CalculationService {
   /**
    * Llogarit stokun për turnin/ditën tjetër.
    *
-   * Logjika:
-   * 1. Nëse gjendje > 0 → përdor gjendjen (numërim fizik i bërë)
-   * 2. Nëse ka stok por pa gjendje → llogarit teorikisht (StokFillim − Shiriti)
-   * 3. Nëse asnjë e dhënë → kthe 0
+   * Formula e re (e thjeshtë, pa gjendje):
+   *   StokFillim_pasardhës = StokFillim − Shiriti
    *
-   * KRITIKE: Furnizimet tashmë janë te StokFillim — mos i shto sërish!
-   * Kjo formulë duhet përdorur GJITHMONË kur propagohet stoku
-   * (në useTurnData.ts, StockPropagationService, edge functions).
+   * Pra:
+   *   T2.stokFillim (data D) = T1.stokFillim (D) − T1.shiriti (D)
+   *   T1.stokFillim (data D) = T2.stokFillim (D−1) − T2.shiriti (D−1)
+   *
+   * Gjendje NUK përdoret më për propagim — shërben vetëm për llogaritjen e Dif
+   * (kontrolli fizik), jo për kalimin e stokut.
+   *
+   * KUJDES: Furnizimet tashmë janë mbledhur te StokFillim te useTurnData —
+   * mos i shto sërish.
    */
   static calculateStockForNextTurn(productData: ProductData): number {
-    if (productData.gjendje > 0) {
-      return productData.gjendje;
-    }
-    if (productData.stokFillim === 0) {
-      return 0;
-    }
     return productData.stokFillim - productData.shiriti;
   }
 }

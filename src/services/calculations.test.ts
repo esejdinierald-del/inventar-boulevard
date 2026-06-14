@@ -137,21 +137,27 @@ describe("CalculationService", () => {
   });
 
   // ---- calculateStockForNextTurn ----
+  // Formula e re: StokFillim − Shiriti (pa marrë parasysh gjendjen)
   describe("calculateStockForNextTurn", () => {
-    it("përdor gjendjen kur > 0 (numërim fizik)", () => {
+    it("kthen stokFillim − shiriti edhe kur gjendje > 0", () => {
       const data: ProductData = { stokFillim: 15, furnizime: 5, shiriti: 8, gjendje: 6 };
-      expect(CalculationService.calculateStockForNextTurn(data)).toBe(6);
+      // 15 − 8 = 7 (gjendje injorohet për propagim)
+      expect(CalculationService.calculateStockForNextTurn(data)).toBe(7);
     });
 
-    it("llogarit teorikisht kur gjendje = 0", () => {
+    it("kthen stokFillim − shiriti kur gjendje = 0", () => {
       const data: ProductData = { stokFillim: 15, furnizime: 5, shiriti: 8, gjendje: 0 };
-      // 15 − 8 = 7
       expect(CalculationService.calculateStockForNextTurn(data)).toBe(7);
     });
 
     it("kthen 0 kur asnjë e dhënë", () => {
       const data: ProductData = { stokFillim: 0, furnizime: 0, shiriti: 0, gjendje: 0 };
       expect(CalculationService.calculateStockForNextTurn(data)).toBe(0);
+    });
+
+    it("mund të kthejë negative kur shiriti > stokFillim", () => {
+      const data: ProductData = { stokFillim: 5, furnizime: 0, shiriti: 8, gjendje: 0 };
+      expect(CalculationService.calculateStockForNextTurn(data)).toBe(-3);
     });
   });
 
