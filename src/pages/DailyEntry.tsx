@@ -22,14 +22,18 @@ import { useAlcoholicDrinksList } from "@/hooks/useAlcoholicDrinksList";
 import { AlcoholicDrinksService } from "@/services/alcoholic-drinks.service";
 import { TurnData, ShpenzimiData } from "@/types/turn.types";
 
+const TODAY = () => new Date().toISOString().split('T')[0];
+
 const DailyEntry = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(TODAY());
   const [editingProduct, setEditingProduct] = useState<string | null>(null);
   const [editedProductName, setEditedProductName] = useState("");
   const [activeTurn, setActiveTurn] = useState<"turn1" | "turn2">("turn1");
   const [showPinDialog, setShowPinDialog] = useState(false);
   const [verifiedStaff, setVerifiedStaff] = useState<string | null>(null);
   const [verifiedStaffData, setVerifiedStaffData] = useState<VerifiedStaffData | null>(null);
+  // Gjendje e konfirmuar nga stafi për ditën/turnin aktual (ruhet në localStorage)
+  const [gjendjeUploaded, setGjendjeUploaded] = useState<{ turn1: boolean; turn2: boolean }>({ turn1: false, turn2: false });
 
   // Custom hooks
   const { isAdminUnlocked, isViewOnlyUnlocked, showPasswordDialog, showViewOnlyDialog, validatePassword, validateViewOnlyPassword, toggleAdminMode, requestViewOnly, closePasswordDialog, closeViewOnlyDialog, isWithinStaffEditWindow, unlockAdmin } = useAuth();
