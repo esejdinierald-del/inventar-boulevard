@@ -157,19 +157,6 @@ describe("CalculationService", () => {
       const data: ProductData = { stokFillim: 0, furnizime: 0, shiriti: 0, gjendje: 0 };
       expect(CalculationService.calculateStockForNextTurn(data)).toBe(0);
     });
-
-    it("BESON gjendje=0 kur gjendjeConfirmed=true (produkti mbaroi)", () => {
-      const data: ProductData = { stokFillim: 10, furnizime: 5, shiriti: 8, gjendje: 0 };
-      // pa konfirmim: teorik 7
-      expect(CalculationService.calculateStockForNextTurn(data, false)).toBe(7);
-      // me konfirmim: numërim fizik 0
-      expect(CalculationService.calculateStockForNextTurn(data, true)).toBe(0);
-    });
-
-    it("përdor gjendjen e konfirmuar edhe kur > 0", () => {
-      const data: ProductData = { stokFillim: 10, furnizime: 5, shiriti: 8, gjendje: 6 };
-      expect(CalculationService.calculateStockForNextTurn(data, true)).toBe(6);
-    });
   });
 
   // ---- hasAnyDifferences ----

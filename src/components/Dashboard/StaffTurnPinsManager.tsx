@@ -58,7 +58,7 @@ export const StaffTurnPinsManager = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('staff_turn_pins')
-        .select('id, staff_name, turn_number, is_active, is_manager, permissions')
+        .select('*')
         .order('turn_number', { ascending: true })
         .order('staff_name', { ascending: true });
 
@@ -77,7 +77,7 @@ export const StaffTurnPinsManager = () => {
         return {
           id: item.id,
           staff_name: item.staff_name,
-          pin: '', // PIN is not readable from client; admin must retype on edit
+          pin: item.pin,
           turn_number: item.turn_number,
           is_active: item.is_active,
           is_manager: item.is_manager,
@@ -118,7 +118,7 @@ export const StaffTurnPinsManager = () => {
     setEditingPin(pin);
     setFormData({
       staff_name: pin.staff_name,
-      pin: '', // require admin to retype PIN; cannot be read back from server
+      pin: pin.pin,
       is_active: pin.is_active,
       is_manager: pin.is_manager,
       permissions: pin.permissions || {

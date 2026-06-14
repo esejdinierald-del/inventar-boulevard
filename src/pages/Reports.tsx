@@ -15,20 +15,9 @@ interface ProductPrices {
   [key: string]: number;
 }
 
-/** Escape HTML to prevent XSS when interpolating untrusted DB strings into document.write. */
-const escHtml = (s: unknown): string =>
-  String(s ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-
 const Reports = () => {
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [topProducts, setTopProducts] = useState<any[]>([]);
@@ -47,45 +36,13 @@ const Reports = () => {
   });
   const printRef = useRef<HTMLDivElement>(null);
 
-  // Auto-unlock if an admin session already exists
-  useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || user.is_anonymous) return;
-      const { data: isAdmin } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
-      if (isAdmin === true) setIsUnlocked(true);
-    })();
-  }, []);
-
-  const handleUnlock = async () => {
-    if (!email || !password) {
-      toast.error("Plotëso email-in dhe fjalëkalimin");
-      return;
-    }
-    try {
-      setIsAuthenticating(true);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      if (error || !data.user) {
-        toast.error("Email ose fjalëkalim i pavlefshëm");
-        return;
-      }
-      const { data: isAdmin } = await supabase.rpc('has_role', { _user_id: data.user.id, _role: 'admin' });
-      if (!isAdmin) {
-        await supabase.auth.signOut();
-        toast.error("Kjo llogari nuk ka të drejta admini");
-        return;
-      }
+  const handleUnlock = () => {
+    const secretPassword = "23061983";
+    if (password === "1983" || password === secretPassword) {
       setIsUnlocked(true);
-      setPassword("");
       toast.success("Raportet u zhbllokuan");
-    } catch (err) {
-      console.error('Admin login error:', err);
-      toast.error("Gabim gjatë hyrjes");
-    } finally {
-      setIsAuthenticating(false);
+    } else {
+      toast.error("Fjalëkalimi është i gabuar");
     }
   };
 
@@ -519,10 +476,10 @@ const Reports = () => {
           <tbody>
             ${topProducts.map(p => `
               <tr>
-                <td>${escHtml(p.name)}</td>
-                <td class="text-right">${Number(p.quantity) || 0}</td>
-                <td class="text-right">${(Number(p.cost) || 0).toLocaleString()} ALL</td>
-                <td class="text-right">${(Number(p.avgDaily) || 0).toFixed(1)}</td>
+                <td>${p.name}</td>
+                <td class="text-right">${p.quantity}</td>
+                <td class="text-right">${p.cost.toLocaleString()} ALL</td>
+                <td class="text-right">${p.avgDaily.toFixed(1)}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -541,10 +498,10 @@ const Reports = () => {
           <tbody>
             ${monthlyData.filter(d => d.sales > 0).map(d => `
               <tr>
-                <td>${escHtml(d.day)}</td>
-                <td class="text-right">${(Number(d.t1) || 0).toLocaleString()} ALL</td>
-                <td class="text-right">${(Number(d.t2) || 0).toLocaleString()} ALL</td>
-                <td class="text-right">${(Number(d.sales) || 0).toLocaleString()} ALL</td>
+                <td>${d.day}</td>
+                <td class="text-right">${d.t1.toLocaleString()} ALL</td>
+                <td class="text-right">${d.t2.toLocaleString()} ALL</td>
+                <td class="text-right">${d.sales.toLocaleString()} ALL</td>
               </tr>
             `).join('')}
             <tr class="total-row">
@@ -575,31 +532,18 @@ const Reports = () => {
       <div className="space-y-6">
         {!isUnlocked && (
           <Card className="border-warning">
-            <CardContent className="pt-6 space-y-3">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Lock className="h-4 w-4 text-warning" />
-                Hyr me llogarinë e adminit për të parë raportet
-              </div>
-              <Input
-                type="email"
-                autoComplete="username"
-                placeholder="Email-i i adminit"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+            <CardContent className="pt-6">
               <div className="flex items-center gap-4">
+                <Lock className="h-5 w-5 text-warning" />
                 <Input
                   type="password"
-                  autoComplete="current-password"
-                  placeholder="Fjalëkalimi"
+                  placeholder="Fut fjalëkalimin për të parë raportet"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
                   className="flex-1"
                 />
-                <Button onClick={handleUnlock} disabled={isAuthenticating}>
-                  {isAuthenticating ? "..." : "Zhblloko"}
-                </Button>
+                <Button onClick={handleUnlock}>Zhblloko</Button>
               </div>
             </CardContent>
           </Card>

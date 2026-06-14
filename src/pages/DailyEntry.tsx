@@ -56,7 +56,7 @@ const DailyEntry = () => {
     forceSaveNextDayStock,
     totalXhiro,
     saveStatus,
-  } = useTurnData({ products, coffeeTypes, selectedDate, gjendjeConfirmedT1: gjendjeT1.confirmed, gjendjeConfirmedT2: gjendjeT2.confirmed });
+  } = useTurnData({ products, coffeeTypes, selectedDate });
 
   // Wrapper për addProduct që përditëson edhe turn data
   const addProduct = useCallback(async (productName: string) => {
@@ -333,15 +333,6 @@ const DailyEntry = () => {
   const handleApplySupplies = useCallback(async (mapping: any) => {
     console.log("Applying supplies from mapping:", mapping);
     console.log("Active turn:", activeTurn);
-
-    // KRITIKE: Mbroj turnet e kyçura — pas printit/kyçjes nuk lejohen furnizime
-    // (vetëm admin mund të zhbllokojë turnin nga butoni në krye)
-    const currentTurnNumber: 1 | 2 = activeTurn === 'turn1' ? 1 : 2;
-    if (isTurnLocked(currentTurnNumber)) {
-      toast.error(`🔒 Turni ${currentTurnNumber} është i kyçur. Zhblloko nga admini para se të aplikosh furnizime.`);
-      return;
-    }
-    
     
     const alcoholicUpdates: { name: string; quantity: number }[] = [];
     
@@ -424,7 +415,7 @@ const DailyEntry = () => {
         toast.success(`${successCount} pije alkoolike u përditësuan me sukses!`);
       }
     }
-  }, [updateTurn1Product, updateTurn2Product, activeTurn, turn1, turn2, isTurnLocked]);
+  }, [updateTurn1Product, updateTurn2Product, activeTurn, turn1, turn2]);
 
   // Save handler
   const handleSave = useCallback(async () => {
@@ -551,9 +542,7 @@ const DailyEntry = () => {
             <p className="text-muted-foreground">Regjistro shitjet dhe inventarin për secilin turn</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {(!isPastDate() || hasElevatedAccess()) && (
-              <InvoiceMappingManager products={products} kitchenProducts={kitchenProducts} alcoholicDrinks={alcoholicDrinks} isAdmin={isAdminUnlocked} onApplySupplies={handleApplySupplies} />
-            )}
+            <InvoiceMappingManager products={products} kitchenProducts={kitchenProducts} alcoholicDrinks={alcoholicDrinks} isAdmin={isAdminUnlocked} onApplySupplies={handleApplySupplies} />
             <ProductMappingManager products={products} coffeeTypes={coffeeTypes} kitchenProducts={kitchenProducts} alcoholicDrinks={alcoholicDrinks} />
             <Button
               variant={isAdminUnlocked ? "default" : "outline"}

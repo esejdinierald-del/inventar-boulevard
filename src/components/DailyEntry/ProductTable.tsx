@@ -92,13 +92,14 @@ export const ProductTable = ({
         </TableHeader>
         <TableBody>
           {products.map(product => {
-            const data = turnProducts[product] ?? {
-              stokFillim: 0,
-              gjendje: 0,
-              shiriti: 0,
-              furnizime: 0,
-            };
-
+            const data = turnProducts[product];
+            
+            // Skip if no data for this product
+            if (!data) {
+              console.warn(`No data found for product: ${product}`);
+              return null;
+            }
+            
             const dif = CalculationService.calculateDif(
               data.stokFillim,
               data.furnizime,

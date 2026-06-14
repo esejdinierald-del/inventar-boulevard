@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Lock, Shield, Home } from "lucide-react";
+import { Lock, Shield } from "lucide-react";
 
-// Hardcoded admin passwords removed — admin login now uses Supabase Auth + has_role.
+const ADMIN_PASSWORD = "1983";
+const SECRET_PASSWORD = "23061983";
 
 export interface StaffPermissions {
   dashboard: boolean;
@@ -37,11 +37,8 @@ export const StaffPinVerifyDialog = ({
   onAdminVerified,
 }: StaffPinVerifyDialogProps) => {
   const [pin, setPin] = useState("");
-  const [adminEmail, setAdminEmail] = useState("");
-  const [adminPassword, setAdminPassword] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [mode, setMode] = useState<"staff" | "admin">("staff");
-  const navigate = useNavigate();
 
   const handleVerifyStaff = async () => {
     if (!pin || pin.length !== 4) {
@@ -53,7 +50,11 @@ export const StaffPinVerifyDialog = ({
       setIsVerifying(true);
 
       const { data, error } = await supabase
-        .rpc('verify_staff_pin', { _pin: pin });
+        .from('staff_turn_pins')
+        .select('*')
+        .eq('pin', pin)
+        .eq('is_active', true)
+        .maybeSingle();
 
       if (error) {
         console.error('Error verifying PIN:', error);
@@ -61,15 +62,14 @@ export const StaffPinVerifyDialog = ({
         return;
       }
 
-      const row = Array.isArray(data) ? data[0] : data;
-      if (!row) {
+      if (!data) {
         toast.error("PIN i gabuar ose jo aktiv");
         setPin("");
         return;
       }
 
       // Parse permissions from the database
-      const perms = row.permissions as unknown;
+      const perms = data.permissions as unknown;
       const defaultPerms: StaffPermissions = {
         dashboard: false,
         products: false,
@@ -82,18 +82,18 @@ export const StaffPinVerifyDialog = ({
         : defaultPerms;
 
       const staffData: VerifiedStaffData = {
-        name: row.staff_name,
-        isManager: row.is_manager,
+        name: data.staff_name,
+        isManager: data.is_manager,
         permissions
       };
 
-      if (row.is_manager) {
-        toast.success(`Mirë se erdhe, Menaxher ${row.staff_name}!`);
+      if (data.is_manager) {
+        toast.success(`Mirë se erdhe, Menaxher ${data.staff_name}!`);
       } else {
-        toast.success(`Mirë se erdhe, ${row.staff_name}!`);
+        toast.success(`Mirë se erdhe, ${data.staff_name}!`);
       }
       
-      onVerified(row.staff_name, staffData);
+      onVerified(data.staff_name, staffData);
       setPin("");
       onOpenChange(false);
     } catch (err) {
@@ -104,40 +104,15 @@ export const StaffPinVerifyDialog = ({
     }
   };
 
-  const handleVerifyAdmin = async () => {
-    if (!adminEmail || !adminPassword) {
-      toast.error("Plotëso email-in dhe fjalëkalimin");
-      return;
-    }
-    try {
-      setIsVerifying(true);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: adminEmail.trim(),
-        password: adminPassword,
-      });
-      if (error || !data.user) {
-        toast.error("Email ose fjalëkalim i pavlefshëm");
-        return;
-      }
-      const { data: isAdmin } = await supabase.rpc('has_role', {
-        _user_id: data.user.id,
-        _role: 'admin',
-      });
-      if (!isAdmin) {
-        await supabase.auth.signOut();
-        toast.error("Kjo llogari nuk ka të drejta admini");
-        return;
-      }
+  const handleVerifyAdmin = () => {
+    if (pin === ADMIN_PASSWORD || pin === SECRET_PASSWORD) {
       toast.success("Admin u hap me sukses!");
-      setAdminEmail("");
-      setAdminPassword("");
+      setPin("");
       onOpenChange(false);
       onAdminVerified?.();
-    } catch (err) {
-      console.error('Admin login error:', err);
-      toast.error("Gabim gjatë hyrjes së adminit");
-    } finally {
-      setIsVerifying(false);
+    } else {
+      toast.error("Fjalëkalimi është gabim!");
+      setPin("");
     }
   };
 
@@ -151,8 +126,6 @@ export const StaffPinVerifyDialog = ({
 
   const switchMode = () => {
     setPin("");
-    setAdminEmail("");
-    setAdminPassword("");
     setMode(mode === "staff" ? "admin" : "staff");
   };
 
@@ -180,87 +153,53 @@ export const StaffPinVerifyDialog = ({
         </DialogHeader>
         <div className="space-y-4 pt-4">
           <p className="text-sm text-muted-foreground">
-            {mode === "staff"
+            {mode === "staff" 
               ? "Fut PIN-in tënd 4-shifror për të filluar punën"
-              : "Hyr me email-in dhe fjalëkalimin e adminit"
+              : "Fut fjalëkalimin e admin-it"
             }
           </p>
-          {mode === "staff" ? (
-            <div className="space-y-2">
-              <Label htmlFor="pin">PIN (4 shifra)</Label>
-              <Input
-                id="pin"
-                type="password"
-                inputMode="numeric"
-                maxLength={4}
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && pin.length === 4) handleVerify();
-                }}
-                placeholder="****"
-                className="text-center text-2xl tracking-widest"
-                autoFocus
-              />
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <Label htmlFor="admin-email-pin">Email</Label>
-                <Input
-                  id="admin-email-pin"
-                  type="email"
-                  autoComplete="username"
-                  placeholder="admin@example.com"
-                  value={adminEmail}
-                  onChange={(e) => setAdminEmail(e.target.value)}
-                  autoFocus
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="admin-pass-pin">Fjalëkalimi</Label>
-                <Input
-                  id="admin-pass-pin"
-                  type="password"
-                  autoComplete="current-password"
-                  placeholder="••••••••"
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && adminEmail && adminPassword) handleVerify();
-                  }}
-                />
-              </div>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="pin">
+              {mode === "staff" ? "PIN (4 shifra)" : "Fjalëkalimi"}
+            </Label>
+            <Input
+              id="pin"
+              type="password"
+              inputMode="numeric"
+              maxLength={mode === "staff" ? 4 : 8}
+              value={pin}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, '');
+                setPin(value);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  if (mode === "staff" && pin.length === 4) {
+                    handleVerify();
+                  } else if (mode === "admin" && pin.length >= 4) {
+                    handleVerify();
+                  }
+                }
+              }}
+              placeholder={mode === "staff" ? "****" : "********"}
+              className="text-center text-2xl tracking-widest"
+              autoFocus
+            />
+          </div>
           <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="sm"
+            <Button 
+              variant="ghost" 
+              size="sm" 
               onClick={switchMode}
               className="text-muted-foreground"
             >
               {mode === "staff" ? "Hyr si Admin" : "Hyr si Staf"}
             </Button>
-            <Button
-              onClick={handleVerify}
-              disabled={
-                isVerifying ||
-                (mode === "staff" ? pin.length !== 4 : !adminEmail || !adminPassword)
-              }
+            <Button 
+              onClick={handleVerify} 
+              disabled={isVerifying || (mode === "staff" ? pin.length !== 4 : pin.length < 4)}
             >
               {isVerifying ? 'Duke verifikuar...' : 'Verifiko'}
-            </Button>
-          </div>
-          <div className="pt-2 border-t">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/')}
-              className="w-full gap-2"
-            >
-              <Home className="h-4 w-4" />
-              Kthehu te Dashboard
             </Button>
           </div>
         </div>

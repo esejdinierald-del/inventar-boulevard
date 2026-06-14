@@ -1,57 +1,17 @@
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 
-/**
- * Authentication hook — replaces the legacy hardcoded admin password with
- * real Supabase Auth + `has_role(_user_id, 'admin')` role checks.
- *
- * `validatePassword` and `validateViewOnlyPassword` now take (email, password)
- * and sign in via Supabase. The legacy single-string signatures are no longer
- * supported; callers must pass both arguments.
- */
+const ADMIN_PASSWORD = "1983";
+const SECRET_PASSWORD = "23061983"; // Fjalëkalim sekret backup
+const STAFF_EDIT_WINDOW_MINUTES = 240; // Staff mund të modifikojë të dhënat për 4 orë pas mesnatës (00:00 - 04:00)
 
-const STAFF_EDIT_WINDOW_MINUTES = 240; // 4 hours after midnight (00:00 - 04:00)
-const VIEW_ONLY_DURATION_MS = 24 * 60 * 60 * 1000;
-const VIEW_ONLY_CHECK_INTERVAL_MS = 60 * 1000;
-
-/**
- * Verify the current user has the admin role.
- */
-const verifyAdminRole = async (userId: string): Promise<boolean> => {
-  const { data, error } = await supabase.rpc('has_role', {
-    _user_id: userId,
-    _role: 'admin',
-  });
-  if (error) {
-    console.error('has_role error:', error);
-    return false;
-  }
-  return data === true;
-};
-
-/**
- * Sign in with email/password and confirm admin role. Returns true on success.
- * Signs out automatically if the user is not an admin.
- */
-const signInAsAdmin = async (email: string, password: string): Promise<boolean> => {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error || !data.user) {
-    toast.error('Email ose fjalëkalim i pavlefshëm');
-    return false;
-  }
-  const isAdmin = await verifyAdminRole(data.user.id);
-  if (!isAdmin) {
-    await supabase.auth.signOut();
-    toast.error('Kjo llogari nuk ka të drejta admini');
-    return false;
-  }
-  return true;
-};
+const VIEW_ONLY_DURATION_MS = 24 * 60 * 60 * 1000; // 24 orë
+const VIEW_ONLY_CHECK_INTERVAL_MS = 60 * 1000; // Kontrollo çdo minutë
 
 export const useAuth = () => {
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
   const [viewOnlyExpiry, setViewOnlyExpiry] = useState<number | null>(() => {
+    // Kontrollo nëse ka sesion aktiv në localStorage
     const saved = localStorage.getItem('viewOnlyExpiry');
     if (saved) {
       const expiry = Number(saved);
@@ -65,21 +25,10 @@ export const useAuth = () => {
 
   const isViewOnlyUnlocked = viewOnlyExpiry !== null && viewOnlyExpiry > Date.now();
 
-  // Auto-detect existing admin session on mount
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (cancelled || !user || user.is_anonymous) return;
-      const ok = await verifyAdminRole(user.id);
-      if (!cancelled && ok) setIsAdminUnlocked(true);
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
-  // Expire view-only sessions
+  // Timer për të skaduar automatikisht view-only kur mbaron 24-orëshi
   useEffect(() => {
     if (!viewOnlyExpiry) return;
+    
     const check = () => {
       if (viewOnlyExpiry <= Date.now()) {
         setViewOnlyExpiry(null);
@@ -87,58 +36,81 @@ export const useAuth = () => {
         toast.info('⏰ Sesioni i shikimit 24-orësh ka skaduar');
       }
     };
+
     const interval = setInterval(check, VIEW_ONLY_CHECK_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [viewOnlyExpiry]);
 
+  // Kontrollo nëse staff mund të modifikojë të dhënat e ditës së djeshme
   const isWithinStaffEditWindow = useCallback((): boolean => {
     const now = new Date();
-    const totalMinutes = now.getHours() * 60 + now.getMinutes();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const totalMinutes = hours * 60 + minutes;
+    
+    // Nëse jemi brenda STAFF_EDIT_WINDOW_MINUTES minuta pas mesnatës
     return totalMinutes < STAFF_EDIT_WINDOW_MINUTES;
   }, []);
 
+  // Kontrollo nëse jemi brenda orëve të turnit 2 (17:00 - 04:00)
+  // Përdoret për të sfumuar Gjendjen e T1 që të mos shihet nga stafi T2
   const isWithinT2Window = useCallback((): boolean => {
-    const hours = new Date().getHours();
+    const now = new Date();
+    const hours = now.getHours();
+    // 17:00 - 23:59 ose 00:00 - 04:00
     return hours >= 17 || hours < 4;
   }, []);
 
-  const validatePassword = useCallback(async (email: string, password: string): Promise<boolean> => {
-    const ok = await signInAsAdmin(email, password);
-    if (ok) {
+  const validatePassword = useCallback((password: string): boolean => {
+    if (password === ADMIN_PASSWORD || password === SECRET_PASSWORD) {
       setIsAdminUnlocked(true);
       setShowPasswordDialog(false);
-      toast.success('Admin u hap me sukses!');
+      toast.success("Admin u hap me sukses!");
+      return true;
+    } else {
+      toast.error("Fjalëkalimi është gabim!");
+      return false;
     }
-    return ok;
   }, []);
 
-  const validateViewOnlyPassword = useCallback(async (email: string, password: string): Promise<boolean> => {
-    const ok = await signInAsAdmin(email, password);
-    if (ok) {
+  const validateViewOnlyPassword = useCallback((password: string): boolean => {
+    if (password === ADMIN_PASSWORD || password === SECRET_PASSWORD) {
       const expiry = Date.now() + VIEW_ONLY_DURATION_MS;
       setViewOnlyExpiry(expiry);
       localStorage.setItem('viewOnlyExpiry', String(expiry));
       setShowViewOnlyDialog(false);
-      toast.success('🔓 Shikimi u zhbllokua për 24 orë!');
+      toast.success("🔓 Shikimi u zhbllokua për 24 orë!");
+      return true;
+    } else {
+      toast.error("Fjalëkalimi është gabim!");
+      return false;
     }
-    return ok;
   }, []);
 
-  const toggleAdminMode = useCallback(async () => {
+  const toggleAdminMode = useCallback(() => {
     if (isAdminUnlocked) {
-      // Logout admin session
-      await supabase.auth.signOut();
       setIsAdminUnlocked(false);
-      toast.info('Admin u mbyll');
+      toast.info("Admin u mbyll");
     } else {
       setShowPasswordDialog(true);
     }
   }, [isAdminUnlocked]);
 
-  const requestViewOnly = useCallback(() => setShowViewOnlyDialog(true), []);
-  const closePasswordDialog = useCallback(() => setShowPasswordDialog(false), []);
-  const closeViewOnlyDialog = useCallback(() => setShowViewOnlyDialog(false), []);
-  const unlockAdmin = useCallback(() => setIsAdminUnlocked(true), []);
+  const requestViewOnly = useCallback(() => {
+    setShowViewOnlyDialog(true);
+  }, []);
+
+  const closePasswordDialog = useCallback(() => {
+    setShowPasswordDialog(false);
+  }, []);
+
+  const closeViewOnlyDialog = useCallback(() => {
+    setShowViewOnlyDialog(false);
+  }, []);
+
+  const unlockAdmin = useCallback(() => {
+    setIsAdminUnlocked(true);
+  }, []);
 
   return {
     isAdminUnlocked,

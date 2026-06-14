@@ -1,32 +1,60 @@
-# Plan: Rillogaritje e plot\u00eb e stokut p\u00ebr t\u00eb gjitha datat
+## Qëllimi
+1. Sfumim dinamik për "Stok Fillim" + "Dif" sipas gjendjes së Gjendjes/turn lock.
+2. Buton "Konfirmo Gjendjen" brenda tabelës, poshtë kolonës Gjendje.
+3. Fsheh Xhiron e datave të kaluara nga stafi (vetëm admin/menaxher e sheh).
 
-## Q\u00ebllimi
-Ekzekutoj nj\u00eb rillogaritje t\u00eb vetme (one-time) q\u00eb propagon stokun n\u00eb t\u00eb gjitha datat ekzistuese sipas formul\u00ebs zyrtare, pa ndryshuar asnj\u00eb logjik\u00eb biznesi.
+## 1) Sfumim Stok Fillim + Dif (staf)
 
-## Formula (e pandryshuar)
-- `T2.stokFillim = T1.stokFillim + T1.furnizime - T1.shiriti`
-- `Dita+1 T1.stokFillim = T2.stokFillim + T2.furnizime - T2.shiriti`
-- `T2.mulliriFillim = T1.mulliriPerfund`
-- `Dita+1 T1.mulliriFillim = T2.mulliriPerfund` (ose T1.mulliriPerfund n\u00ebse T2=0)
-- N\u00ebse `gjendje_locks` ekziston p\u00ebr (dat\u00eb, turn), respektohet `gjendje` e konfirmuar.
+Rrjedha:
+```text
+Hap turnin   → Stok Fillim ░  | Gjendje [ ] | Shiriti — | Dif ░
+Konfirmo     → Stok Fillim ✓  | Gjendje 🔒  | Shiriti ✓ | Dif ✓
+Kyç turnin   → Stok Fillim ░  | Gjendje 🔒  | Shiriti ✓ | Dif ░
+```
 
-## Hapat
+### `src/components/DailyEntry/ProductTable.tsx`
+- Prop e re `turnLocked: boolean`.
+- Flag i vetëm: `obscureForStaff = !isAdminUnlocked && (!gjendjeConfirmed || turnLocked)`.
+- Apliko `blur-sm opacity-40 select-none pointer-events-none` te:
+  - Inputi "Stok Fillim" për çdo rresht + qeliza TOTALI e saj.
+  - Qeliza "Dif" për çdo rresht + qeliza TOTALI e Dif.
+- Hiq blur-in aktual gjithmonë-aktiv te Stok Fillim (tani vjen nga `obscureForStaff`).
+- Rresht i ri brenda `<TableBody>` poshtë rreshtit TOTALI, vetëm për staf kur `!gjendjeConfirmed && !turnLocked`:
+  - `<TableRow>` me `colSpan` të plotë me butonin `✓ Konfirmo Gjendjen`.
+  - Validim ekzistues: kërkon të paktën një produkt me `gjendje > 0`.
 
-### 1) Forco edge function `recalculate-all-stock` t\u00eb respektoj\u00eb `gjendje_locks`
-Versioni aktual p\u00ebrdor vet\u00ebm `stokFillim + furnizime - shiriti` p\u00ebr propagim. Do shtohet leximi i `gjendje_locks` dhe, kur turn-i \u00ebsht\u00eb i konfirmuar, p\u00ebrdoret e nj\u00ebjta logjik\u00eb si `StockPropagationService.calculateStockForNextTurn` (njejt\u00eb si propagimi i klientit). Asgj\u00eb tjet\u00ebr nuk preket.
+### `src/components/DailyEntry/TurnSection.tsx`
+- I kalon `ProductTable`: `turnLocked={isTurnLocked}` + `onConfirmGjendje`.
+- Heq butonin e dyfishtë "Mbyll Gjendjen & Hap Skanerin" nga header (mbetet vetëm brenda tabelës).
+- Mban shenjën "🔒 Gjendja e mbyllur" dhe butonin admin "Zhblloko Gjendjen".
 
-### 2) Shto buton "Rillogarit gjith\u00e7ka" n\u00eb Dashboard (admin-only)
-Te `src/components/Dashboard/AdminSettingsCard.tsx`: nj\u00eb buton i ri q\u00eb th\u00ebrret `supabase.functions.invoke('recalculate-all-stock')`, tregon spinner, dhe shfaq numrin e ndryshimeve. Konfirmim para ekzekutimit.
+## 2) Fshehja e Xhiros për datat e kaluara (staf)
 
-### 3) Verifikim
-Pas ekzekutimit, hap nj\u00eb dat\u00eb t\u00eb hershme dhe nj\u00eb t\u00eb fundit; konfirmo q\u00eb `stokFillim` p\u00ebrputhet me formul\u00ebn dhe `next_day_stock` \u00ebsht\u00eb e p\u00ebrdit\u00ebsuar.
+### `src/components/DailyEntry/TurnExtras.tsx`
+- Prop e re `hideXhiro?: boolean`.
+- Kur `hideXhiro && !isAdminUnlocked`:
+  - Inputi i Xhiros zëvendësohet me një placeholder `░░░░ ALL` (ose `blur-sm opacity-40 select-none pointer-events-none` mbi vlerën aktuale + input i mbyllur).
+- Asnjë ndryshim te llogaritjet — vetëm prezantim.
 
-## Garanci sigurie
-- Asnj\u00eb ndryshim n\u00eb formul\u00ebn "Dif" apo n\u00eb llogarit\u00ebsit financiar\u00eb.
-- T\u00eb dh\u00ebnat hyr\u00ebse (`shiriti`, `furnizime`, `gjendje`, `xhiro`, `shpenzime`) nuk preken \u2014 vet\u00ebm `stokFillim` dhe `mulliriFillim` rillogariten.
-- Funksioni mbron me autentifikim admin (tashm\u00eb verifikon JWT; do shtohet `has_role('admin')`).
-- Ekziston `daily_entry_history` p\u00ebr rikthim n\u00ebse duhet.
+### `src/pages/DailyEntry.tsx`
+- Llogarit `isPastDate = selectedDate < todayISO` (krahasim string YYYY-MM-DD).
+- Kalo `hideXhiro={isPastDate && !isAdminUnlocked}` te të dy `TurnSection` (T1 + T2).
+- Përcillet më pas te `TurnExtras` përmes `TurnSection` me prop të ri `hideXhiro`.
 
-## Fajllat q\u00eb prek
-- `supabase/functions/recalculate-all-stock/index.ts` (shton respekt p\u00ebr `gjendje_locks` + check admin)
-- `src/components/Dashboard/AdminSettingsCard.tsx` (buton + handler)
+### `src/components/DailyEntry/TurnSection.tsx`
+- Prop i ri `hideXhiro?: boolean` → kalohet te `TurnExtras`.
+
+Admin/menaxher e sheh Xhiron e çdo date pa kufizim. Data e sotme dhe e djeshme (brenda dritares ekzistuese) mbeten të dukshme për stafin.
+
+## Pa ndryshime në
+- `useGjendjeLock.ts`, `useTurnLock.ts`, `calculations.ts`.
+- Logjika financiare / propagimi i stokut.
+- Skaneri (vazhdon të varet vetëm nga `gjendjeConfirmed`).
+
+## Testim manual
+1. Staf, datë e sotme, turn i pa filluar → Stok Fillim + Dif sfumuar; Xhiro e dukshme.
+2. Vendos Gjendje + kliko "Konfirmo Gjendjen" → Stok Fillim + Dif të qarta; Gjendja e ngrirë; skaneri i hapur.
+3. Mbyll + print "Kyç turnin" → Stok Fillim + Dif sfumohen sërish.
+4. Staf zgjedh një datë të kaluar → Xhiro sfumuar/zëvendësuar; Stok Fillim + Dif sfumuar (turni i kyçur).
+5. Admin (1983) → gjithçka e dukshme në çdo datë; butoni "Zhblloko Gjendjen" funksionon.
+6. `npm test` → testet e CalculationService qëndrojnë jeshile (asnjë ndryshim formule).
