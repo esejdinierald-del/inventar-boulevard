@@ -34,6 +34,35 @@ const DailyEntry = () => {
   const [verifiedStaffData, setVerifiedStaffData] = useState<VerifiedStaffData | null>(null);
   // Gjendje e konfirmuar nga stafi për ditën/turnin aktual (ruhet në localStorage)
   const [gjendjeUploaded, setGjendjeUploaded] = useState<{ turn1: boolean; turn2: boolean }>({ turn1: false, turn2: false });
+  // Kyçja 10-orëshe e kolonës Gjendje pas printit (timestamp ms i skadimit, per turn)
+  const [gjendjePrintLockUntil, setGjendjePrintLockUntil] = useState<{ turn1: number | null; turn2: number | null }>({ turn1: null, turn2: null });
+  // Ticker që rifreskon UI-në kur skadon kyçja
+  const [nowTick, setNowTick] = useState<number>(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  // Lexo kyçjen e printit nga localStorage për datën aktuale
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`gjendjePrintLockUntil:${selectedDate}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setGjendjePrintLockUntil({
+          turn1: typeof parsed.turn1 === 'number' ? parsed.turn1 : null,
+          turn2: typeof parsed.turn2 === 'number' ? parsed.turn2 : null,
+        });
+      } else {
+        setGjendjePrintLockUntil({ turn1: null, turn2: null });
+      }
+    } catch {
+      setGjendjePrintLockUntil({ turn1: null, turn2: null });
+    }
+  }, [selectedDate]);
+  const isGjendjePrintLocked = (turn: 'turn1' | 'turn2') => {
+    const until = gjendjePrintLockUntil[turn];
+    return !!until && until > nowTick;
+  };
 
   // Custom hooks
   const { isAdminUnlocked, isViewOnlyUnlocked, showPasswordDialog, showViewOnlyDialog, validatePassword, validateViewOnlyPassword, toggleAdminMode, requestViewOnly, closePasswordDialog, closeViewOnlyDialog, isWithinStaffEditWindow, unlockAdmin } = useAuth();
