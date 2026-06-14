@@ -52,6 +52,8 @@ export const TurnSection = ({
   showCopyButton = false,
   mulliriFillimDisabled = false,
   isTurnLocked = false,
+  gjendjeUploaded = true,
+  onConfirmGjendje,
   onProductUpdate,
   onCoffeeUpdate,
   onTurnUpdate,
