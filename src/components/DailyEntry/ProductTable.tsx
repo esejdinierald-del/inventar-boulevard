@@ -5,6 +5,7 @@ import { Eye, Unlock, Lock } from "lucide-react";
 import { ProductData } from "@/types/turn.types";
 import { CalculationService } from "@/services/calculations";
 import { AddProductRow } from "./AddProductRow";
+import { DifStart, formatDifStart } from "@/hooks/useDifStartDates";
 
 interface ProductTableProps {
   products: string[];
