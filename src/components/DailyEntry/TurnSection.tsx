@@ -22,6 +22,7 @@ interface TurnSectionProps {
   /** Kontrollon sfumimin e Stok Fillim & Dif për stafin. */
   gjendjeUploaded?: boolean;
   onConfirmGjendje?: () => void;
+  onUnlockGjendje?: () => void;
   onProductUpdate: (product: string, field: keyof ProductData, value: number) => void;
   onCoffeeUpdate: (coffee: string, value: number) => void;
   onTurnUpdate: (field: keyof TurnData, value: number) => void;
