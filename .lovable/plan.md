@@ -1,50 +1,37 @@
-## Formula e re e propagimit të Stok Fillimit
+## Kolona e re "Dif fillon" në /daily
 
-### Rregulli (i thjeshtë, pa gjendje)
+Shtoj një kolonë të re menjëherë pas kolonës **Dif** në tabelën e produkteve (T1 dhe T2), që tregon datën kur ka filluar gabimi për secilin produkt — për ta gjetur më lehtë se kush ka bërë input gabim.
 
-Stok Fillimi i turnit/ditës pasardhëse = **StokFillim − Shirit** i turnit paraardhës.
+### Logjika
+- Për secilin produkt, ngarkohet historiku i fundit **30 ditëve** nga `daily_entries`.
+- Për çdo ditë llogaritet **Dif total ditor = Dif(T1) + Dif(T2)** me të njëjtën formulë ekzistuese (`shiriti + gjendje − stokFillim`).
+- Kërkohet nga sot prapa data më e fundit ku Dif total ditor = **0** (produkti ishte në rregull).
+- **"Dif fillon"** = data e parë **pas** asaj dite (d.m.th. dita e parë me Dif ≠ 0 në seri të pandërprerë deri sot).
+- Nëse Dif aktual i ditës së zgjedhur = 0 → shfaqet `—`.
+- Nëse nuk gjendet asnjë ditë me Dif=0 brenda 30 ditëve → shfaqet `>30 ditë`.
 
-```
-T2.stokFillim (data D) = T1.stokFillim (D) − T1.shiriti (D)
-T1.stokFillim (data D) = T2.stokFillim (D−1) − T2.shiriti (D−1)
-```
+### Ndryshimet teknike
 
-**Gjendje NUK përdoret më** për propagim — shërben vetëm për llogaritjen e Dif (kontrolli fizik), jo për kalimin e stokut.
+1. **Hook i ri `src/hooks/useDifStartDates.ts`**
+   - Input: lista e produkteve + data aktuale.
+   - Fetch i vetëm te `daily_entries` për 30 ditët e fundit (të dyja turnet).
+   - Llogarit për çdo produkt datën kur "fillon Dif" duke ecur prapa në kohë.
+   - Cache në memorie (React Query ose `useMemo` i thjeshtë) për të mos rifreskuar në çdo input.
 
-Furnizimet vazhdojnë të shtohen automatikisht te StokFillim i të njëjtit turn (sjellja ekzistuese), prandaj formula sipër është e mjaftueshme.
+2. **`src/components/DailyEntry/ProductTable.tsx`**
+   - Shton kolonë të re `<TableHead>Dif fillon</TableHead>` menjëherë pas `Dif`.
+   - Për çdo rresht shfaq datën formato `dd/MM` (ose `—` / `>30 ditë`).
+   - Sfumohet bashkë me Dif kur stafi s'ka konfirmuar Gjendjen.
+   - Total row: qelizë bosh për këtë kolonë.
+   - Prop i ri: `difStartDates: Record<string, string | null>`.
 
-### Shembull (kanace, 14/06)
-- T1 14/06: stokFillim=216, shirit=6 → **T2 14/06 stokFillim = 216 − 6 = 210** (jo 205, jo 200)
-- Nëse T2 14/06: shirit=X → T1 15/06 stokFillim = 210 − X
+3. **`src/components/DailyEntry/TurnSection.tsx`** (ose ku thirret `ProductTable`)
+   - Thërret `useDifStartDates` dhe pason datat te `ProductTable`.
 
-### Skedarët që preken
+4. **Print report** — **NUK preket**; kolona shfaqet vetëm në UI.
 
-1. **`src/services/calculations.ts` — `calculateStockForNextTurn`**
-   Hiq degën `if (gjendje > 0) return gjendje`. Bëhet thjesht:
-   ```ts
-   static calculateStockForNextTurn(p: ProductData): number {
-     return p.stokFillim - p.shiriti;
-   }
-   ```
-   (Nëse stokFillim=0 dhe shirit=0 → 0 natyrshëm.)
+5. **Testet** — shtohen unit tests në `calculations.test.ts` (ose file i ri) për funksionin që kthen datën e fillimit të Dif.
 
-2. **`src/hooks/useTurnData.ts`** — kudo që llogaritet T2.stokFillim nga T1 ose stoku i ditës tjetër nga T2, përdor formulën e re. Hiq edhe "manual edit lock" për stokFillim të T2 nëse bllokon ri-sinkronizimin (që doli problemi me 200-shin), që T2 të ndjekë gjithmonë T1.stokFillim − T1.shiriti.
-
-3. **`src/services/stock-propagation.service.ts`** — tashmë thërret `calculateStockForNextTurn`, prandaj korrigjohet automatikisht. Komentet/log-et që përmendin "gjendje" duhen përditësuar.
-
-4. **`supabase/functions/recalculate-all-stock/`** dhe **`fix-t2-stock/`** — kontrollo nëse përdorin të njëjtën formulë; nëse po, përditëso në mënyrë identike.
-
-5. **`src/services/calculations.test.ts`** — përditëso testet që mbulojnë rastin `gjendje > 0`.
-
-### Korrigjimi i të dhënave ekzistuese
-
-Pas vendosjes së formulës së re, ekzekuto edge function-in `recalculate-all-stock` (ose `propagateFromDate` nga data më e hershme që duam të rregullojmë, p.sh. 13/06) që historiku të ri-llogaritet me rregullin e ri. Kjo do të korrigjojë T2 14/06 → 210 dhe çdo ditë pasardhëse.
-
-### Çfarë mbetet pa ndryshim
-
-- Formula e Dif: `shirit + gjendje − stokFillim`.
-- Furnizime → mbledhen te StokFillim automatikisht.
-- Kafe / mulliri, pijet alkoolike, kuzhina, RLS, UI.
-
-### Pyetje konfirmuese
-1. Të ekzekutoj `recalculate-all-stock` mbi gjithë historikun pas ndryshimit (rregullon retroaktivisht edhe 14/06)? Po / vetëm nga një datë e caktuar / jo, lëre të zbatohet vetëm për të dhënat e reja.
+### Çfarë nuk ndryshon
+- Formula e Dif, propagimi i stokut, RLS, skema e DB.
+- Sjellja për admin/staf, bllokimi i fushave, printim, raporte.
