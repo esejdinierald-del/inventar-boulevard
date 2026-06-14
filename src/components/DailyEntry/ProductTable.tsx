@@ -22,6 +22,7 @@ interface ProductTableProps {
   onUnlockGjendje?: () => void;
   onProductUpdate: (product: string, field: keyof ProductData, value: number) => void;
   onProductDelete?: (product: string) => void;
+  difStartDates?: Record<string, DifStart>;
   onProductEdit?: (product: string) => void;
   onProductAdd?: (productName: string) => boolean | Promise<boolean>;
   editingProduct: string | null;
