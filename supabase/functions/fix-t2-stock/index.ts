@@ -69,7 +69,7 @@ serve(async (req) => {
         
         if (t1Data) {
           const currentStokFillim = t2Data.stokFillim;
-          const expectedStokFillim = t1Data.stokFillim + t1Data.furnizime - t1Data.shiriti;
+          const expectedStokFillim = t1Data.stokFillim - t1Data.shiriti;
           
           if (currentStokFillim !== expectedStokFillim) {
             newT2Products[productName] = {

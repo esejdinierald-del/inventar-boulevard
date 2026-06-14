@@ -23,11 +23,11 @@ interface TurnData {
 }
 
 /**
- * Llogarit stokun e propaguar për turnin/ditën tjetër:
- * stokFillim + furnizime - shiriti
+ * Llogarit stokun e propaguar për turnin/ditën tjetër.
+ * Formula e re: StokFillim − Shiriti (Furnizime tashmë mblidhen te StokFillim).
  */
 function calculatePropagatedStock(p: ProductData): number {
-  return p.stokFillim + p.furnizime - p.shiriti;
+  return p.stokFillim - p.shiriti;
 }
 
 serve(async (req) => {

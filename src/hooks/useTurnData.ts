@@ -372,37 +372,41 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
 
   const updateTurn1Product = useCallback((product: string, field: keyof ProductData, value: number) => {
     console.log(`📝 Updating T1 ${product}.${field} = ${value}`);
-    setTurn1(prev => ({
-      ...prev,
-      products: {
-        ...prev.products,
-        [product]: {
-          ...EMPTY_PRODUCT,
-          ...(prev.products[product] || {}),
-          [field]: value
-        }
+    setTurn1(prev => {
+      const existing = { ...EMPTY_PRODUCT, ...(prev.products[product] || {}) };
+      const next: ProductData = { ...existing, [field]: value };
+      // KRITIKE: Kur ndryshon Furnizime, shto delta-n te StokFillim i të njëjtit turn.
+      // Furnizime mbetet si regjistër historie; Dif tashmë llogaritet pa Furnizime.
+      if (field === 'furnizime') {
+        const delta = value - (existing.furnizime || 0);
+        next.stokFillim = (existing.stokFillim || 0) + delta;
       }
-    }));
+      return {
+        ...prev,
+        products: { ...prev.products, [product]: next },
+      };
+    });
   }, []);
 
   const updateTurn2Product = useCallback((product: string, field: keyof ProductData, value: number) => {
     console.log(`📝 Updating T2 ${product}.${field} = ${value}`);
     // KRITIKE: Nëse stafi redakton manualisht stokFillim në T2, mos e mbishkruaj
-    // me auto-sync nga T1
-    if (field === 'stokFillim') {
+    // me auto-sync nga T1. Furnizime po ashtu prek stokFillim, prandaj e shenjojmë.
+    if (field === 'stokFillim' || field === 'furnizime') {
       t2ManuallyEditedStokFillim.current.add(product);
     }
-    setTurn2(prev => ({
-      ...prev,
-      products: {
-        ...prev.products,
-        [product]: {
-          ...EMPTY_PRODUCT,
-          ...(prev.products[product] || {}),
-          [field]: value
-        }
+    setTurn2(prev => {
+      const existing = { ...EMPTY_PRODUCT, ...(prev.products[product] || {}) };
+      const next: ProductData = { ...existing, [field]: value };
+      if (field === 'furnizime') {
+        const delta = value - (existing.furnizime || 0);
+        next.stokFillim = (existing.stokFillim || 0) + delta;
       }
-    }));
+      return {
+        ...prev,
+        products: { ...prev.products, [product]: next },
+      };
+    });
   }, []);
 
   // Sync mulliri from T1 to T2
