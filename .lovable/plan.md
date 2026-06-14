@@ -1,36 +1,30 @@
-## Plan: Furnizime shtohet automatikisht te StokFillim
+## Plani: Sfumimi rikthehet pas printimit
 
-Kur futet/ndryshohet Furnizime për një produkt, vlera shtohet menjëherë te StokFillim i të njëjtit turn. Kolona Furnizime mbetet vetëm si regjistër historie. Formula e Dif përditësohet që të mos numërojë dy herë.
+### Sjellja e re
+Pasi stafi shtyp "Printo dhe Kyç" për një turn:
+- Turni vazhdon të kyçet (si tani).
+- Përveç kyçjes, **`gjendjeUploaded` për atë turn rivendoset në `false`**.
+- Rezultati: kolonat **Stok Fillim** dhe **Dif** sfumohen sërish për stafin, ashtu si para konfirmimit fillestar të Gjendjes.
+- Kështu, kur stafi i T2 hap aplikacionin (edhe nëse përdor PIN-in e T1 për të parë T1), nuk mund të shohë Stok Fillim / Dif të T1 — sepse sfumimi është aktiv.
+- Admin (me fjalëkalim) vazhdon t'i shohë normalisht (sfumimi ndodh vetëm për staf).
 
-### Ndryshimet kryesore
+### Ndryshim i vetëm në kod
+**`src/pages/DailyEntry.tsx` → `handlePrintAndLock`** (rreth rreshtit 494):
+Pas `lockTurn(...)`, shto:
+```ts
+const turnKey = activeTurn; // 'turn1' | 'turn2'
+setGjendjeUploaded(prev => {
+  const next = { ...prev, [turnKey]: false };
+  try { localStorage.setItem(`gjendjeUploaded:${selectedDate}`, JSON.stringify(next)); } catch {}
+  return next;
+});
+```
+Pastaj thirret `window.print()` si më parë.
 
-**1. Formula e re**
-- Dif (e re): `Shiriti + Gjendje − StokFillim` (heq `− Furnizime`)
-- Stok për turnin/ditën pasardhëse: `Gjendje` (nëse > 0) ose `StokFillim − Shiriti`
-- Arsyeja: StokFillim tashmë përfshin Furnizimet.
+### Çfarë NUK ndryshon
+- Logjika e kyçjes së turnit, RLS, kalkulimet, print layout, mulliri, shpenzimet.
+- Admini mund përsëri ta riaktivizojë me butonin ekzistues "Unlock Gjendje" nëse duhet korrigjim.
+- T1 dhe T2 trajtohen të pavarura — printimi i T1 sfumon vetëm T1; printimi i T2 sfumon T2.
 
-**2. Sjellja e inputit (useTurnData)**
-- Kur thirret `updateTurn1Product(p, 'furnizime', vlera_re)`:
-  - `delta = vlera_re − furnizime_aktuale`
-  - `stokFillim += delta` (i njëjti turn)
-  - `furnizime = vlera_re`
-- Njësoj për T2.
-- Auto-sync T1→T2: vazhdon të përdorë `calculateStockForNextTurn` (formula e re).
-
-**3. Skedarët që ndryshojnë**
-- `src/services/calculations.ts` — `calculateDif`, `calculateNewStock`, `calculateStockForNextTurn` + JSDoc i përditësuar.
-- `src/services/calculations.test.ts` — rifresko testet me formula e re.
-- `src/hooks/useTurnData.ts` — logjikë e re për `updateTurn{1,2}Product` kur `field === 'furnizime'`.
-- `src/components/DailyEntry/ProductTable.tsx` — përditëso llogaritjen e Dif në rresht dhe totale.
-- `src/components/DailyEntry/PrintableTurnReport.tsx` — përditëso Dif në print.
-- `supabase/functions/fix-t2-stock/index.ts` dhe `recalculate-all-stock/index.ts` — heq `+ furnizime` nga formulat e propagimit.
-- `src/services/stock-propagation.service.ts` — njësoj.
-- `mem://index.md` Core: ndrysho "Dif Formula" në të renë.
-
-### Çfarë mbetet e njëjtë
-- Kolona Furnizime në UI (vetëm-lexim si regjistër, vazhdon të editohet, por tani efekti shkon te StokFillim).
-- Skema e DB-së, RLS, auth, print layout, mullir, shpenzime, kafe.
-- Të dhënat historike: NUK migrohen automatikisht. Datat e vjetra do të llogariten me formulën e re — për shumicën rezultati është i njëjti sepse StokFillim historik nuk i kishte furnizimet të shtuara. **Kjo është një efekt anësor i rëndësishëm:** datat e mëparshme që kishin Furnizime > 0 do të tregojnë Dif të ndryshme nga më parë.
-
-### Pyetje para implementimit
-A duhet të bëj edhe një migrim një-herësh që për të gjitha datat historike: `stokFillim += furnizime, furnizime e mban si është` (që Dif të mbetet 0 për datat e kaluara)? Ose i lëmë datat historike ashtu siç janë dhe formula e re aplikohet vetëm mbi inputet e reja?
+### Pyetje
+Para se ta implementoj: kur admini e zhbllokon turnin (`unlockTurn`), a dëshiron që edhe `gjendjeUploaded` të rikthehet automatikisht në `true` (që stafi të shohë sërish menjëherë pas zhbllokimit), apo ta lëmë stafin të rikonfirmojë Gjendjen me butonin "Ngarko Gjendjen"?

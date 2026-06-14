@@ -505,10 +505,17 @@ const DailyEntry = () => {
     if (verifiedStaff) {
       await lockTurn(currentTurnNumber as 1 | 2, verifiedStaff);
     }
-    
+
+    // Risfumo Stok Fillim & Dif për stafin (që edhe me PIN tjetër mos i shikojë)
+    setGjendjeUploaded(prev => {
+      const next = { ...prev, [activeTurn]: false };
+      try { localStorage.setItem(`gjendjeUploaded:${selectedDate}`, JSON.stringify(next)); } catch {}
+      return next;
+    });
+
     // Printo
     window.print();
-  }, [activeTurn, verifiedStaff, handleSave, lockTurn, forceSaveNextDayStock]);
+  }, [activeTurn, verifiedStaff, handleSave, lockTurn, forceSaveNextDayStock, selectedDate]);
 
   // Unlock handler (admin only)
   const handleUnlockTurn = useCallback(async (turnNumber: 1 | 2) => {
