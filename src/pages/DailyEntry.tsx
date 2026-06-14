@@ -668,6 +668,8 @@ const DailyEntry = () => {
               isAdminUnlocked={isAdminUnlocked}
               isFieldDisabled={isFieldDisabled()}
               isTurnLocked={isTurnLocked(1)}
+              gjendjeUploaded={gjendjeUploaded.turn1}
+              onConfirmGjendje={() => confirmGjendje('turn1')}
               showCopyButton
               onProductUpdate={updateTurn1Product}
               onCoffeeUpdate={updateTurn1Coffee}
