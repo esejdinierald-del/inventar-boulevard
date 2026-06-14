@@ -56,6 +56,7 @@ export const TurnSection = ({
   mulliriFillimDisabled = false,
   isTurnLocked = false,
   gjendjeUploaded = true,
+  gjendjeLockedByPrint = false,
   onConfirmGjendje,
   onUnlockGjendje,
   onProductUpdate,
