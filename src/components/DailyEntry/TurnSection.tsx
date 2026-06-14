@@ -52,6 +52,7 @@ export const TurnSection = ({
   turnData,
   products,
   coffeeTypes,
+  selectedDate,
   alcoholicDrinks = [],
   isAdminUnlocked,
   isFieldDisabled,
