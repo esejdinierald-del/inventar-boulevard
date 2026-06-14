@@ -55,6 +55,9 @@ export const ProductTable = ({
   // Sfumimi aplikohet vetëm për staf (jo admin) derisa Gjendja të konfirmohet
   const isBlurred = !isAdminUnlocked && !gjendjeUploaded;
   const blurClass = isBlurred ? "blur-sm opacity-40 select-none pointer-events-none" : "";
+  // Pas printit: kolona Gjendje sfumohet & bllokohet për 10h (vetëm staf)
+  const isGjendjePrintBlurred = !isAdminUnlocked && gjendjeLockedByPrint;
+  const gjendjeBlurClass = isGjendjePrintBlurred ? "blur-sm opacity-40 select-none pointer-events-none" : "";
 
   // Kontrollo nëse të paktën një produkt ka gjendje > 0 (lejojmë konfirmimin)
   const hasAnyGjendje = Object.values(turnProducts).some(p => p && p.gjendje > 0);
