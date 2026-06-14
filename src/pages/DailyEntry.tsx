@@ -541,6 +541,7 @@ const DailyEntry = () => {
           coffeeTypes={coffeeTypes}
           selectedDate={selectedDate}
           verifiedStaff={verifiedStaff}
+          isAdminUnlocked={isAdminUnlocked}
         />
         {/* Date restriction warnings for staff */}
         {isPastDate() && !isAdminUnlocked && !isFieldDisabled() && isYesterday() && (
