@@ -147,7 +147,7 @@ export const ProductTable = ({
 
             return (
               <TableRow key={product}>
-                <TableCell className={`font-medium ${blurClass}`}>
+                <TableCell className="font-medium">
                   {isAdminUnlocked && editingProduct === product ? (
                     <div className="flex items-center gap-2">
                       <Input
