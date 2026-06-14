@@ -552,22 +552,30 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
   }, []);
 
   // Handle receipt data
+  /**
+   * Apliko të dhënat e shiritit për T1.
+   * KRITIKE: ZËVENDËSON plotësisht shiritin e vjetër — produktet që nuk
+   * janë në faturën e re marrin shiriti=0. Kështu ringarkimi i shiritit
+   * jep gjithmonë vlerën e fundit, jo shumën me ngarkimet e mëparshme.
+   */
   const handleReceiptDataT1 = useCallback((
     productData: { [key: string]: number },
     coffeeData: { [key: string]: number },
     alcoholicDrinksData?: { [key: string]: number },
     total?: number
   ) => {
-    console.log('T1 Receipt Data - Alcoholic Drinks:', alcoholicDrinksData);
+    console.log('T1 Receipt Data (REPLACE mode) - Alcoholic Drinks:', alcoholicDrinksData);
     setTurn1(prev => ({
       ...prev,
       products: Object.fromEntries(
         Object.entries(prev.products).map(([key, value]) => [
           key,
-          productData[key] !== undefined ? { ...value, shiriti: productData[key] } : value
+          { ...value, shiriti: productData[key] ?? 0 }
         ])
       ),
-      coffee: { ...prev.coffee, ...coffeeData },
+      coffee: Object.fromEntries(
+        Object.keys(prev.coffee).map(key => [key, coffeeData[key] ?? 0])
+      ),
       xhiro: total !== undefined ? total : prev.xhiro
     }));
     
@@ -577,22 +585,27 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     }
   }, [applyAlcoholicDrinksImmediately]);
 
+  /**
+   * Apliko të dhënat e shiritit për T2 — zëvendësim total, jo shtim.
+   */
   const handleReceiptDataT2 = useCallback((
     productData: { [key: string]: number },
     coffeeData: { [key: string]: number },
     alcoholicDrinksData?: { [key: string]: number },
     total?: number
   ) => {
-    console.log('T2 Receipt Data - Alcoholic Drinks:', alcoholicDrinksData);
+    console.log('T2 Receipt Data (REPLACE mode) - Alcoholic Drinks:', alcoholicDrinksData);
     setTurn2(prev => ({
       ...prev,
       products: Object.fromEntries(
         Object.entries(prev.products).map(([key, value]) => [
           key,
-          productData[key] !== undefined ? { ...value, shiriti: productData[key] } : value
+          { ...value, shiriti: productData[key] ?? 0 }
         ])
       ),
-      coffee: { ...prev.coffee, ...coffeeData },
+      coffee: Object.fromEntries(
+        Object.keys(prev.coffee).map(key => [key, coffeeData[key] ?? 0])
+      ),
       xhiro: total !== undefined ? total : prev.xhiro
     }));
     

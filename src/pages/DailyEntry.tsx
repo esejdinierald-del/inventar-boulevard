@@ -22,14 +22,18 @@ import { useAlcoholicDrinksList } from "@/hooks/useAlcoholicDrinksList";
 import { AlcoholicDrinksService } from "@/services/alcoholic-drinks.service";
 import { TurnData, ShpenzimiData } from "@/types/turn.types";
 
+const TODAY = () => new Date().toISOString().split('T')[0];
+
 const DailyEntry = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(TODAY());
   const [editingProduct, setEditingProduct] = useState<string | null>(null);
   const [editedProductName, setEditedProductName] = useState("");
   const [activeTurn, setActiveTurn] = useState<"turn1" | "turn2">("turn1");
   const [showPinDialog, setShowPinDialog] = useState(false);
   const [verifiedStaff, setVerifiedStaff] = useState<string | null>(null);
   const [verifiedStaffData, setVerifiedStaffData] = useState<VerifiedStaffData | null>(null);
+  // Gjendje e konfirmuar nga stafi për ditën/turnin aktual (ruhet në localStorage)
+  const [gjendjeUploaded, setGjendjeUploaded] = useState<{ turn1: boolean; turn2: boolean }>({ turn1: false, turn2: false });
 
   // Custom hooks
   const { isAdminUnlocked, isViewOnlyUnlocked, showPasswordDialog, showViewOnlyDialog, validatePassword, validateViewOnlyPassword, toggleAdminMode, requestViewOnly, closePasswordDialog, closeViewOnlyDialog, isWithinStaffEditWindow, unlockAdmin } = useAuth();
@@ -132,6 +136,34 @@ const DailyEntry = () => {
     setShowPinDialog(true);
   }, [selectedDate]);
 
+  // Lexo gjendjeUploaded nga localStorage për datën aktuale
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`gjendjeUploaded:${selectedDate}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setGjendjeUploaded({ turn1: !!parsed.turn1, turn2: !!parsed.turn2 });
+      } else {
+        setGjendjeUploaded({ turn1: false, turn2: false });
+      }
+    } catch {
+      setGjendjeUploaded({ turn1: false, turn2: false });
+    }
+  }, [selectedDate]);
+
+  const confirmGjendje = useCallback((turn: 'turn1' | 'turn2') => {
+    setGjendjeUploaded(prev => {
+      const next = { ...prev, [turn]: true };
+      try {
+        localStorage.setItem(`gjendjeUploaded:${selectedDate}`, JSON.stringify(next));
+      } catch (e) {
+        console.warn('Nuk u ruajt gjendjeUploaded:', e);
+      }
+      return next;
+    });
+    toast.success(`Gjendja u ngarkua për Turnin ${turn === 'turn1' ? '1' : '2'}`);
+  }, [selectedDate]);
+
   // Check staff verification when switching turns
   const handleTurnChange = (turnValue: string) => {
     if (!verifiedStaff) {
@@ -188,6 +220,16 @@ const DailyEntry = () => {
     if (verifiedStaffData?.isManager && verifiedStaffData?.permissions?.dashboard) return true;
     return false;
   }, [isAdminUnlocked, verifiedStaffData]);
+
+  // Stafi nuk lejohet në data të kaluara ose të ardhshme — ridrejtoje në sot
+  useEffect(() => {
+    if (hasElevatedAccess()) return;
+    const today = TODAY();
+    if (selectedDate !== today) {
+      toast.info("Stafi mund të punojë vetëm me datën e sotme");
+      setSelectedDate(today);
+    }
+  }, [selectedDate, hasElevatedAccess]);
 
   const isFieldDisabled = useCallback(() => {
     // Nëse është admin ose menaxher me të drejta dashboard, nuk ka kufizime për datat
@@ -330,8 +372,15 @@ const DailyEntry = () => {
   const handleApplySupplies = useCallback(async (mapping: any) => {
     console.log("Applying supplies from mapping:", mapping);
     console.log("Active turn:", activeTurn);
-    
+
+    // Bllokim: stafi nuk mund të ngarkojë furnizime në data jo të sotme
+    if (!hasElevatedAccess() && selectedDate !== TODAY()) {
+      toast.error("Nuk mund të ngarkohen furnizime për data jo të sotme");
+      return;
+    }
+
     const alcoholicUpdates: { name: string; quantity: number }[] = [];
+    
     
     for (const [invoiceName, mappedItem] of Object.entries(mapping)) {
       const item = mappedItem as any;
@@ -412,7 +461,7 @@ const DailyEntry = () => {
         toast.success(`${successCount} pije alkoolike u përditësuan me sukses!`);
       }
     }
-  }, [updateTurn1Product, updateTurn2Product, activeTurn, turn1, turn2]);
+  }, [updateTurn1Product, updateTurn2Product, activeTurn, turn1, turn2, hasElevatedAccess, selectedDate]);
 
   // Save handler
   const handleSave = useCallback(async () => {
@@ -558,6 +607,8 @@ const DailyEntry = () => {
                 onChange={e => setSelectedDate(e.target.value)}
                 className="w-auto"
                 title="Zgjidhni datën"
+                min={hasElevatedAccess() ? undefined : TODAY()}
+                max={hasElevatedAccess() ? undefined : TODAY()}
               />
             </div>
           </div>
@@ -617,6 +668,8 @@ const DailyEntry = () => {
               isAdminUnlocked={isAdminUnlocked}
               isFieldDisabled={isFieldDisabled()}
               isTurnLocked={isTurnLocked(1)}
+              gjendjeUploaded={gjendjeUploaded.turn1}
+              onConfirmGjendje={() => confirmGjendje('turn1')}
               showCopyButton
               onProductUpdate={updateTurn1Product}
               onCoffeeUpdate={updateTurn1Coffee}
@@ -648,6 +701,8 @@ const DailyEntry = () => {
               isAdminUnlocked={isAdminUnlocked}
               isFieldDisabled={isFieldDisabled()}
               isTurnLocked={isTurnLocked(2)}
+              gjendjeUploaded={gjendjeUploaded.turn2}
+              onConfirmGjendje={() => confirmGjendje('turn2')}
               mulliriFillimDisabled
               onProductUpdate={updateTurn2Product}
               onCoffeeUpdate={updateTurn2Coffee}

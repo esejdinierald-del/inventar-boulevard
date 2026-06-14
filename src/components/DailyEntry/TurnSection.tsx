@@ -19,6 +19,9 @@ interface TurnSectionProps {
   showCopyButton?: boolean;
   mulliriFillimDisabled?: boolean;
   isTurnLocked?: boolean;
+  /** Kontrollon sfumimin e Stok Fillim & Dif për stafin. */
+  gjendjeUploaded?: boolean;
+  onConfirmGjendje?: () => void;
   onProductUpdate: (product: string, field: keyof ProductData, value: number) => void;
   onCoffeeUpdate: (coffee: string, value: number) => void;
   onTurnUpdate: (field: keyof TurnData, value: number) => void;
@@ -49,6 +52,8 @@ export const TurnSection = ({
   showCopyButton = false,
   mulliriFillimDisabled = false,
   isTurnLocked = false,
+  gjendjeUploaded = true,
+  onConfirmGjendje,
   onProductUpdate,
   onCoffeeUpdate,
   onTurnUpdate,
@@ -96,6 +101,8 @@ export const TurnSection = ({
             turnProducts={turnData.products}
             isAdminUnlocked={isAdminUnlocked}
             isFieldDisabled={isFieldDisabled}
+            gjendjeUploaded={gjendjeUploaded}
+            onConfirmGjendje={onConfirmGjendje}
             onProductUpdate={onProductUpdate}
             onProductDelete={onProductDelete}
             onProductEdit={onProductEdit}
