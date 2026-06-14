@@ -279,21 +279,17 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
   }, [turn1, turn2, selectedDate, setSaveStatus]);
 
   // Auto-sync T1 stock to T2 when T1 changes
-  // KRITIKE: Përdor calculateStockForNextTurn (respekton T1.gjendje), dhe NUK
-  // mbishkruan produktet që u redaktuan manualisht në T2
+  // Formula e re: T2.stokFillim = T1.stokFillim − T1.shiriti (pa marrë parasysh gjendjen)
+  // T2 ndjek GJITHMONË T1 — nuk ka më manual-edit lock për stokFillim.
   useEffect(() => {
     if (isInitialLoad.current) return;
     
     const syncAndPropagate = async () => {
-      console.log('🔄 Syncing T1 → T2 (respekton T1.gjendje, ruan manual T2 edits)');
+      console.log('🔄 Syncing T1 → T2 (stokFillim − shiriti, pa gjendje)');
       setTurn2(prev => {
         const merged: { [key: string]: ProductData } = { ...prev.products };
 
         Object.entries(turn1.products).forEach(([key, t1Data]) => {
-          if (t2ManuallyEditedStokFillim.current.has(key)) {
-            console.log(`  ⏭️ ${key}: u redaktua manualisht në T2, NUK po e mbishkruaj`);
-            return;
-          }
           const newStokFillim = CalculationService.calculateStockForNextTurn(t1Data);
           const existing = merged[key] || { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 };
           merged[key] = { ...existing, stokFillim: newStokFillim };
