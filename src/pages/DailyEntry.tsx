@@ -221,6 +221,16 @@ const DailyEntry = () => {
     return false;
   }, [isAdminUnlocked, verifiedStaffData]);
 
+  // Stafi nuk lejohet në data të kaluara ose të ardhshme — ridrejtoje në sot
+  useEffect(() => {
+    if (hasElevatedAccess()) return;
+    const today = TODAY();
+    if (selectedDate !== today) {
+      toast.info("Stafi mund të punojë vetëm me datën e sotme");
+      setSelectedDate(today);
+    }
+  }, [selectedDate, hasElevatedAccess]);
+
   const isFieldDisabled = useCallback(() => {
     // Nëse është admin ose menaxher me të drejta dashboard, nuk ka kufizime për datat
     if (hasElevatedAccess()) return false;
