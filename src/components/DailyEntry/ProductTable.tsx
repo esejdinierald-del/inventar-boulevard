@@ -13,6 +13,8 @@ interface ProductTableProps {
   isFieldDisabled: boolean;
   /** Kur false dhe staf: kolonat Stok Fillim & Dif janë të sfumuara. */
   gjendjeUploaded?: boolean;
+  /** Kur true (dhe staf): kolona Gjendje sfumohet dhe bllokohet — kyçje 10h pas printit. */
+  gjendjeLockedByPrint?: boolean;
   /** Thirret kur stafi shtyp "Ngarko Gjendjen". */
   onConfirmGjendje?: () => void;
   /** Thirret nga admini për të riaktivizuar stafin (zhbllokon kolonën Gjendje). */
@@ -37,6 +39,7 @@ export const ProductTable = ({
   isAdminUnlocked,
   isFieldDisabled,
   gjendjeUploaded = true,
+  gjendjeLockedByPrint = false,
   onConfirmGjendje,
   onUnlockGjendje,
   onProductUpdate,
@@ -52,6 +55,9 @@ export const ProductTable = ({
   // Sfumimi aplikohet vetëm për staf (jo admin) derisa Gjendja të konfirmohet
   const isBlurred = !isAdminUnlocked && !gjendjeUploaded;
   const blurClass = isBlurred ? "blur-sm opacity-40 select-none pointer-events-none" : "";
+  // Pas printit: kolona Gjendje sfumohet & bllokohet për 10h (vetëm staf)
+  const isGjendjePrintBlurred = !isAdminUnlocked && gjendjeLockedByPrint;
+  const gjendjeBlurClass = isGjendjePrintBlurred ? "blur-sm opacity-40 select-none pointer-events-none" : "";
 
   // Kontrollo nëse të paktën një produkt ka gjendje > 0 (lejojmë konfirmimin)
   const hasAnyGjendje = Object.values(turnProducts).some(p => p && p.gjendje > 0);
@@ -169,14 +175,15 @@ export const ProductTable = ({
                     tabIndex={isBlurred ? -1 : 0}
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell className={gjendjeBlurClass}>
                   <Input
                     type="number"
                     step="any"
                     value={data.gjendje || ""}
                     onChange={(e) => onProductUpdate(product, 'gjendje', Number(e.target.value))}
                     className="w-20"
-                    disabled={isGjendjeDisabled(isFieldDisabled) || (gjendjeUploaded && !isAdminUnlocked)}
+                    disabled={isGjendjeDisabled(isFieldDisabled) || (gjendjeUploaded && !isAdminUnlocked) || isGjendjePrintBlurred}
+                    tabIndex={isGjendjePrintBlurred ? -1 : 0}
                   />
                 </TableCell>
                 <TableCell className={blurClass}>
@@ -219,7 +226,7 @@ export const ProductTable = ({
             <TableCell className={`font-bold ${blurClass}`}>
               {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.stokFillim, 0)}
             </TableCell>
-            <TableCell className="font-bold">
+            <TableCell className={`font-bold ${gjendjeBlurClass}`}>
               {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.gjendje, 0)}
             </TableCell>
             <TableCell className="font-bold text-primary">

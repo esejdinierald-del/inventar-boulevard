@@ -21,6 +21,8 @@ interface TurnSectionProps {
   isTurnLocked?: boolean;
   /** Kontrollon sfumimin e Stok Fillim & Dif për stafin. */
   gjendjeUploaded?: boolean;
+  /** Kyçja 10-orëshe e kolonës Gjendje pas printit. */
+  gjendjeLockedByPrint?: boolean;
   onConfirmGjendje?: () => void;
   onUnlockGjendje?: () => void;
   onProductUpdate: (product: string, field: keyof ProductData, value: number) => void;
@@ -54,6 +56,7 @@ export const TurnSection = ({
   mulliriFillimDisabled = false,
   isTurnLocked = false,
   gjendjeUploaded = true,
+  gjendjeLockedByPrint = false,
   onConfirmGjendje,
   onUnlockGjendje,
   onProductUpdate,
@@ -104,6 +107,7 @@ export const TurnSection = ({
             isAdminUnlocked={isAdminUnlocked}
             isFieldDisabled={isFieldDisabled}
             gjendjeUploaded={gjendjeUploaded}
+            gjendjeLockedByPrint={gjendjeLockedByPrint}
             onConfirmGjendje={onConfirmGjendje}
             onUnlockGjendje={onUnlockGjendje}
             onProductUpdate={onProductUpdate}
