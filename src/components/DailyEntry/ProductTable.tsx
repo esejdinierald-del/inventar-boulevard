@@ -39,6 +39,7 @@ export const ProductTable = ({
   isAdminUnlocked,
   isFieldDisabled,
   gjendjeUploaded = true,
+  gjendjeLockedByPrint = false,
   onConfirmGjendje,
   onUnlockGjendje,
   onProductUpdate,
