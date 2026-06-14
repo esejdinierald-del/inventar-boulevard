@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Eye } from "lucide-react";
 import { ProductData } from "@/types/turn.types";
 import { CalculationService } from "@/services/calculations";
 import { AddProductRow } from "./AddProductRow";
@@ -10,6 +11,10 @@ interface ProductTableProps {
   turnProducts: { [key: string]: ProductData };
   isAdminUnlocked: boolean;
   isFieldDisabled: boolean;
+  /** Kur false dhe staf: kolonat Stok Fillim & Dif janë të sfumuara. */
+  gjendjeUploaded?: boolean;
+  /** Thirret kur stafi shtyp "Ngarko Gjendjen". */
+  onConfirmGjendje?: () => void;
   onProductUpdate: (product: string, field: keyof ProductData, value: number) => void;
   onProductDelete?: (product: string) => void;
   onProductEdit?: (product: string) => void;
@@ -21,21 +26,16 @@ interface ProductTableProps {
   onCancelEdit: () => void;
 }
 
-// Gjendje dhe Furnizime bllokojnë vetëm për data të kaluara
-// Për ditën e sotme dhe ditën e djeshme brenda 4-orëve, janë gjithmonë të hapura për staff
-const isGjendjeDisabled = (isFieldDisabled: boolean): boolean => {
-  return isFieldDisabled;
-};
-
-const isFurnizimeDisabled = (isFieldDisabled: boolean): boolean => {
-  return isFieldDisabled;
-};
+const isGjendjeDisabled = (isFieldDisabled: boolean): boolean => isFieldDisabled;
+const isFurnizimeDisabled = (isFieldDisabled: boolean): boolean => isFieldDisabled;
 
 export const ProductTable = ({
   products,
   turnProducts,
   isAdminUnlocked,
   isFieldDisabled,
+  gjendjeUploaded = true,
+  onConfirmGjendje,
   onProductUpdate,
   onProductDelete,
   onProductEdit,
@@ -46,9 +46,38 @@ export const ProductTable = ({
   onSaveEdit,
   onCancelEdit,
 }: ProductTableProps) => {
+  // Sfumimi aplikohet vetëm për staf (jo admin) derisa Gjendja të konfirmohet
+  const isBlurred = !isAdminUnlocked && !gjendjeUploaded;
+  const blurClass = isBlurred ? "blur-sm opacity-40 select-none pointer-events-none" : "";
+
+  // Kontrollo nëse të paktën një produkt ka gjendje > 0 (lejojmë konfirmimin)
+  const hasAnyGjendje = Object.values(turnProducts).some(p => p && p.gjendje > 0);
+
   return (
-    <div className="overflow-x-auto">
-      <Table>
+    <div className="space-y-3">
+      {/* Butoni i konfirmimit të gjendjes — vetëm për stafin kur nuk është konfirmuar ende */}
+      {!isAdminUnlocked && !gjendjeUploaded && onConfirmGjendje && (
+        <div className="rounded-lg border border-warning/50 bg-warning/10 p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+          <div className="text-sm">
+            <p className="font-medium">📋 Numëro fizikisht gjendjen e secilit produkt</p>
+            <p className="text-xs text-muted-foreground">
+              Pasi të plotësosh kolonën <strong>Gjendje</strong>, shtyp butonin për të zbuluar <strong>Stok Fillim</strong> dhe <strong>Dif</strong>.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={onConfirmGjendje}
+            disabled={!hasAnyGjendje}
+            className="whitespace-nowrap"
+          >
+            <Eye className="h-3 w-3 mr-1" />
+            Ngarko Gjendjen
+          </Button>
+        </div>
+      )}
+
+      <div className="overflow-x-auto">
+        <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Produkti</TableHead>
@@ -63,13 +92,10 @@ export const ProductTable = ({
         <TableBody>
           {products.map(product => {
             const data = turnProducts[product];
-            
-            // Skip if no data for this product
             if (!data) {
               console.warn(`No data found for product: ${product}`);
               return null;
             }
-            
             const dif = CalculationService.calculateDif(
               data.stokFillim,
               data.furnizime,
@@ -88,40 +114,19 @@ export const ProductTable = ({
                         className="w-32"
                         autoFocus
                       />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onSaveEdit(product)}
-                        className="h-7 px-2 text-success"
-                      >
-                        ✓
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onCancelEdit}
-                        className="h-7 px-2 text-destructive"
-                      >
-                        ✕
-                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => onSaveEdit(product)} className="h-7 px-2 text-success">✓</Button>
+                      <Button variant="ghost" size="sm" onClick={onCancelEdit} className="h-7 px-2 text-destructive">✕</Button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
                       <span>{product}</span>
                       {isAdminUnlocked && onProductEdit && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onProductEdit(product)}
-                          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                        >
-                          ✏️
-                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => onProductEdit(product)} className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground">✏️</Button>
                       )}
                     </div>
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell className={blurClass}>
                   <Input
                     type="number"
                     step="any"
@@ -161,19 +166,12 @@ export const ProductTable = ({
                     disabled={isFurnizimeDisabled(isFieldDisabled)}
                   />
                 </TableCell>
-                <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'}`}>
+                <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'} ${blurClass}`}>
                   {dif}
                 </TableCell>
                 {isAdminUnlocked && onProductDelete && (
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onProductDelete(product)}
-                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                    >
-                      ✕
-                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => onProductDelete(product)} className="h-8 w-8 p-0 text-destructive hover:text-destructive">✕</Button>
                   </TableCell>
                 )}
               </TableRow>
@@ -183,7 +181,7 @@ export const ProductTable = ({
           {/* Total Row */}
           <TableRow className="bg-muted/50">
             <TableCell className="font-bold">TOTALI</TableCell>
-            <TableCell className="font-bold">
+            <TableCell className={`font-bold ${blurClass}`}>
               {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.stokFillim, 0)}
             </TableCell>
             <TableCell className="font-bold">
@@ -195,7 +193,7 @@ export const ProductTable = ({
             <TableCell className="font-bold text-success">
               {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.furnizime, 0)}
             </TableCell>
-            <TableCell className="font-bold">
+            <TableCell className={`font-bold ${blurClass}`}>
               {Object.values(turnProducts).filter(p => p).reduce(
                 (sum, p) => sum + CalculationService.calculateDif(p.stokFillim, p.furnizime, p.gjendje, p.shiriti),
                 0
@@ -204,12 +202,12 @@ export const ProductTable = ({
             {isAdminUnlocked && <TableCell></TableCell>}
           </TableRow>
           
-          {/* Add Product Row */}
           {isAdminUnlocked && onProductAdd && (
             <AddProductRow onAdd={onProductAdd} colSpan={7} />
           )}
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 };
