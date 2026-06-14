@@ -81,6 +81,7 @@ export const TurnSection = ({
   onShpenzimiRemove,
   onShpenzimiUpdate,
 }: TurnSectionProps) => {
+  const { difStartDates } = useDifStartDates(products, selectedDate);
   return (
     <div className="space-y-4">
       {/* Products Table */}
