@@ -13,6 +13,8 @@ interface ProductTableProps {
   isFieldDisabled: boolean;
   /** Kur false dhe staf: kolonat Stok Fillim & Dif janë të sfumuara. */
   gjendjeUploaded?: boolean;
+  /** Kur true (dhe staf): kolona Gjendje sfumohet dhe bllokohet — kyçje 10h pas printit. */
+  gjendjeLockedByPrint?: boolean;
   /** Thirret kur stafi shtyp "Ngarko Gjendjen". */
   onConfirmGjendje?: () => void;
   /** Thirret nga admini për të riaktivizuar stafin (zhbllokon kolonën Gjendje). */
