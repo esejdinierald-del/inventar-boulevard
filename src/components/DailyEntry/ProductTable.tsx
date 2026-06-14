@@ -215,6 +215,9 @@ export const ProductTable = ({
                 <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'} ${blurClass}`}>
                   {dif}
                 </TableCell>
+                <TableCell className={`text-xs ${blurClass} ${dif !== 0 ? 'text-warning font-medium' : 'text-muted-foreground'}`}>
+                  {dif !== 0 ? formatDifStart(difStartDates[product]) : '—'}
+                </TableCell>
                 {isAdminUnlocked && onProductDelete && (
                   <TableCell>
                     <Button variant="ghost" size="sm" onClick={() => onProductDelete(product)} className="h-8 w-8 p-0 text-destructive hover:text-destructive">✕</Button>
