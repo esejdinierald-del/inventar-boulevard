@@ -175,14 +175,15 @@ export const ProductTable = ({
                     tabIndex={isBlurred ? -1 : 0}
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell className={gjendjeBlurClass}>
                   <Input
                     type="number"
                     step="any"
                     value={data.gjendje || ""}
                     onChange={(e) => onProductUpdate(product, 'gjendje', Number(e.target.value))}
                     className="w-20"
-                    disabled={isGjendjeDisabled(isFieldDisabled) || (gjendjeUploaded && !isAdminUnlocked)}
+                    disabled={isGjendjeDisabled(isFieldDisabled) || (gjendjeUploaded && !isAdminUnlocked) || isGjendjePrintBlurred}
+                    tabIndex={isGjendjePrintBlurred ? -1 : 0}
                   />
                 </TableCell>
                 <TableCell className={blurClass}>
