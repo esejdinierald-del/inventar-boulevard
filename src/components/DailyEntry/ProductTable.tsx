@@ -58,13 +58,13 @@ export const ProductTable = ({
 
   return (
     <div className="space-y-3">
-      {/* Butoni i konfirmimit të gjendjes — vetëm për stafin kur nuk është konfirmuar ende */}
+      {/* Banner para konfirmimit — stafi numëron dhe ngarkon gjendjen */}
       {!isAdminUnlocked && !gjendjeUploaded && onConfirmGjendje && (
         <div className="rounded-lg border border-warning/50 bg-warning/10 p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <div className="text-sm">
             <p className="font-medium">📋 Numëro fizikisht gjendjen e secilit produkt</p>
             <p className="text-xs text-muted-foreground">
-              Pasi të plotësosh kolonën <strong>Gjendje</strong>, shtyp butonin për të zbuluar <strong>Stok Fillim</strong> dhe <strong>Dif</strong>.
+              Pasi të plotësosh kolonën <strong>Gjendje</strong>, shtyp butonin për të zbuluar <strong>Stok Fillim</strong> dhe <strong>Dif</strong>. Pas konfirmimit, kolona Gjendje do të kyçet.
             </p>
           </div>
           <Button
@@ -78,6 +78,35 @@ export const ProductTable = ({
           </Button>
         </div>
       )}
+
+      {/* Banner pas konfirmimit — kolona Gjendje e kyçur; vetëm admini riaktivizon */}
+      {gjendjeUploaded && (
+        <div className="rounded-lg border border-success/50 bg-success/10 p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+          <div className="text-sm flex items-center gap-2">
+            <Lock className="h-4 w-4 text-success" />
+            <div>
+              <p className="font-medium">✅ Gjendja u ngarkua dhe është kyçur</p>
+              <p className="text-xs text-muted-foreground">
+                {isAdminUnlocked
+                  ? "Mund ta riaktivizosh stafin për ta modifikuar sërish."
+                  : "Për të modifikuar Gjendjen, kërko adminin që të riaktivizojë."}
+              </p>
+            </div>
+          </div>
+          {isAdminUnlocked && onUnlockGjendje && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onUnlockGjendje}
+              className="whitespace-nowrap"
+            >
+              <Unlock className="h-3 w-3 mr-1" />
+              Riaktivizo për stafin
+            </Button>
+          )}
+        </div>
+      )}
+
 
       <div className="overflow-x-auto">
         <Table>
