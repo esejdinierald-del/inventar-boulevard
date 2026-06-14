@@ -1,37 +1,50 @@
-## Çfarë ndryshon
+## Formula e re e propagimit të Stok Fillimit
 
-Kur **stafi** shkruan një numër në kolonën **Furnizime** të një produkti, ajo vlerë (delta) i shtohet automatikisht **Stok Fillimit** të të njëjtit turn. Dif rillogaritet sakt menjëherë.
+### Rregulli (i thjeshtë, pa gjendje)
 
-### Shembulli yt (B52, T1)
-- Para: stokFillim=10, gjendje=7, shirit=13, furnizime=0 → Dif = 13+7−10 = **10** (mungesë)
-- Stafi shkruan furnizime=**10** (10 copë kanë ardhur)
-- Pas: stokFillim=**20**, gjendje=7, shirit=13, furnizime=10 → Dif = 13+7−20 = **0** ✅
+Stok Fillimi i turnit/ditës pasardhëse = **StokFillim − Shirit** i turnit paraardhës.
 
-(Formula aktuale `Dif = shirit + gjendje − stokFillim` tashmë e injoron `furnizime` — shih `CalculationService.calculateDif`. Pra mjafton që sasia të hyjë te stokFillim.)
+```
+T2.stokFillim (data D) = T1.stokFillim (D) − T1.shiriti (D)
+T1.stokFillim (data D) = T2.stokFillim (D−1) − T2.shiriti (D−1)
+```
 
-## Si funksionon teknikisht
+**Gjendje NUK përdoret më** për propagim — shërben vetëm për llogaritjen e Dif (kontrolli fizik), jo për kalimin e stokut.
 
-**Skedari kryesor: `src/hooks/useTurnData.ts`**
+Furnizimet vazhdojnë të shtohen automatikisht te StokFillim i të njëjtit turn (sjellja ekzistuese), prandaj formula sipër është e mjaftueshme.
 
-Te funksionet `updateTurn1Product` dhe `updateTurn2Product`, kur `field === 'furnizime'`:
-1. Llogarit `delta = newValue − oldFurnizime`
-2. Përditëso produktin me: `furnizime = newValue`, `stokFillim = oldStokFillim + delta`
-3. Ruaj në DB si zakonisht (debounced save ekzistues).
+### Shembull (kanace, 14/06)
+- T1 14/06: stokFillim=216, shirit=6 → **T2 14/06 stokFillim = 216 − 6 = 210** (jo 205, jo 200)
+- Nëse T2 14/06: shirit=X → T1 15/06 stokFillim = 210 − X
 
-Për fushat e tjera (`stokFillim`, `gjendje`, `shiriti`) → sjellje pa ndryshim.
+### Skedarët që preken
 
-### Pse delta dhe jo thjesht +newValue?
-Që nëse stafi gabon dhe e korrigjon (p.sh. shkruan 10, pastaj e ndryshon në 8), Stok Fillimi të zbresë me 2, jo të shtohet edhe 8 sipër.
+1. **`src/services/calculations.ts` — `calculateStockForNextTurn`**
+   Hiq degën `if (gjendje > 0) return gjendje`. Bëhet thjesht:
+   ```ts
+   static calculateStockForNextTurn(p: ProductData): number {
+     return p.stokFillim - p.shiriti;
+   }
+   ```
+   (Nëse stokFillim=0 dhe shirit=0 → 0 natyrshëm.)
 
-### Aplikimi nga faturat (admin → `handleApplySupplies` në `DailyEntry.tsx`)
-Aktualisht thërret `updateTurnXProduct(name, 'furnizime', current + qty)`. Meqë logjika e re e trajton automatikisht këtë rast (delta = qty → stokFillim += qty), **nuk duhet ndryshim shtesë** te `DailyEntry.tsx`. Faturat e adminit do të shtojnë te stokFillim njësoj.
+2. **`src/hooks/useTurnData.ts`** — kudo që llogaritet T2.stokFillim nga T1 ose stoku i ditës tjetër nga T2, përdor formulën e re. Hiq edhe "manual edit lock" për stokFillim të T2 nëse bllokon ri-sinkronizimin (që doli problemi me 200-shin), që T2 të ndjekë gjithmonë T1.stokFillim − T1.shiriti.
 
-## Pa prekur
-- Formula e Dif (mbetet `shirit + gjendje − stokFillim`).
-- Pijet alkoolike (inventar global në Dashboard).
-- Kafe, kuzhinë, mapimet, RLS, edge functions.
-- Propagimi i stokut në turnin/ditën tjetër (përdor `stokFillim`/`gjendje`, që tashmë janë të sakta).
-- Historiku ekzistues — vlerat e vjetra mbeten ashtu siç janë ruajtur.
+3. **`src/services/stock-propagation.service.ts`** — tashmë thërret `calculateStockForNextTurn`, prandaj korrigjohet automatikisht. Komentet/log-et që përmendin "gjendje" duhen përditësuar.
 
-## Konfirmim i shpejtë
-A doni që kolona **Furnizime** të mbetet e dukshme me numrin e shkruar (për gjurmim sa furnizim hyri sot), apo të bëhet `0` pasi delta i kalon Stok Fillimit? Rekomandimi im: **mbaje të dukshme** — stafi sheh sa shtoi, dhe printi/historiku ruan gjurmën.
+4. **`supabase/functions/recalculate-all-stock/`** dhe **`fix-t2-stock/`** — kontrollo nëse përdorin të njëjtën formulë; nëse po, përditëso në mënyrë identike.
+
+5. **`src/services/calculations.test.ts`** — përditëso testet që mbulojnë rastin `gjendje > 0`.
+
+### Korrigjimi i të dhënave ekzistuese
+
+Pas vendosjes së formulës së re, ekzekuto edge function-in `recalculate-all-stock` (ose `propagateFromDate` nga data më e hershme që duam të rregullojmë, p.sh. 13/06) që historiku të ri-llogaritet me rregullin e ri. Kjo do të korrigjojë T2 14/06 → 210 dhe çdo ditë pasardhëse.
+
+### Çfarë mbetet pa ndryshim
+
+- Formula e Dif: `shirit + gjendje − stokFillim`.
+- Furnizime → mbledhen te StokFillim automatikisht.
+- Kafe / mulliri, pijet alkoolike, kuzhina, RLS, UI.
+
+### Pyetje konfirmuese
+1. Të ekzekutoj `recalculate-all-stock` mbi gjithë historikun pas ndryshimit (rregullon retroaktivisht edhe 14/06)? Po / vetëm nga një datë e caktuar / jo, lëre të zbatohet vetëm për të dhënat e reja.
