@@ -136,6 +136,34 @@ const DailyEntry = () => {
     setShowPinDialog(true);
   }, [selectedDate]);
 
+  // Lexo gjendjeUploaded nga localStorage për datën aktuale
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`gjendjeUploaded:${selectedDate}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setGjendjeUploaded({ turn1: !!parsed.turn1, turn2: !!parsed.turn2 });
+      } else {
+        setGjendjeUploaded({ turn1: false, turn2: false });
+      }
+    } catch {
+      setGjendjeUploaded({ turn1: false, turn2: false });
+    }
+  }, [selectedDate]);
+
+  const confirmGjendje = useCallback((turn: 'turn1' | 'turn2') => {
+    setGjendjeUploaded(prev => {
+      const next = { ...prev, [turn]: true };
+      try {
+        localStorage.setItem(`gjendjeUploaded:${selectedDate}`, JSON.stringify(next));
+      } catch (e) {
+        console.warn('Nuk u ruajt gjendjeUploaded:', e);
+      }
+      return next;
+    });
+    toast.success(`Gjendja u ngarkua për Turnin ${turn === 'turn1' ? '1' : '2'}`);
+  }, [selectedDate]);
+
   // Check staff verification when switching turns
   const handleTurnChange = (turnValue: string) => {
     if (!verifiedStaff) {
