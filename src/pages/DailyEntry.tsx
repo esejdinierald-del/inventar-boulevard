@@ -725,6 +725,7 @@ const DailyEntry = () => {
             <TurnSection
               turnName="1"
               turnData={turn1}
+              selectedDate={selectedDate}
               products={products}
               coffeeTypes={coffeeTypes}
               alcoholicDrinks={alcoholicDrinks}
@@ -760,6 +761,7 @@ const DailyEntry = () => {
             <TurnSection
               turnName="2"
               turnData={turn2}
+              selectedDate={selectedDate}
               products={products}
               coffeeTypes={coffeeTypes}
               alcoholicDrinks={alcoholicDrinks}

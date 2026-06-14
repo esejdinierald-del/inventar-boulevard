@@ -7,12 +7,15 @@ import { TurnExtras } from "./TurnExtras";
 import { ShpenzimiTable } from "./ShpenzimiTable";
 import { ReceiptScanner } from "@/components/ReceiptScanner";
 import { CalculationService } from "@/services/calculations";
+import { useDifStartDates } from "@/hooks/useDifStartDates";
 
 interface TurnSectionProps {
   turnName: string;
   turnData: TurnData;
   products: string[];
   coffeeTypes: string[];
+  /** Data aktuale e zgjedhur (YYYY-MM-DD) — për të llogaritur "Dif fillon". */
+  selectedDate: string;
   alcoholicDrinks?: string[];
   isAdminUnlocked: boolean;
   isFieldDisabled: boolean;
@@ -49,6 +52,7 @@ export const TurnSection = ({
   turnData,
   products,
   coffeeTypes,
+  selectedDate,
   alcoholicDrinks = [],
   isAdminUnlocked,
   isFieldDisabled,
@@ -77,6 +81,7 @@ export const TurnSection = ({
   onShpenzimiRemove,
   onShpenzimiUpdate,
 }: TurnSectionProps) => {
+  const { difStartDates } = useDifStartDates(products, selectedDate);
   return (
     <div className="space-y-4">
       {/* Products Table */}
@@ -112,6 +117,7 @@ export const TurnSection = ({
             onUnlockGjendje={onUnlockGjendje}
             onProductUpdate={onProductUpdate}
             onProductDelete={onProductDelete}
+            difStartDates={difStartDates}
             onProductEdit={onProductEdit}
             onProductAdd={onProductAdd}
             editingProduct={editingProduct}

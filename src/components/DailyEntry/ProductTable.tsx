@@ -5,6 +5,7 @@ import { Eye, Unlock, Lock } from "lucide-react";
 import { ProductData } from "@/types/turn.types";
 import { CalculationService } from "@/services/calculations";
 import { AddProductRow } from "./AddProductRow";
+import { DifStart, formatDifStart } from "@/hooks/useDifStartDates";
 
 interface ProductTableProps {
   products: string[];
@@ -21,6 +22,7 @@ interface ProductTableProps {
   onUnlockGjendje?: () => void;
   onProductUpdate: (product: string, field: keyof ProductData, value: number) => void;
   onProductDelete?: (product: string) => void;
+  difStartDates?: Record<string, DifStart>;
   onProductEdit?: (product: string) => void;
   onProductAdd?: (productName: string) => boolean | Promise<boolean>;
   editingProduct: string | null;
@@ -44,6 +46,7 @@ export const ProductTable = ({
   onUnlockGjendje,
   onProductUpdate,
   onProductDelete,
+  difStartDates = {},
   onProductEdit,
   onProductAdd,
   editingProduct,
@@ -124,6 +127,7 @@ export const ProductTable = ({
             <TableHead>Shiriti</TableHead>
             <TableHead>Furnizime</TableHead>
             <TableHead>Dif</TableHead>
+            <TableHead title="Data kur ka filluar diferenca (deri 30d prapa)">Dif fillon</TableHead>
             {isAdminUnlocked && <TableHead className="w-[50px]"></TableHead>}
           </TableRow>
         </TableHeader>
@@ -211,6 +215,9 @@ export const ProductTable = ({
                 <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'} ${blurClass}`}>
                   {dif}
                 </TableCell>
+                <TableCell className={`text-xs ${blurClass} ${dif !== 0 ? 'text-warning font-medium' : 'text-muted-foreground'}`}>
+                  {dif !== 0 ? formatDifStart(difStartDates[product]) : '—'}
+                </TableCell>
                 {isAdminUnlocked && onProductDelete && (
                   <TableCell>
                     <Button variant="ghost" size="sm" onClick={() => onProductDelete(product)} className="h-8 w-8 p-0 text-destructive hover:text-destructive">✕</Button>
@@ -241,11 +248,12 @@ export const ProductTable = ({
                 0
               )}
             </TableCell>
+            <TableCell></TableCell>
             {isAdminUnlocked && <TableCell></TableCell>}
           </TableRow>
           
           {isAdminUnlocked && onProductAdd && (
-            <AddProductRow onAdd={onProductAdd} colSpan={7} />
+            <AddProductRow onAdd={onProductAdd} colSpan={8} />
           )}
         </TableBody>
       </Table>
