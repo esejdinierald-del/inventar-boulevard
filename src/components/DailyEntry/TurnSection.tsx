@@ -14,6 +14,8 @@ interface TurnSectionProps {
   turnData: TurnData;
   products: string[];
   coffeeTypes: string[];
+  /** Data aktuale e zgjedhur (YYYY-MM-DD) — për të llogaritur "Dif fillon". */
+  selectedDate: string;
   alcoholicDrinks?: string[];
   isAdminUnlocked: boolean;
   isFieldDisabled: boolean;
