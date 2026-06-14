@@ -18,26 +18,27 @@ export class CalculationService {
   /**
    * Llogarit diferencën e produktit për një turn.
    *
-   * Formula: Dif = Shiriti + Gjendje - StokFillim - Furnizime
+   * Formula (e re): Dif = Shiriti + Gjendje − StokFillim
    *
-   * @param stokFillim - Stoku fillestar i turnit (nga turni/dita e mëparshme)
-   * @param furnizime  - Sasitë e furnizuara gjatë turnit
-   * @param gjendje    - Numërimi fizik në fund të turnit
-   * @param shiriti    - Sasitë e regjistruara në kasë (nga skaneri)
+   * KUJDES: Çdo Furnizim që futet shtohet AUTOMATIKISHT te StokFillim i të
+   * njëjtit turn (shih useTurnData.updateTurn{1,2}Product). Prandaj formula
+   * NUK e zbret më Furnizime — do të numëronte dy herë. Parametri `furnizime`
+   * mbetet në signature për përputhshmëri por nuk përdoret.
+   *
    * @returns Diferenca: negative = mungesa, pozitive = tepricë, 0 = përputhet
    *
    * @example
-   * // StokFillim=10, Furnizime=5, Gjendje=7, Shiriti=8
-   * // Dif = 8 + 7 - 10 - 5 = 0 (pa diferencë)
-   * calculateDif(10, 5, 7, 8) // → 0
+   * // StokFillim=15 (10 fillestar + 5 furnizime), Gjendje=7, Shiriti=8
+   * // Dif = 8 + 7 − 15 = 0
+   * calculateDif(15, 5, 7, 8) // → 0
    */
   static calculateDif(
     stokFillim: number,
-    furnizime: number,
+    _furnizime: number,
     gjendje: number,
     shiriti: number
   ): number {
-    return shiriti + gjendje - stokFillim - furnizime;
+    return shiriti + gjendje - stokFillim;
   }
 
   /**
