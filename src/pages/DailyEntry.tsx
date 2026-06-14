@@ -767,6 +767,7 @@ const DailyEntry = () => {
               isFieldDisabled={isFieldDisabled()}
               isTurnLocked={isTurnLocked(2)}
               gjendjeUploaded={gjendjeUploaded.turn2}
+              gjendjeLockedByPrint={isGjendjePrintLocked('turn2')}
               onConfirmGjendje={() => confirmGjendje('turn2')}
               onUnlockGjendje={() => unlockGjendje('turn2')}
               mulliriFillimDisabled
