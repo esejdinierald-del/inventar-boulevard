@@ -169,7 +169,7 @@ export const ProductTable = ({
                     tabIndex={isBlurred ? -1 : 0}
                   />
                 </TableCell>
-                <TableCell className={blurClass}>
+                <TableCell>
                   <Input
                     type="number"
                     step="any"
@@ -177,7 +177,6 @@ export const ProductTable = ({
                     onChange={(e) => onProductUpdate(product, 'gjendje', Number(e.target.value))}
                     className="w-20"
                     disabled={isGjendjeDisabled(isFieldDisabled) || (gjendjeUploaded && !isAdminUnlocked)}
-                    tabIndex={isBlurred ? -1 : 0}
                   />
                 </TableCell>
                 <TableCell className={blurClass}>
