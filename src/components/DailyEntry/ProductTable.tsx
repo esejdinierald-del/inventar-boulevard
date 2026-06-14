@@ -127,9 +127,8 @@ export const ProductTable = ({
                     step="any"
                     value={data.stokFillim || ""}
                     onChange={(e) => onProductUpdate(product, 'stokFillim', Number(e.target.value))}
-                    className={`w-20 ${!isAdminUnlocked ? 'blur-sm opacity-40 select-none pointer-events-none' : ''}`}
+                    className="w-20"
                     disabled={!isAdminUnlocked}
-                    aria-hidden={!isAdminUnlocked}
                   />
                 </TableCell>
                 <TableCell>
@@ -184,7 +183,7 @@ export const ProductTable = ({
           {/* Total Row */}
           <TableRow className="bg-muted/50">
             <TableCell className="font-bold">TOTALI</TableCell>
-            <TableCell className={`font-bold ${!isAdminUnlocked ? 'blur-sm opacity-40 select-none' : ''}`}>
+            <TableCell className="font-bold">
               {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.stokFillim, 0)}
             </TableCell>
             <TableCell className="font-bold">
