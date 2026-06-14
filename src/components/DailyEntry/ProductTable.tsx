@@ -175,7 +175,7 @@ export const ProductTable = ({
                     value={data.gjendje || ""}
                     onChange={(e) => onProductUpdate(product, 'gjendje', Number(e.target.value))}
                     className="w-20"
-                    disabled={isGjendjeDisabled(isFieldDisabled)}
+                    disabled={isGjendjeDisabled(isFieldDisabled) || (gjendjeUploaded && !isAdminUnlocked)}
                   />
                 </TableCell>
                 <TableCell>
