@@ -542,6 +542,14 @@ const DailyEntry = () => {
       return next;
     });
 
+    // Kyç kolonën Gjendje për 10 orë pas printit (vec e vec T1/T2)
+    const until = Date.now() + 10 * 60 * 60 * 1000;
+    setGjendjePrintLockUntil(prev => {
+      const next = { ...prev, [activeTurn]: until };
+      try { localStorage.setItem(`gjendjePrintLockUntil:${selectedDate}`, JSON.stringify(next)); } catch {}
+      return next;
+    });
+
     // Printo
     window.print();
   }, [activeTurn, verifiedStaff, handleSave, lockTurn, forceSaveNextDayStock, selectedDate]);
