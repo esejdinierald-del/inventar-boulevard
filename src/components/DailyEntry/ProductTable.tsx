@@ -226,7 +226,7 @@ export const ProductTable = ({
             <TableCell className={`font-bold ${blurClass}`}>
               {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.stokFillim, 0)}
             </TableCell>
-            <TableCell className="font-bold">
+            <TableCell className={`font-bold ${gjendjeBlurClass}`}>
               {Object.values(turnProducts).filter(p => p).reduce((sum, p) => sum + p.gjendje, 0)}
             </TableCell>
             <TableCell className="font-bold text-primary">
