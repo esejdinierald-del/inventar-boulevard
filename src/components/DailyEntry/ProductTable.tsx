@@ -127,6 +127,7 @@ export const ProductTable = ({
             <TableHead>Shiriti</TableHead>
             <TableHead>Furnizime</TableHead>
             <TableHead>Dif</TableHead>
+            <TableHead title="Data kur ka filluar diferenca (deri 30d prapa)">Dif fillon</TableHead>
             {isAdminUnlocked && <TableHead className="w-[50px]"></TableHead>}
           </TableRow>
         </TableHeader>
