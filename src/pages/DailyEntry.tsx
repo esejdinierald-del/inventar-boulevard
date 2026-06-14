@@ -607,6 +607,8 @@ const DailyEntry = () => {
                 onChange={e => setSelectedDate(e.target.value)}
                 className="w-auto"
                 title="Zgjidhni datën"
+                min={hasElevatedAccess() ? undefined : TODAY()}
+                max={hasElevatedAccess() ? undefined : TODAY()}
               />
             </div>
           </div>
