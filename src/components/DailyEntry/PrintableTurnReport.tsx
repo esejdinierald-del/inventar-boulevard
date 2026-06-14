@@ -18,6 +18,7 @@ export const PrintableTurnReport = ({
   coffeeTypes,
   selectedDate,
   verifiedStaff,
+  isAdminUnlocked = false,
 }: PrintableTurnReportProps) => {
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
