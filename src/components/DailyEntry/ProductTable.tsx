@@ -248,11 +248,12 @@ export const ProductTable = ({
                 0
               )}
             </TableCell>
+            <TableCell></TableCell>
             {isAdminUnlocked && <TableCell></TableCell>}
           </TableRow>
           
           {isAdminUnlocked && onProductAdd && (
-            <AddProductRow onAdd={onProductAdd} colSpan={7} />
+            <AddProductRow onAdd={onProductAdd} colSpan={8} />
           )}
         </TableBody>
       </Table>
