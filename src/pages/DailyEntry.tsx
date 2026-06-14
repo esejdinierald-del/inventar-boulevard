@@ -732,6 +732,7 @@ const DailyEntry = () => {
               isFieldDisabled={isFieldDisabled()}
               isTurnLocked={isTurnLocked(1)}
               gjendjeUploaded={gjendjeUploaded.turn1}
+              gjendjeLockedByPrint={isGjendjePrintLocked('turn1')}
               onConfirmGjendje={() => confirmGjendje('turn1')}
               onUnlockGjendje={() => unlockGjendje('turn1')}
               showCopyButton
