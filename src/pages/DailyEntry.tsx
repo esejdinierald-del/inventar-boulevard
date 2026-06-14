@@ -164,6 +164,24 @@ const DailyEntry = () => {
     toast.success(`Gjendja u ngarkua për Turnin ${turn === 'turn1' ? '1' : '2'}`);
   }, [selectedDate]);
 
+  /** Admin-only: riaktivizon stafin që të modifikojë sërish Gjendjen e turnit. */
+  const unlockGjendje = useCallback((turn: 'turn1' | 'turn2') => {
+    if (!isAdminUnlocked) {
+      toast.error("Vetëm admini mund të riaktivizojë stafin");
+      return;
+    }
+    setGjendjeUploaded(prev => {
+      const next = { ...prev, [turn]: false };
+      try {
+        localStorage.setItem(`gjendjeUploaded:${selectedDate}`, JSON.stringify(next));
+      } catch (e) {
+        console.warn('Nuk u ruajt gjendjeUploaded:', e);
+      }
+      return next;
+    });
+    toast.success(`Stafi u riaktivizua të modifikojë Gjendjen e Turnit ${turn === 'turn1' ? '1' : '2'}`);
+  }, [isAdminUnlocked, selectedDate]);
+
   // Check staff verification when switching turns
   const handleTurnChange = (turnValue: string) => {
     if (!verifiedStaff) {
