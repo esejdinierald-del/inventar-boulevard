@@ -46,6 +46,7 @@ export const ProductTable = ({
   onUnlockGjendje,
   onProductUpdate,
   onProductDelete,
+  difStartDates = {},
   onProductEdit,
   onProductAdd,
   editingProduct,
