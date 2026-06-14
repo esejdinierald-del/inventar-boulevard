@@ -8,6 +8,7 @@ interface PrintableTurnReportProps {
   coffeeTypes: string[];
   selectedDate: string;
   verifiedStaff: string | null;
+  isAdminUnlocked?: boolean;
 }
 
 export const PrintableTurnReport = ({
