@@ -38,6 +38,7 @@ export const ProductTable = ({
   isFieldDisabled,
   gjendjeUploaded = true,
   onConfirmGjendje,
+  onUnlockGjendje,
   onProductUpdate,
   onProductDelete,
   onProductEdit,
