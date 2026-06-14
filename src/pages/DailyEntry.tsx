@@ -727,15 +727,15 @@ const DailyEntry = () => {
                       <div className="grid gap-4 md:grid-cols-3 print:grid-cols-3">
                         <div className="space-y-1">
                           <p className="text-sm text-muted-foreground print:text-gray-600">Shpenzime T1</p>
-                          <p className={`text-lg font-semibold text-destructive ${blurXhiro}`}>- {fmt(totalShpenzimeT1)} ALL</p>
+                          <p className="text-lg font-semibold text-destructive">- {totalShpenzimeT1.toLocaleString()} ALL</p>
                         </div>
                         <div className="space-y-1">
                           <p className="text-sm text-muted-foreground print:text-gray-600">Shpenzime T2</p>
-                          <p className={`text-lg font-semibold text-destructive ${blurXhiro}`}>- {fmt(totalShpenzimeT2)} ALL</p>
+                          <p className="text-lg font-semibold text-destructive">- {totalShpenzimeT2.toLocaleString()} ALL</p>
                         </div>
                         <div className="space-y-1">
                           <p className="text-sm text-muted-foreground print:text-gray-600">Total Shpenzime</p>
-                          <p className={`text-xl font-bold text-destructive ${blurXhiro}`}>- {fmt(totalShpenzime)} ALL</p>
+                          <p className="text-xl font-bold text-destructive">- {totalShpenzime.toLocaleString()} ALL</p>
                         </div>
                       </div>
                     </div>
@@ -745,7 +745,7 @@ const DailyEntry = () => {
                       <div className="flex flex-wrap items-center justify-center gap-2 text-lg md:text-xl font-semibold">
                         <span className={blurXhiro}>{fmt(totalXhiro)}</span>
                         <span className="text-muted-foreground">−</span>
-                        <span className={`text-destructive ${blurXhiro}`}>{fmt(totalShpenzime)}</span>
+                        <span className="text-destructive">{totalShpenzime.toLocaleString()}</span>
                         <span className="text-muted-foreground">=</span>
                         <span className={`text-primary text-2xl font-bold ${blurXhiro}`}>{fmt(xhiroNeto)} ALL</span>
                       </div>
