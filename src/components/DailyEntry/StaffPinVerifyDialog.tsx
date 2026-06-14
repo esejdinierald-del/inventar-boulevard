@@ -50,11 +50,7 @@ export const StaffPinVerifyDialog = ({
       setIsVerifying(true);
 
       const { data, error } = await supabase
-        .from('staff_turn_pins')
-        .select('*')
-        .eq('pin', pin)
-        .eq('is_active', true)
-        .maybeSingle();
+        .rpc('verify_staff_pin', { _pin: pin });
 
       if (error) {
         console.error('Error verifying PIN:', error);
@@ -62,14 +58,16 @@ export const StaffPinVerifyDialog = ({
         return;
       }
 
-      if (!data) {
+      const verifiedStaff = data?.[0];
+
+      if (!verifiedStaff) {
         toast.error("PIN i gabuar ose jo aktiv");
         setPin("");
         return;
       }
 
       // Parse permissions from the database
-      const perms = data.permissions as unknown;
+      const perms = verifiedStaff.permissions as unknown;
       const defaultPerms: StaffPermissions = {
         dashboard: false,
         products: false,
@@ -82,18 +80,18 @@ export const StaffPinVerifyDialog = ({
         : defaultPerms;
 
       const staffData: VerifiedStaffData = {
-        name: data.staff_name,
-        isManager: data.is_manager,
+        name: verifiedStaff.staff_name,
+        isManager: verifiedStaff.is_manager,
         permissions
       };
 
-      if (data.is_manager) {
-        toast.success(`Mirë se erdhe, Menaxher ${data.staff_name}!`);
+      if (verifiedStaff.is_manager) {
+        toast.success(`Mirë se erdhe, Menaxher ${verifiedStaff.staff_name}!`);
       } else {
-        toast.success(`Mirë se erdhe, ${data.staff_name}!`);
+        toast.success(`Mirë se erdhe, ${verifiedStaff.staff_name}!`);
       }
       
-      onVerified(data.staff_name, staffData);
+      onVerified(verifiedStaff.staff_name, staffData);
       setPin("");
       onOpenChange(false);
     } catch (err) {
