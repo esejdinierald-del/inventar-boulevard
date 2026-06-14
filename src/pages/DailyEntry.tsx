@@ -722,6 +722,7 @@ const DailyEntry = () => {
               isTurnLocked={isTurnLocked(2)}
               gjendjeUploaded={gjendjeUploaded.turn2}
               onConfirmGjendje={() => confirmGjendje('turn2')}
+              onUnlockGjendje={() => unlockGjendje('turn2')}
               mulliriFillimDisabled
               onProductUpdate={updateTurn2Product}
               onCoffeeUpdate={updateTurn2Coffee}
