@@ -10,32 +10,33 @@ import { ProductData, TurnData } from "@/types/turn.types";
 
 describe("CalculationService", () => {
   // ---- calculateDif ----
+  // Formula e re: Dif = Shiriti + Gjendje − StokFillim
+  // Furnizime tashmë mblidhen automatikisht te StokFillim (shih useTurnData).
   describe("calculateDif", () => {
-    it("kthen 0 kur shiriti + gjendje = stokFillim + furnizime", () => {
-      // stokFillim=10, furnizime=5, gjendje=7, shiriti=8
-      // 8 + 7 - 10 - 5 = 0
-      expect(CalculationService.calculateDif(10, 5, 7, 8)).toBe(0);
+    it("kthen 0 kur shiriti + gjendje = stokFillim", () => {
+      // stokFillim=15 (10 fillestar + 5 furnizime tashmë të mbledhura), gjendje=7, shiriti=8
+      // 8 + 7 − 15 = 0
+      expect(CalculationService.calculateDif(15, 5, 7, 8)).toBe(0);
     });
 
-    it("kthen negative kur ka mungesa (produkte të pashitura në shiriti)", () => {
-      // stokFillim=10, furnizime=0, gjendje=3, shiriti=5
-      // 5 + 3 - 10 - 0 = -2 (2 copa mungojnë)
+    it("kthen negative kur ka mungesa", () => {
+      // stokFillim=10, gjendje=3, shiriti=5 → 5+3−10 = −2
       expect(CalculationService.calculateDif(10, 0, 3, 5)).toBe(-2);
     });
 
     it("kthen pozitive kur ka tepricë", () => {
-      // stokFillim=10, furnizime=0, gjendje=5, shiriti=8
-      // 8 + 5 - 10 - 0 = 3 (3 copa tepricë)
+      // stokFillim=10, gjendje=5, shiriti=8 → 8+5−10 = 3
       expect(CalculationService.calculateDif(10, 0, 5, 8)).toBe(3);
     });
 
-    it("trajton furnizime korrektësisht", () => {
-      // stokFillim=5, furnizime=10, gjendje=7, shiriti=8
-      // 8 + 7 - 5 - 10 = 0
-      expect(CalculationService.calculateDif(5, 10, 7, 8)).toBe(0);
+    it("injoron parametrin furnizime (mbetet vetëm si regjistër)", () => {
+      // I njëjti rezultat me ose pa furnizime
+      expect(CalculationService.calculateDif(10, 0, 5, 8)).toBe(
+        CalculationService.calculateDif(10, 99, 5, 8)
+      );
     });
 
-    it("trajton vlera 0 për të gjitha fushat", () => {
+    it("trajton vlera 0", () => {
       expect(CalculationService.calculateDif(0, 0, 0, 0)).toBe(0);
     });
   });
@@ -43,20 +44,14 @@ describe("CalculationService", () => {
   // ---- calculateMulliriDif ----
   describe("calculateMulliriDif", () => {
     it("kthen 0 kur totalKafe = (perfund - fillim)", () => {
-      // fillim=100, perfund=150, totalKafe=50
-      // 50 - (150 - 100) = 0
       expect(CalculationService.calculateMulliriDif(100, 150, 50)).toBe(0);
     });
 
     it("kthen negative kur ka kafe të paregjistruar", () => {
-      // fillim=100, perfund=160, totalKafe=50
-      // 50 - (160 - 100) = -10
       expect(CalculationService.calculateMulliriDif(100, 160, 50)).toBe(-10);
     });
 
     it("kthen pozitive kur ka tepricë kafeje", () => {
-      // fillim=100, perfund=130, totalKafe=50
-      // 50 - (130 - 100) = 20
       expect(CalculationService.calculateMulliriDif(100, 130, 50)).toBe(20);
     });
 
@@ -128,9 +123,10 @@ describe("CalculationService", () => {
   });
 
   // ---- calculateNewStock ----
+  // Formula e re: StokFillim − Shiriti (Furnizime tashmë te StokFillim)
   describe("calculateNewStock", () => {
-    it("llogarit stokFillim + furnizime - shiriti", () => {
-      const data: ProductData = { stokFillim: 10, furnizime: 5, shiriti: 8, gjendje: 0 };
+    it("llogarit stokFillim − shiriti", () => {
+      const data: ProductData = { stokFillim: 15, furnizime: 5, shiriti: 8, gjendje: 0 };
       expect(CalculationService.calculateNewStock(data)).toBe(7);
     });
 
@@ -143,13 +139,13 @@ describe("CalculationService", () => {
   // ---- calculateStockForNextTurn ----
   describe("calculateStockForNextTurn", () => {
     it("përdor gjendjen kur > 0 (numërim fizik)", () => {
-      const data: ProductData = { stokFillim: 10, furnizime: 5, shiriti: 8, gjendje: 6 };
+      const data: ProductData = { stokFillim: 15, furnizime: 5, shiriti: 8, gjendje: 6 };
       expect(CalculationService.calculateStockForNextTurn(data)).toBe(6);
     });
 
     it("llogarit teorikisht kur gjendje = 0", () => {
-      const data: ProductData = { stokFillim: 10, furnizime: 5, shiriti: 8, gjendje: 0 };
-      // 10 + 5 - 8 = 7
+      const data: ProductData = { stokFillim: 15, furnizime: 5, shiriti: 8, gjendje: 0 };
+      // 15 − 8 = 7
       expect(CalculationService.calculateStockForNextTurn(data)).toBe(7);
     });
 
