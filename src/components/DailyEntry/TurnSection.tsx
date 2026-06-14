@@ -117,6 +117,7 @@ export const TurnSection = ({
             onUnlockGjendje={onUnlockGjendje}
             onProductUpdate={onProductUpdate}
             onProductDelete={onProductDelete}
+            difStartDates={difStartDates}
             onProductEdit={onProductEdit}
             onProductAdd={onProductAdd}
             editingProduct={editingProduct}
