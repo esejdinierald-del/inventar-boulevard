@@ -372,8 +372,15 @@ const DailyEntry = () => {
   const handleApplySupplies = useCallback(async (mapping: any) => {
     console.log("Applying supplies from mapping:", mapping);
     console.log("Active turn:", activeTurn);
-    
+
+    // Bllokim: stafi nuk mund të ngarkojë furnizime në data jo të sotme
+    if (!hasElevatedAccess() && selectedDate !== TODAY()) {
+      toast.error("Nuk mund të ngarkohen furnizime për data jo të sotme");
+      return;
+    }
+
     const alcoholicUpdates: { name: string; quantity: number }[] = [];
+    
     
     for (const [invoiceName, mappedItem] of Object.entries(mapping)) {
       const item = mappedItem as any;
