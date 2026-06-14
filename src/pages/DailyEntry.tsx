@@ -253,27 +253,21 @@ const DailyEntry = () => {
     }
   };
 
-  // Date validation
+  // Date validation — përdorin datën LOKALE (jo UTC) që të mos bllokohet stafi pas mesnate UTC.
   const isPastDate = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return selectedDate < today;
+    return selectedDate < TODAY();
   }, [selectedDate]);
 
   const isFutureDate = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return selectedDate > today;
+    return selectedDate > TODAY();
   }, [selectedDate]);
 
   const isToday = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return selectedDate === today;
+    return selectedDate === TODAY();
   }, [selectedDate]);
 
   const isYesterday = useCallback(() => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayDate = yesterday.toISOString().split('T')[0];
-    return selectedDate === yesterdayDate;
+    return selectedDate === YESTERDAY();
   }, [selectedDate]);
 
   // Check if user has elevated access (admin or manager with dashboard permission)
