@@ -7,7 +7,21 @@ import { TurnExtras } from "./TurnExtras";
 import { ShpenzimiTable } from "./ShpenzimiTable";
 import { ReceiptScanner } from "@/components/ReceiptScanner";
 import { CalculationService } from "@/services/calculations";
+import { StockPropagationService } from "@/services/stock-propagation.service";
 import { useDifStartDates } from "@/hooks/useDifStartDates";
+import { useState } from "react";
+import { RefreshCw } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface TurnSectionProps {
   turnName: string;
@@ -82,6 +96,15 @@ export const TurnSection = ({
   onShpenzimiUpdate,
 }: TurnSectionProps) => {
   const { difStartDates } = useDifStartDates(products, selectedDate);
+  const [rebasing, setRebasing] = useState(false);
+  const handleRebase = async () => {
+    setRebasing(true);
+    try {
+      await StockPropagationService.rebaseFromGjendje(selectedDate);
+    } finally {
+      setRebasing(false);
+    }
+  };
   return (
     <div className="space-y-4">
       {/* Products Table */}
@@ -102,6 +125,30 @@ export const TurnSection = ({
               <Button variant="outline" size="sm" onClick={onCopyToNextTurn} className="text-xs">
                 Kopjo në T2 →
               </Button>
+            )}
+            {isAdminUnlocked && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="text-xs" disabled={rebasing}>
+                    <RefreshCw className={`h-3 w-3 mr-1 ${rebasing ? 'animate-spin' : ''}`} />
+                    Rivendos stokun nga gjendja
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Rivendos stokun nga gjendja?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Për çdo produkt të kësaj date ({selectedDate}), gjendja fizike (T2 → T1 si rezervë)
+                      bëhet stok fillestar i ditës pasardhëse. Të gjitha ditët deri sot do të rillogariten
+                      me formulën standarde. Veprimi nuk zhbëhet automatikisht.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Anulo</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleRebase}>Po, rivendos</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
         </CardHeader>
