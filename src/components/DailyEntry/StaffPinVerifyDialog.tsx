@@ -49,30 +49,11 @@ export const StaffPinVerifyDialog = ({
     try {
       setIsVerifying(true);
 
-      // DIAG: log pin metadata (not value) + session
-      const { data: sessionData } = await supabase.auth.getSession();
-      console.log('[PIN-DIAG] sending pin', {
-        length: pin.length,
-        digitsOnly: /^\d+$/.test(pin),
-        firstChar: pin[0],
-        hasSession: !!sessionData?.session,
-        userId: sessionData?.session?.user?.id,
-        role: sessionData?.session?.user?.role,
-        isAnonymous: (sessionData?.session?.user as any)?.is_anonymous,
-      });
-
       const { data, error } = await supabase
         .rpc('verify_staff_pin', { _pin: pin });
 
-      console.log('[PIN-DIAG] rpc response', {
-        error,
-        dataType: Array.isArray(data) ? 'array' : typeof data,
-        dataLength: Array.isArray(data) ? data.length : null,
-        data,
-      });
-
       if (error) {
-        console.error('[PIN-DIAG] Error verifying PIN:', error);
+        console.error('Error verifying PIN:', error);
         toast.error(`Gabim verifikimi: ${error.message} (code: ${error.code ?? 'n/a'})`);
         return;
       }
@@ -80,7 +61,6 @@ export const StaffPinVerifyDialog = ({
       const verifiedStaff = data?.[0];
 
       if (!verifiedStaff) {
-        console.warn('[PIN-DIAG] No staff returned for pin length', pin.length);
         toast.error("PIN i gabuar ose jo aktiv");
         setPin("");
         return;
