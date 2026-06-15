@@ -96,6 +96,15 @@ export const TurnSection = ({
   onShpenzimiUpdate,
 }: TurnSectionProps) => {
   const { difStartDates } = useDifStartDates(products, selectedDate);
+  const [rebasing, setRebasing] = useState(false);
+  const handleRebase = async () => {
+    setRebasing(true);
+    try {
+      await StockPropagationService.rebaseFromGjendje(selectedDate);
+    } finally {
+      setRebasing(false);
+    }
+  };
   return (
     <div className="space-y-4">
       {/* Products Table */}
