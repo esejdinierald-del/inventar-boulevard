@@ -7,7 +7,21 @@ import { TurnExtras } from "./TurnExtras";
 import { ShpenzimiTable } from "./ShpenzimiTable";
 import { ReceiptScanner } from "@/components/ReceiptScanner";
 import { CalculationService } from "@/services/calculations";
+import { StockPropagationService } from "@/services/stock-propagation.service";
 import { useDifStartDates } from "@/hooks/useDifStartDates";
+import { useState } from "react";
+import { RefreshCw } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface TurnSectionProps {
   turnName: string;
