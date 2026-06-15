@@ -292,36 +292,38 @@ export const useInvoiceMappings = () => {
     }
 
     // Llogarit furnizime totale dhe çmim mesatar për çdo produkt destinacion
-    const aggregated: { [productName: string]: { type: string; totalUnits: number; totalCost: number } } = {};
+    const aggregated: { [productName: string]: { type: string; name: string; totalUnits: number; totalCost: number } } = {};
     
     mappedProducts.forEach(p => {
       const mapping = invoiceMapping[p.name];
       const totalUnits = p.invoiceQuantity * mapping.quantity;
+      // Fix Bug 3: skalo koston me sasinë aktuale (jo totalin origjinal të faturës)
+      const scaledCost = p.unitInvoicePrice * p.invoiceQuantity;
       const key = `${mapping.type}:${mapping.name}`;
       
       if (aggregated[key]) {
         aggregated[key].totalUnits += totalUnits;
-        aggregated[key].totalCost += p.invoicePrice;
+        aggregated[key].totalCost += scaledCost;
       } else {
         aggregated[key] = {
           type: mapping.type,
+          name: mapping.name,
           totalUnits,
-          totalCost: p.invoicePrice,
+          totalCost: scaledCost,
         };
       }
     });
 
-    // Krijo mapping final me sasinë totale të llogarituar
+    // Krijo mapping final me sasinë totale të llogarituar - Fix Bug 4: çelës type:name
     const finalMapping: MappingData = {};
     for (const [key, agg] of Object.entries(aggregated)) {
-      const [type, name] = [key.substring(0, key.indexOf(':')), key.substring(key.indexOf(':') + 1)];
       const avgPrice = agg.totalUnits > 0 ? Math.round(agg.totalCost / agg.totalUnits) : 0;
-      finalMapping[name] = {
-        type: type as any,
-        name,
+      finalMapping[key] = {
+        type: agg.type as any,
+        name: agg.name,
         quantity: agg.totalUnits,
       };
-      console.log(`📦 ${name}: ${agg.totalUnits} copë, çmim mesatar: ${avgPrice} lekë/copë`);
+      console.log(`📦 ${agg.name} (${agg.type}): ${agg.totalUnits} copë, çmim mesatar: ${avgPrice} lekë/copë`);
     }
 
     if (onApplySupplies) {
