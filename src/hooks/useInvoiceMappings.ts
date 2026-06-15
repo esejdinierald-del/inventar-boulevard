@@ -7,8 +7,12 @@ import { findBestMapping } from "@/utils/invoiceMatching";
 export interface InvoiceProduct {
   name: string;
   originalName: string;
-  invoiceQuantity: number;  // Sasia nga fatura
-  invoicePrice: number;     // Çmimi total nga fatura
+  invoiceQuantity: number;  // Sasia nga fatura (e editueshme nga stafi)
+  invoicePrice: number;     // Çmimi total i akumuluar nga fatura(t)
+  /** Çmimi mesatar për njësi fature (ruhet që ta skalojmë kur staf edited qty). */
+  unitInvoicePrice: number;
+  /** Sasia origjinale e raportuar nga AI - referencë për çmim/njësi. */
+  originalInvoiceQuantity: number;
 }
 
 type InvoiceMapping = { 
@@ -113,9 +117,16 @@ export const useInvoiceMappings = () => {
             totalFromInvoices += data.data.total;
           }
           if (data.data.items) {
-            data.data.items.forEach((item: { name: string; price?: number }) => {
-              if (!productMap.has(item.name)) {
-                productMap.set(item.name, { totalQty: 0, totalPrice: item.price || 0 });
+            data.data.items.forEach((item: { name: string; price?: number; quantity?: number }) => {
+              // Fix Bug 1 + 2: akumulo sasi & çmim për të njëjtin produkt nga shumë fatura
+              const qty = item.quantity && item.quantity > 0 ? item.quantity : 1;
+              const price = item.price || 0;
+              const existing = productMap.get(item.name);
+              if (existing) {
+                existing.totalQty += qty;
+                existing.totalPrice += price;
+              } else {
+                productMap.set(item.name, { totalQty: qty, totalPrice: price });
               }
             });
           }
@@ -129,6 +140,9 @@ export const useInvoiceMappings = () => {
         originalName: name,
         invoiceQuantity: info.totalQty,
         invoicePrice: info.totalPrice,
+        // Çmimi mesatar për njësi fature - ruhet që ta skalojmë kur staf edited qty
+        unitInvoicePrice: info.totalQty > 0 ? info.totalPrice / info.totalQty : 0,
+        originalInvoiceQuantity: info.totalQty,
       }));
 
       setDetectedProducts(uniqueProducts);
@@ -278,36 +292,38 @@ export const useInvoiceMappings = () => {
     }
 
     // Llogarit furnizime totale dhe çmim mesatar për çdo produkt destinacion
-    const aggregated: { [productName: string]: { type: string; totalUnits: number; totalCost: number } } = {};
+    const aggregated: { [productName: string]: { type: string; name: string; totalUnits: number; totalCost: number } } = {};
     
     mappedProducts.forEach(p => {
       const mapping = invoiceMapping[p.name];
       const totalUnits = p.invoiceQuantity * mapping.quantity;
+      // Fix Bug 3: skalo koston me sasinë aktuale (jo totalin origjinal të faturës)
+      const scaledCost = p.unitInvoicePrice * p.invoiceQuantity;
       const key = `${mapping.type}:${mapping.name}`;
       
       if (aggregated[key]) {
         aggregated[key].totalUnits += totalUnits;
-        aggregated[key].totalCost += p.invoicePrice;
+        aggregated[key].totalCost += scaledCost;
       } else {
         aggregated[key] = {
           type: mapping.type,
+          name: mapping.name,
           totalUnits,
-          totalCost: p.invoicePrice,
+          totalCost: scaledCost,
         };
       }
     });
 
-    // Krijo mapping final me sasinë totale të llogarituar
+    // Krijo mapping final me sasinë totale të llogarituar - Fix Bug 4: çelës type:name
     const finalMapping: MappingData = {};
     for (const [key, agg] of Object.entries(aggregated)) {
-      const [type, name] = [key.substring(0, key.indexOf(':')), key.substring(key.indexOf(':') + 1)];
       const avgPrice = agg.totalUnits > 0 ? Math.round(agg.totalCost / agg.totalUnits) : 0;
-      finalMapping[name] = {
-        type: type as any,
-        name,
+      finalMapping[key] = {
+        type: agg.type as any,
+        name: agg.name,
         quantity: agg.totalUnits,
       };
-      console.log(`📦 ${name}: ${agg.totalUnits} copë, çmim mesatar: ${avgPrice} lekë/copë`);
+      console.log(`📦 ${agg.name} (${agg.type}): ${agg.totalUnits} copë, çmim mesatar: ${avgPrice} lekë/copë`);
     }
 
     if (onApplySupplies) {
