@@ -212,15 +212,14 @@ export const ProductTable = ({
                     tabIndex={isBlurred ? -1 : 0}
                   />
                 </TableCell>
-                <TableCell className={blurClass}>
+                <TableCell>
                   <Input
                     type="number"
                     step="any"
                     value={data.furnizime || ""}
                     onChange={(e) => onProductUpdate(product, 'furnizime', Number(e.target.value))}
                     className="w-20 bg-success/10"
-                    disabled={isFurnizimeDisabled(isFieldDisabled)}
-                    tabIndex={isBlurred ? -1 : 0}
+                    disabled={isFurnizimeDisabled(isFieldDisabled) || (gjendjeUploaded && !isAdminUnlocked)}
                   />
                 </TableCell>
                 <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'} ${blurClass}`}>

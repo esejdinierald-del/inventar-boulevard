@@ -1,24 +1,17 @@
-## Qëllimi
-Vendos butonin **📦 Ngarko Furnizime** brenda kartës së verdhë "Numëro fizikisht gjendjen" për të dy turnet (T1 dhe T2), që stafi ta ketë qartë si hap përpara konfirmimit. Butoni ekzistues në header mbetet (akses global).
+## Sjellja e re
 
-## Ndryshime
+| Faza | Stok Fillim & Dif | Furnizime | Gjendje |
+|------|------------------|-----------|---------|
+| Para konfirmimit | Të fshehura (blur) | **Të dukshme & të editueshme** | Të editueshme |
+| Pas "Ngarko Gjendjen" | Të dukshme, bllokuar për staf | **Të dukshme, të bllokuara për staf** | Të dukshme, të bllokuara për staf |
+| Admin (gjithmonë) | Të editueshme | **Të editueshme** | Të editueshme |
 
-### 1. `src/components/DailyEntry/ProductTable.tsx`
-- Shto prop opsionale `invoiceUploadSlot?: ReactNode`.
-- Brenda banner-it `!gjendjeUploaded` (rasti i stafit para konfirmimit), shfaq slot-in mbi rreshtin me "Ngarko Gjendjen".
-- Përditëso tekstin udhëzues si listë hapash:
-  1. Ngarko furnizimet (faturat) — nëse ka.
-  2. Numëro fizikisht gjendjen e secilit produkt.
-  3. Shtyp "Ngarko Gjendjen" për të zbuluar Stok Fillim & Dif.
+## Ndryshimi
 
-### 2. `src/components/DailyEntry/TurnSection.tsx`
-- Shto prop opsionale `invoiceUploadSlot?: ReactNode`.
-- Kalo atë drejt te `<ProductTable>`.
+Në `src/components/DailyEntry/ProductTable.tsx`:
 
-### 3. `src/pages/DailyEntry.tsx`
-- Importo dhe rendero një `<InvoiceMappingManager>` si `invoiceUploadSlot` për secilin `<TurnSection>` (T1 dhe T2), me të njëjtat props si instance e header (`products`, `kitchenProducts`, `alcoholicDrinks`, `isAdmin`, `onApplySupplies`).
+1. Hiq `blurClass` nga `<TableCell>` e kolonës **Furnizime** (rresht produkti).
+2. Zgjero kushtin `disabled` të input-it të Furnizime me `(gjendjeUploaded && !isAdminUnlocked)`, me të njëjtën logjikë si kolona **Gjendje**.
+3. Përditëso `tabIndex` nëse kolona është e bllokuar (në vend të `isBlurred` përdor kushtin e ri të bllokimit).
 
-## Pa ndryshime
-- Logjika e furnizimeve, stokut, Dif: e paprekur.
-- Butoni në header nuk hiqet.
-- Sjellja e `Ngarko Gjendjen` (kërkesa për gjendje > 0) e njëjtë.
+Totali i Furnizimeve në rreshtin TOTAL tashmë nuk ka `blurClass`, kështu që nuk kërkohet ndryshim atje. Kolonat **Stok Fillim**, **Shiriti** dhe **Dif** mbeten të pazhvendosura.
