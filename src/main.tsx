@@ -7,12 +7,12 @@ let refreshedForServiceWorkerUpdate = false;
 
 // Register PWA service worker and activate new app versions immediately.
 // This prevents staff devices from staying on an old cached PIN-verification bundle.
-registerSW({
+const updateServiceWorker = registerSW({
   immediate: true,
   onNeedRefresh() {
     if (refreshedForServiceWorkerUpdate) return;
     refreshedForServiceWorkerUpdate = true;
-    window.location.reload();
+    updateServiceWorker(true);
   },
   onRegisteredSW(_swUrl, registration) {
     registration?.update().catch(() => {
