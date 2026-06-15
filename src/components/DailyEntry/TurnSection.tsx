@@ -97,6 +97,7 @@ export const TurnSection = ({
   onShpenzimiAdd,
   onShpenzimiRemove,
   onShpenzimiUpdate,
+  invoiceUploadSlot,
 }: TurnSectionProps) => {
   const { difStartDates } = useDifStartDates(products, selectedDate);
   const [rebasing, setRebasing] = useState(false);
