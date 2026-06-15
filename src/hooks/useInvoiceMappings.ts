@@ -117,9 +117,16 @@ export const useInvoiceMappings = () => {
             totalFromInvoices += data.data.total;
           }
           if (data.data.items) {
-            data.data.items.forEach((item: { name: string; price?: number }) => {
-              if (!productMap.has(item.name)) {
-                productMap.set(item.name, { totalQty: 0, totalPrice: item.price || 0 });
+            data.data.items.forEach((item: { name: string; price?: number; quantity?: number }) => {
+              // Fix Bug 1 + 2: akumulo sasi & çmim për të njëjtin produkt nga shumë fatura
+              const qty = item.quantity && item.quantity > 0 ? item.quantity : 1;
+              const price = item.price || 0;
+              const existing = productMap.get(item.name);
+              if (existing) {
+                existing.totalQty += qty;
+                existing.totalPrice += price;
+              } else {
+                productMap.set(item.name, { totalQty: qty, totalPrice: price });
               }
             });
           }
@@ -133,6 +140,9 @@ export const useInvoiceMappings = () => {
         originalName: name,
         invoiceQuantity: info.totalQty,
         invoicePrice: info.totalPrice,
+        // Çmimi mesatar për njësi fature - ruhet që ta skalojmë kur staf edited qty
+        unitInvoicePrice: info.totalQty > 0 ? info.totalPrice / info.totalQty : 0,
+        originalInvoiceQuantity: info.totalQty,
       }));
 
       setDetectedProducts(uniqueProducts);
