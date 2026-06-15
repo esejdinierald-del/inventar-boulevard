@@ -613,6 +613,7 @@ const DailyEntry = () => {
   return (
     <Layout>
       <div className="space-y-6 pb-20 md:pb-6">
+        <GeofenceGuard bypass={isAdminUnlocked} onAdminLogin={toggleAdminMode}>
         {/* Printable Turn Report - shfaqet vetëm kur printohet */}
         <PrintableTurnReport
           turnName={activeTurn === 'turn1' ? '1' : '2'}
