@@ -12,9 +12,11 @@ import { InvoiceMappingManager } from "@/components/InvoiceMappingManager";
 import { AdminPasswordDialog } from "@/components/DailyEntry/AdminPasswordDialog";
 import { StaffPinVerifyDialog, VerifiedStaffData } from "@/components/DailyEntry/StaffPinVerifyDialog";
 import { StaffOnboardingDialog } from "@/components/DailyEntry/StaffOnboardingDialog";
+import { GeofenceGuard } from "@/components/DailyEntry/GeofenceGuard";
 import { TurnSection } from "@/components/DailyEntry/TurnSection";
 import { PrintableTurnReport } from "@/components/DailyEntry/PrintableTurnReport";
 import { useAuth } from "@/hooks/useAuth";
+import { useStaffSession } from "@/hooks/useStaffSession";
 import { useProductList } from "@/hooks/useProductList";
 import { useTurnData } from "@/hooks/useTurnData";
 import { useTurnLock } from "@/hooks/useTurnLock";
@@ -83,6 +85,23 @@ const DailyEntry = () => {
 
   // Custom hooks
   const { isAdminUnlocked, isViewOnlyUnlocked, showPasswordDialog, showViewOnlyDialog, validatePassword, validateViewOnlyPassword, toggleAdminMode, requestViewOnly, closePasswordDialog, closeViewOnlyDialog, isWithinStaffEditWindow, unlockAdmin } = useAuth();
+
+  // Sesion 60min nga login fiks (vetëm për staf/menaxher; admin pa skadencë).
+  const staffSession = useStaffSession(() => {
+    setVerifiedStaff(null);
+    setVerifiedStaffData(null);
+    setShowPinDialog(true);
+    toast.info("⏰ Sesioni 60-minutësh skadoi. Fut PIN-in përsëri.");
+  });
+  // Nëse rifreskohet faqja dhe sesioni i ruajtur ka skaduar, kthe te dialog PIN.
+  useEffect(() => {
+    if (verifiedStaff && verifiedStaff !== "Admin" && !staffSession.isValid && !isAdminUnlocked) {
+      setVerifiedStaff(null);
+      setVerifiedStaffData(null);
+      setShowPinDialog(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const { products, coffeeTypes, addProduct: originalAddProduct, deleteProduct: originalDeleteProduct, updateProduct, addCoffeeType: originalAddCoffeeType, deleteCoffeeType: originalDeleteCoffeeType } = useProductList();
   const { kitchenProducts } = useKitchenProducts();
   const { alcoholicDrinks } = useAlcoholicDrinksList();
@@ -241,6 +260,8 @@ const DailyEntry = () => {
     console.log('✅ PIN verified for:', staffName, 'isManager:', staffData?.isManager);
     setVerifiedStaff(staffName);
     setVerifiedStaffData(staffData || null);
+    // Nis timer-in 60min për staf/menaxher (jo për admin).
+    staffSession.startSession();
     // Shfaq udhëzimet vetëm për staf normal (jo menaxher)
     if (!staffData?.isManager) {
       setShowStaffOnboarding(true);
@@ -592,6 +613,7 @@ const DailyEntry = () => {
   return (
     <Layout>
       <div className="space-y-6 pb-20 md:pb-6">
+        <GeofenceGuard bypass={isAdminUnlocked} onAdminLogin={toggleAdminMode}>
         {/* Printable Turn Report - shfaqet vetëm kur printohet */}
         <PrintableTurnReport
           turnName={activeTurn === 'turn1' ? '1' : '2'}
@@ -928,6 +950,7 @@ const DailyEntry = () => {
             )}
           </CardContent>
         </Card>
+        </GeofenceGuard>
 
 
         {/* Admin Password Dialog */}
