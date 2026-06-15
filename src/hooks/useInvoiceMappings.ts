@@ -7,8 +7,12 @@ import { findBestMapping } from "@/utils/invoiceMatching";
 export interface InvoiceProduct {
   name: string;
   originalName: string;
-  invoiceQuantity: number;  // Sasia nga fatura
-  invoicePrice: number;     // Çmimi total nga fatura
+  invoiceQuantity: number;  // Sasia nga fatura (e editueshme nga stafi)
+  invoicePrice: number;     // Çmimi total i akumuluar nga fatura(t)
+  /** Çmimi mesatar për njësi fature (ruhet që ta skalojmë kur staf edited qty). */
+  unitInvoicePrice: number;
+  /** Sasia origjinale e raportuar nga AI - referencë për çmim/njësi. */
+  originalInvoiceQuantity: number;
 }
 
 type InvoiceMapping = { 
