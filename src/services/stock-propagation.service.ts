@@ -144,6 +144,125 @@ export class StockPropagationService {
   }
 
   /**
+   * Rivendos stokun e ditëve pasardhëse duke u nisur nga numërimi fizik (gjendje)
+   * i datës `fromDate`. Përdoret nga admini pas rregullimit të Dif: gjendja
+   * reale bëhet stoku fillestar i ditës pasardhëse, dhe propagimi vazhdon normal.
+   *
+   * Seed për produkt: T2.gjendje > 0 ? T2.gjendje
+   *                : T1.gjendje > 0 ? T1.gjendje
+   *                : calculateStockForNextTurn(T2)
+   */
+  static async rebaseFromGjendje(fromDate: string): Promise<void> {
+    const today = new Date().toISOString().split('T')[0];
+    console.log(`🧮 Rebase nga gjendja: ${fromDate} → ${today}`);
+
+    try {
+      const { data: sourceEntry, error: sourceError } = await supabase
+        .from('daily_entries')
+        .select('*')
+        .eq('entry_date', fromDate)
+        .maybeSingle();
+      if (sourceError) throw sourceError;
+      if (!sourceEntry) {
+        toast.error('Nuk ka të dhëna për këtë datë');
+        return;
+      }
+
+      const sourceT1 = sourceEntry.turn1_data as unknown as TurnData;
+      const sourceT2 = sourceEntry.turn2_data as unknown as TurnData;
+
+      // Seed nga gjendja (T2 ka prioritet — numërim përfundimtar i ditës)
+      const calculatedStock: { [key: string]: number } = {};
+      const productNames = new Set<string>([
+        ...Object.keys(sourceT1?.products || {}),
+        ...Object.keys(sourceT2?.products || {}),
+      ]);
+      productNames.forEach((name) => {
+        const t1p = sourceT1?.products?.[name] as ProductData | undefined;
+        const t2p = sourceT2?.products?.[name] as ProductData | undefined;
+        if (t2p && t2p.gjendje > 0) {
+          calculatedStock[name] = t2p.gjendje;
+        } else if (t1p && t1p.gjendje > 0 && (!t2p || (t2p.stokFillim === 0 && t2p.shiriti === 0))) {
+          calculatedStock[name] = t1p.gjendje;
+        } else if (t2p) {
+          calculatedStock[name] = CalculationService.calculateStockForNextTurn(t2p);
+        } else if (t1p) {
+          calculatedStock[name] = CalculationService.calculateStockForNextTurn(t1p);
+        }
+      });
+
+      const mulliriForNextDay = sourceT2.mulliriPerfund > 0
+        ? sourceT2.mulliriPerfund
+        : sourceT1.mulliriPerfund;
+
+      // Forward loop — identike me propagateFromDate
+      let currentDate = new Date(fromDate);
+      currentDate.setDate(currentDate.getDate() + 1);
+      let previousStock = calculatedStock;
+      let previousMulliri = mulliriForNextDay;
+
+      while (currentDate.toISOString().split('T')[0] <= today) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        await this.updateNextDayStock(dateStr, previousStock, previousMulliri);
+
+        const { data: existingEntry, error: entryError } = await supabase
+          .from('daily_entries')
+          .select('*')
+          .eq('entry_date', dateStr)
+          .maybeSingle();
+        if (entryError) throw entryError;
+
+        if (existingEntry) {
+          const updatedT1 = this.updateT1WithNewStock(
+            existingEntry.turn1_data as unknown as TurnData,
+            previousStock,
+            previousMulliri
+          );
+          const updatedT2 = this.updateT2FromT1(
+            existingEntry.turn2_data as unknown as TurnData,
+            updatedT1
+          );
+
+          const { error: updateError } = await supabase
+            .from('daily_entries')
+            .update({
+              turn1_data: updatedT1 as any,
+              turn2_data: updatedT2 as any,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('entry_date', dateStr);
+          if (updateError) throw updateError;
+
+          previousStock = {};
+          Object.entries(updatedT2.products).forEach(([productName, data]) => {
+            const productData = data as ProductData;
+            previousStock[productName] = CalculationService.calculateStockForNextTurn(productData);
+          });
+          previousMulliri = updatedT2.mulliriPerfund > 0
+            ? updatedT2.mulliriPerfund
+            : updatedT1.mulliriPerfund;
+        }
+
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      await this.updateNextDayStock(
+        tomorrow.toISOString().split('T')[0],
+        previousStock,
+        previousMulliri
+      );
+
+      toast.success('Stoku u rivendos nga gjendja dhe u propagua përpara');
+    } catch (error) {
+      console.error('❌ Gabim në rebase:', error);
+      toast.error('Gabim në rivendosjen e stokut');
+      throw error;
+    }
+  }
+
+  /**
    * Përditëso next_day_stock për një datë specifike
    */
   private static async updateNextDayStock(
