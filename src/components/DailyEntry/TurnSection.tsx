@@ -1,3 +1,4 @@
+import { ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TurnData, ProductData, ShpenzimiData } from "@/types/turn.types";
@@ -59,6 +60,8 @@ interface TurnSectionProps {
   onShpenzimiAdd: (shpenzimi: ShpenzimiData) => void;
   onShpenzimiRemove: (index: number) => void;
   onShpenzimiUpdate: (index: number, field: keyof ShpenzimiData, value: string | number) => void;
+  /** Slot opsional për butonin "Ngarko Furnizime" brenda banner-it të gjendjes. */
+  invoiceUploadSlot?: ReactNode;
 }
 
 export const TurnSection = ({
