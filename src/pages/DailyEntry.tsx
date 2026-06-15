@@ -11,6 +11,7 @@ import { ProductMappingManager } from "@/components/ProductMappingManager";
 import { InvoiceMappingManager } from "@/components/InvoiceMappingManager";
 import { AdminPasswordDialog } from "@/components/DailyEntry/AdminPasswordDialog";
 import { StaffPinVerifyDialog, VerifiedStaffData } from "@/components/DailyEntry/StaffPinVerifyDialog";
+import { StaffOnboardingDialog } from "@/components/DailyEntry/StaffOnboardingDialog";
 import { TurnSection } from "@/components/DailyEntry/TurnSection";
 import { PrintableTurnReport } from "@/components/DailyEntry/PrintableTurnReport";
 import { useAuth } from "@/hooks/useAuth";
@@ -45,6 +46,7 @@ const DailyEntry = () => {
   const [editedProductName, setEditedProductName] = useState("");
   const [activeTurn, setActiveTurn] = useState<"turn1" | "turn2">("turn1");
   const [showPinDialog, setShowPinDialog] = useState(false);
+  const [showStaffOnboarding, setShowStaffOnboarding] = useState(false);
   const [verifiedStaff, setVerifiedStaff] = useState<string | null>(null);
   const [verifiedStaffData, setVerifiedStaffData] = useState<VerifiedStaffData | null>(null);
   // Gjendje e konfirmuar nga stafi për ditën/turnin aktual (ruhet në localStorage)
@@ -239,6 +241,10 @@ const DailyEntry = () => {
     console.log('✅ PIN verified for:', staffName, 'isManager:', staffData?.isManager);
     setVerifiedStaff(staffName);
     setVerifiedStaffData(staffData || null);
+    // Shfaq udhëzimet vetëm për staf normal (jo menaxher)
+    if (!staffData?.isManager) {
+      setShowStaffOnboarding(true);
+    }
     // Dialog do të mbyllet automatikisht nga StaffPinVerifyDialog
   };
 
@@ -950,6 +956,11 @@ const DailyEntry = () => {
             setShowPinDialog(false);
             setVerifiedStaff("Admin");
           }}
+        />
+
+        <StaffOnboardingDialog
+          open={showStaffOnboarding}
+          onAcknowledge={() => setShowStaffOnboarding(false)}
         />
       </div>
     </Layout>
