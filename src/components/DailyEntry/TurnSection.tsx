@@ -176,6 +176,7 @@ export const TurnSection = ({
             onEditedNameChange={onEditedNameChange}
             onSaveEdit={onSaveEdit}
             onCancelEdit={onCancelEdit}
+            invoiceUploadSlot={invoiceUploadSlot}
           />
         </CardContent>
       </Card>
