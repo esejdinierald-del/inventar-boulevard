@@ -1,17 +1,26 @@
 ## Sjellja e re
 
-| Faza | Stok Fillim & Dif | Furnizime | Gjendje |
-|------|------------------|-----------|---------|
-| Para konfirmimit | Të fshehura (blur) | **Të dukshme & të editueshme** | Të editueshme |
-| Pas "Ngarko Gjendjen" | Të dukshme, bllokuar për staf | **Të dukshme, të bllokuara për staf** | Të dukshme, të bllokuara për staf |
-| Admin (gjithmonë) | Të editueshme | **Të editueshme** | Të editueshme |
+Pas verifikimit të suksesshëm të PIN-it të stafit (jo admin), përpara se faqja `/daily` të bëhet plotësisht e dukshme/e përdorshme, shfaq një **dialog modal** me udhëzimet:
 
-## Ndryshimi
+> 📋 Hapat para konfirmimit
+> 1. Ngarko furnizimet (faturat) — nëse ka.
+> 2. Numëro fizikisht gjendjen e secilit produkt.
+> 3. Shtyp **Ngarko Gjendjen** për të zbuluar **Stok Fillim** dhe **Dif**.
 
-Në `src/components/DailyEntry/ProductTable.tsx`:
+Me një buton të vetëm: **"OK, kuptova"**. Pas klikimit dialog mbyllet dhe stafi vazhdon normalisht në `/daily`.
 
-1. Hiq `blurClass` nga `<TableCell>` e kolonës **Furnizime** (rresht produkti).
-2. Zgjero kushtin `disabled` të input-it të Furnizime me `(gjendjeUploaded && !isAdminUnlocked)`, me të njëjtën logjikë si kolona **Gjendje**.
-3. Përditëso `tabIndex` nëse kolona është e bllokuar (në vend të `isBlurred` përdor kushtin e ri të bllokimit).
+Nuk shfaqet për admin-in dhe nuk shfaqet kur stafi është verifikuar tashmë (vetëm një herë për sesion verifikimi).
 
-Totali i Furnizimeve në rreshtin TOTAL tashmë nuk ka `blurClass`, kështu që nuk kërkohet ndryshim atje. Kolonat **Stok Fillim**, **Shiriti** dhe **Dif** mbeten të pazhvendosura.
+## Ndryshimet teknike
+
+1. **Komponent i ri** `src/components/DailyEntry/StaffOnboardingDialog.tsx`:
+   - Props: `open: boolean`, `onAcknowledge: () => void`.
+   - `Dialog` jo i mbyllshëm me ESC/click jashtë (njësoj si `StaffPinVerifyDialog`).
+   - Përmban të njëjtin tekst si banner-i ekzistues në `ProductTable.tsx` dhe një buton `OK, kuptova`.
+
+2. **`src/pages/DailyEntry.tsx`**:
+   - Shto state `const [showStaffOnboarding, setShowStaffOnboarding] = useState(false)`.
+   - Te `handlePinVerified`, nëse `!staffData?.isManager` (staf normal, jo admin/manager), vendos `setShowStaffOnboarding(true)`.
+   - Render `<StaffOnboardingDialog open={showStaffOnboarding} onAcknowledge={() => setShowStaffOnboarding(false)} />` pranë `StaffPinVerifyDialog`.
+
+Banner-i ekzistues te `ProductTable.tsx` mbetet i pandryshuar (vazhdon të shërbejë si referencë vizuale brenda tabelës).
