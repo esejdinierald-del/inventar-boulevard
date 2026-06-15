@@ -1,14 +1,24 @@
 import { createRoot } from "react-dom/client";
+import { registerSW } from "virtual:pwa-register";
 import App from "./App.tsx";
 import "./index.css";
 
-// Register service worker for PWA
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
-      // Service worker registration failed, app will still work without PWA features
+let refreshedForServiceWorkerUpdate = false;
+
+// Register PWA service worker and activate new app versions immediately.
+// This prevents staff devices from staying on an old cached PIN-verification bundle.
+registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    if (refreshedForServiceWorkerUpdate) return;
+    refreshedForServiceWorkerUpdate = true;
+    window.location.reload();
+  },
+  onRegisteredSW(_swUrl, registration) {
+    registration?.update().catch(() => {
+      // Update check failed; the current cached app can continue running.
     });
-  });
-}
+  },
+});
 
 createRoot(document.getElementById("root")!).render(<App />);
