@@ -1,3 +1,4 @@
+import { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -30,6 +31,8 @@ interface ProductTableProps {
   onEditedNameChange: (name: string) => void;
   onSaveEdit: (oldName: string) => void;
   onCancelEdit: () => void;
+  /** Slot opsional për butonin "Ngarko Furnizime" brenda banner-it të gjendjes. */
+  invoiceUploadSlot?: ReactNode;
 }
 
 const isGjendjeDisabled = (isFieldDisabled: boolean): boolean => isFieldDisabled;
