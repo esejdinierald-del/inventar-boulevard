@@ -85,6 +85,23 @@ const DailyEntry = () => {
 
   // Custom hooks
   const { isAdminUnlocked, isViewOnlyUnlocked, showPasswordDialog, showViewOnlyDialog, validatePassword, validateViewOnlyPassword, toggleAdminMode, requestViewOnly, closePasswordDialog, closeViewOnlyDialog, isWithinStaffEditWindow, unlockAdmin } = useAuth();
+
+  // Sesion 60min nga login fiks (vetëm për staf/menaxher; admin pa skadencë).
+  const staffSession = useStaffSession(() => {
+    setVerifiedStaff(null);
+    setVerifiedStaffData(null);
+    setShowPinDialog(true);
+    toast.info("⏰ Sesioni 60-minutësh skadoi. Fut PIN-in përsëri.");
+  });
+  // Nëse rifreskohet faqja dhe sesioni i ruajtur ka skaduar, kthe te dialog PIN.
+  useEffect(() => {
+    if (verifiedStaff && verifiedStaff !== "Admin" && !staffSession.isValid && !isAdminUnlocked) {
+      setVerifiedStaff(null);
+      setVerifiedStaffData(null);
+      setShowPinDialog(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const { products, coffeeTypes, addProduct: originalAddProduct, deleteProduct: originalDeleteProduct, updateProduct, addCoffeeType: originalAddCoffeeType, deleteCoffeeType: originalDeleteCoffeeType } = useProductList();
   const { kitchenProducts } = useKitchenProducts();
   const { alcoholicDrinks } = useAlcoholicDrinksList();
