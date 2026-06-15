@@ -950,6 +950,7 @@ const DailyEntry = () => {
             )}
           </CardContent>
         </Card>
+        </GeofenceGuard>
 
 
         {/* Admin Password Dialog */}
