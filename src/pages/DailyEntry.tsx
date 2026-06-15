@@ -260,6 +260,8 @@ const DailyEntry = () => {
     console.log('✅ PIN verified for:', staffName, 'isManager:', staffData?.isManager);
     setVerifiedStaff(staffName);
     setVerifiedStaffData(staffData || null);
+    // Nis timer-in 60min për staf/menaxher (jo për admin).
+    staffSession.startSession();
     // Shfaq udhëzimet vetëm për staf normal (jo menaxher)
     if (!staffData?.isManager) {
       setShowStaffOnboarding(true);
