@@ -1,3 +1,4 @@
+import { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -30,6 +31,8 @@ interface ProductTableProps {
   onEditedNameChange: (name: string) => void;
   onSaveEdit: (oldName: string) => void;
   onCancelEdit: () => void;
+  /** Slot opsional për butonin "Ngarko Furnizime" brenda banner-it të gjendjes. */
+  invoiceUploadSlot?: ReactNode;
 }
 
 const isGjendjeDisabled = (isFieldDisabled: boolean): boolean => isFieldDisabled;
@@ -54,6 +57,7 @@ export const ProductTable = ({
   onEditedNameChange,
   onSaveEdit,
   onCancelEdit,
+  invoiceUploadSlot,
 }: ProductTableProps) => {
   // Sfumimi aplikohet vetëm për staf (jo admin) derisa Gjendja të konfirmohet
   const isBlurred = !isAdminUnlocked && !gjendjeUploaded;
@@ -69,22 +73,29 @@ export const ProductTable = ({
     <div className="space-y-3">
       {/* Banner para konfirmimit — stafi numëron dhe ngarkon gjendjen */}
       {!isAdminUnlocked && !gjendjeUploaded && onConfirmGjendje && (
-        <div className="rounded-lg border border-warning/50 bg-warning/10 p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        <div className="rounded-lg border border-warning/50 bg-warning/10 p-3 space-y-3">
           <div className="text-sm">
-            <p className="font-medium">📋 Numëro fizikisht gjendjen e secilit produkt</p>
-            <p className="text-xs text-muted-foreground">
-              Pasi të plotësosh kolonën <strong>Gjendje</strong>, shtyp butonin për të zbuluar <strong>Stok Fillim</strong> dhe <strong>Dif</strong>. Pas konfirmimit, kolona Gjendje do të kyçet.
-            </p>
+            <p className="font-medium">📋 Hapat para konfirmimit</p>
+            <ol className="text-xs text-muted-foreground list-decimal list-inside space-y-0.5 mt-1">
+              <li>Ngarko furnizimet (faturat) — nëse ka.</li>
+              <li>Numëro fizikisht gjendjen e secilit produkt.</li>
+              <li>Shtyp <strong>Ngarko Gjendjen</strong> për të zbuluar <strong>Stok Fillim</strong> dhe <strong>Dif</strong>.</li>
+            </ol>
           </div>
-          <Button
-            size="sm"
-            onClick={onConfirmGjendje}
-            disabled={!hasAnyGjendje}
-            className="whitespace-nowrap"
-          >
-            <Eye className="h-3 w-3 mr-1" />
-            Ngarko Gjendjen
-          </Button>
+          {invoiceUploadSlot && (
+            <div className="flex flex-wrap gap-2">{invoiceUploadSlot}</div>
+          )}
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              onClick={onConfirmGjendje}
+              disabled={!hasAnyGjendje}
+              className="whitespace-nowrap"
+            >
+              <Eye className="h-3 w-3 mr-1" />
+              Ngarko Gjendjen
+            </Button>
+          </div>
         </div>
       )}
 

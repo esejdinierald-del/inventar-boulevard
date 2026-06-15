@@ -763,6 +763,15 @@ const DailyEntry = () => {
               onShpenzimiAdd={addShpenzimiT1}
               onShpenzimiRemove={removeShpenzimiT1}
               onShpenzimiUpdate={updateShpenzimiT1}
+              invoiceUploadSlot={
+                <InvoiceMappingManager
+                  products={products}
+                  kitchenProducts={kitchenProducts}
+                  alcoholicDrinks={alcoholicDrinks}
+                  isAdmin={isAdminUnlocked}
+                  onApplySupplies={handleApplySupplies}
+                />
+              }
             />
           </TabsContent>
 
@@ -798,6 +807,15 @@ const DailyEntry = () => {
               onShpenzimiAdd={addShpenzimiT2}
               onShpenzimiRemove={removeShpenzimiT2}
               onShpenzimiUpdate={updateShpenzimiT2}
+              invoiceUploadSlot={
+                <InvoiceMappingManager
+                  products={products}
+                  kitchenProducts={kitchenProducts}
+                  alcoholicDrinks={alcoholicDrinks}
+                  isAdmin={isAdminUnlocked}
+                  onApplySupplies={handleApplySupplies}
+                />
+              }
             />
           </TabsContent>
         </Tabs>
