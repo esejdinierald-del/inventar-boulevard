@@ -93,7 +93,6 @@ export const GrinderPhotoScanner = ({ onValueExtracted, turnName, isAdminUnlocke
         onClick={() => setIsOpen(true)}
         className="text-xs px-2 h-8"
         type="button"
-        disabled={currentValue > 0 && !isAdminUnlocked}
       >
         <Camera className="h-3 w-3 mr-1" />
         Foto
@@ -103,6 +102,11 @@ export const GrinderPhotoScanner = ({ onValueExtracted, turnName, isAdminUnlocke
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Ngarko Foto të Mullirit - {turnName}</DialogTitle>
+            {currentValue > 0 && (
+              <p className="text-xs text-warning mt-1">
+                ⚠️ Vlera aktuale: {currentValue} — do të zëvendësohet pas aplikimit
+              </p>
+            )}
           </DialogHeader>
 
           <div className="space-y-4">
