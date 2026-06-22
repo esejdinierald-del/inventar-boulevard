@@ -545,15 +545,14 @@ const DailyEntry = () => {
   }, [updateTurn1Product, updateTurn2Product, activeTurn, turn1, turn2, hasElevatedAccess, selectedDate]);
 
 
-  // Save handler
+  // Save handler — pijet alkoolike zbriten tashmë idempotente nga
+  // `applyAlcoholicDrinksImmediately` (per (datë, turn, pije)); s'ka nevojë
+  // për kalim të dytë që do të dyfishonte numërimin.
   const handleSave = useCallback(async () => {
     saveForNextDay();
-    
-    // Apliko zbritjet e pijeve alkoolike
-    await AlcoholicDrinksService.applyAlcoholicDrinksSales(selectedDate);
-    
     toast.success(`Të dhënat u ruajtën! Xhiro totale: ${totalXhiro.toLocaleString()} ALL`);
-  }, [saveForNextDay, totalXhiro, selectedDate]);
+  }, [saveForNextDay, totalXhiro]);
+
 
   // Print and lock handler
   const handlePrintAndLock = useCallback(async () => {
