@@ -686,7 +686,9 @@ const DailyEntry = () => {
             <p className="text-muted-foreground">Regjistro shitjet dhe inventarin për secilin turn</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <InvoiceMappingManager products={products} kitchenProducts={kitchenProducts} alcoholicDrinks={alcoholicDrinks} isAdmin={isAdminUnlocked} onApplySupplies={handleApplySupplies} />
+            {/* InvoiceMappingManager nuk vendoset në header sepse `targetTurn` duhet
+                të jetë eksplicit (T1 ose T2). Përdor butonin brenda secilit tab. */}
+
             <ProductMappingManager products={products} coffeeTypes={coffeeTypes} kitchenProducts={kitchenProducts} alcoholicDrinks={alcoholicDrinks} />
             <Button
               variant={isAdminUnlocked ? "default" : "outline"}
