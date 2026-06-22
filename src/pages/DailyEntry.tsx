@@ -826,7 +826,13 @@ const DailyEntry = () => {
               onProductUpdate={updateTurn2Product}
               onCoffeeUpdate={updateTurn2Coffee}
               onTurnUpdate={updateTurn2Field}
-              onMulliriPerfundUpdate={(value) => updateTurn2Field('mulliriPerfund', value)}
+              onMulliriPerfundUpdate={(value) => {
+                updateTurn2Field('mulliriPerfund', value);
+                // Sinkronizim direkt (pa pritur debounce) që dita pasardhëse të
+                // marrë menjëherë vlerën e re të mullirit nga foto e T2.
+                syncMulliriT2ToNextDay(value);
+              }}
+
               onReceiptData={handleReceiptDataT2}
               onProductDelete={deleteProduct}
               onProductAdd={addProduct}
