@@ -22,7 +22,7 @@ import { useTurnData } from "@/hooks/useTurnData";
 import { useTurnLock } from "@/hooks/useTurnLock";
 import { useKitchenProducts } from "@/hooks/useKitchenProducts";
 import { useAlcoholicDrinksList } from "@/hooks/useAlcoholicDrinksList";
-import { AlcoholicDrinksService } from "@/services/alcoholic-drinks.service";
+// AlcoholicDrinksService nuk përdoret më: zbritja bëhet idempotente në useTurnData.
 import { TurnData, ShpenzimiData } from "@/types/turn.types";
 
 /** Kthen datën lokale (jo UTC) në format YYYY-MM-DD. */
@@ -114,6 +114,8 @@ const DailyEntry = () => {
     updateTurn1Product,
     updateTurn2Product,
     syncMulliriT1ToT2,
+    syncMulliriT2ToNextDay,
+
     copyT1ToT2,
     saveForNextDay,
     loadFromPreviousDay,
@@ -452,9 +454,12 @@ const DailyEntry = () => {
     syncMulliriT1ToT2(value);
   }, [updateTurn1Field, syncMulliriT1ToT2]);
 
-  const handleApplySupplies = useCallback(async (mapping: any) => {
-    console.log("Applying supplies from mapping:", mapping);
-    console.log("Active turn:", activeTurn);
+  const handleApplySupplies = useCallback(async (mapping: any, targetTurn?: "turn1" | "turn2") => {
+    // `targetTurn` kapet **në çastin që dialogu u hap** (kalohet eksplicit nga
+    // secila instancë e InvoiceMappingManager). Kjo eliminon bug-un kur stafi
+    // ndron tab pas hapjes së dialogut: faturat shkojnë gjithmonë në turnin e duhur.
+    const turnToUse: "turn1" | "turn2" = targetTurn ?? activeTurn;
+    console.log("Applying supplies from mapping:", mapping, "→ target turn:", turnToUse);
 
     // Bllokim: stafi nuk mund të ngarkojë furnizime në data jo të sotme
     if (!hasElevatedAccess() && selectedDate !== TODAY()) {
@@ -470,11 +475,11 @@ const DailyEntry = () => {
       if (!item.name) continue;
       
       const quantity = item.quantity || 1;
-      console.log(`Applying ${quantity} of ${item.name} (type: ${item.type}) to ${activeTurn}`);
+      console.log(`Applying ${quantity} of ${item.name} (type: ${item.type}) to ${turnToUse}`);
       
       if (item.type === 'product') {
         // ADD to existing furnizime (not replace)
-        if (activeTurn === 'turn1') {
+        if (turnToUse === 'turn1') {
           const currentFurnizime = turn1.products[item.name]?.furnizime || 0;
           updateTurn1Product(item.name, 'furnizime', currentFurnizime + quantity);
         } else {
@@ -483,14 +488,11 @@ const DailyEntry = () => {
         }
       } else if (item.type === 'coffee') {
         // Kafeja mbahet në copa - furnizimet janë kg kafe të bluar, jo copa
-        // Do të implementohet si inventar i veçantë nëse nevojitet
         console.log(`Coffee supplies: ${item.name} x${quantity} (struktura aktuale nuk e mbështet)`);
         toast.info(`Kafe furnizime: ${item.name} - duhet inventar i veçantë për kg kafe`);
       } else if (item.type === 'kitchen') {
-        // Kitchen products nuk kanë inventar në databazë aktualisht
         console.log(`Kitchen supplies: ${item.name} x${quantity}`);
       } else if (item.type === 'alcoholic_drink' || item.type === 'alcoholic') {
-        // Grumbullo pijet alkoolike për t'i përditësuar në fund
         alcoholicUpdates.push({ name: item.name, quantity });
       }
     }
@@ -502,7 +504,6 @@ const DailyEntry = () => {
       
       for (const update of alcoholicUpdates) {
         try {
-          // Merr gjendjen aktuale
           const { data: drink, error: fetchError } = await supabase
             .from('alcoholic_drinks_inventory')
             .select('*')
@@ -515,7 +516,6 @@ const DailyEntry = () => {
             continue;
           }
           
-          // Shto furnizimin në gjendjen aktuale
           const newFurnizime = drink.furnizime + update.quantity;
           const newGjendje = newFurnizime - drink.shitje;
           
@@ -546,15 +546,15 @@ const DailyEntry = () => {
     }
   }, [updateTurn1Product, updateTurn2Product, activeTurn, turn1, turn2, hasElevatedAccess, selectedDate]);
 
-  // Save handler
+
+  // Save handler — pijet alkoolike zbriten tashmë idempotente nga
+  // `applyAlcoholicDrinksImmediately` (per (datë, turn, pije)); s'ka nevojë
+  // për kalim të dytë që do të dyfishonte numërimin.
   const handleSave = useCallback(async () => {
     saveForNextDay();
-    
-    // Apliko zbritjet e pijeve alkoolike
-    await AlcoholicDrinksService.applyAlcoholicDrinksSales(selectedDate);
-    
     toast.success(`Të dhënat u ruajtën! Xhiro totale: ${totalXhiro.toLocaleString()} ALL`);
-  }, [saveForNextDay, totalXhiro, selectedDate]);
+  }, [saveForNextDay, totalXhiro]);
+
 
   // Print and lock handler
   const handlePrintAndLock = useCallback(async () => {
@@ -688,7 +688,9 @@ const DailyEntry = () => {
             <p className="text-muted-foreground">Regjistro shitjet dhe inventarin për secilin turn</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <InvoiceMappingManager products={products} kitchenProducts={kitchenProducts} alcoholicDrinks={alcoholicDrinks} isAdmin={isAdminUnlocked} onApplySupplies={handleApplySupplies} />
+            {/* InvoiceMappingManager nuk vendoset në header sepse `targetTurn` duhet
+                të jetë eksplicit (T1 ose T2). Përdor butonin brenda secilit tab. */}
+
             <ProductMappingManager products={products} coffeeTypes={coffeeTypes} kitchenProducts={kitchenProducts} alcoholicDrinks={alcoholicDrinks} />
             <Button
               variant={isAdminUnlocked ? "default" : "outline"}
@@ -797,8 +799,10 @@ const DailyEntry = () => {
                   kitchenProducts={kitchenProducts}
                   alcoholicDrinks={alcoholicDrinks}
                   isAdmin={isAdminUnlocked}
+                  targetTurn="turn1"
                   onApplySupplies={handleApplySupplies}
                 />
+
               }
             />
           </TabsContent>
@@ -822,7 +826,13 @@ const DailyEntry = () => {
               onProductUpdate={updateTurn2Product}
               onCoffeeUpdate={updateTurn2Coffee}
               onTurnUpdate={updateTurn2Field}
-              onMulliriPerfundUpdate={(value) => updateTurn2Field('mulliriPerfund', value)}
+              onMulliriPerfundUpdate={(value) => {
+                updateTurn2Field('mulliriPerfund', value);
+                // Sinkronizim direkt (pa pritur debounce) që dita pasardhëse të
+                // marrë menjëherë vlerën e re të mullirit nga foto e T2.
+                syncMulliriT2ToNextDay(value);
+              }}
+
               onReceiptData={handleReceiptDataT2}
               onProductDelete={deleteProduct}
               onProductAdd={addProduct}
@@ -841,8 +851,10 @@ const DailyEntry = () => {
                   kitchenProducts={kitchenProducts}
                   alcoholicDrinks={alcoholicDrinks}
                   isAdmin={isAdminUnlocked}
+                  targetTurn="turn2"
                   onApplySupplies={handleApplySupplies}
                 />
+
               }
             />
           </TabsContent>

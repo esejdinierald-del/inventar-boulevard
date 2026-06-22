@@ -136,4 +136,27 @@ export class CalculationService {
   static calculateStockForNextTurn(productData: ProductData): number {
     return productData.stokFillim - productData.shiriti;
   }
+
+  /**
+   * Llogarit T2.stokFillim duke ruajtur furnizimet që janë futur **në vetë T2**.
+   *
+   * Formula:
+   *   T2.stokFillim = (T1.stokFillim − T1.shiriti) + T2.furnizime
+   *
+   * Pse: kur ngarkohet faturë në T2, `updateTurn2Product` shton menjëherë delta-n
+   * te `stokFillim` (që ta llogaritet drejt Dif-i). Por çdo auto-sync nga T1
+   * (load ose efekt) e rivendos `stokFillim` pastër nga T1, duke **fshirë**
+   * furnizimet e T2. Ky helper i ruan ato.
+   *
+   * @param t1Data        ProductData nga T1 (i njëjti produkt)
+   * @param t2Existing    ProductData ekzistues i T2 (mund të jetë i pacaktuar)
+   */
+  static calculateT2StokFillim(
+    t1Data: ProductData,
+    t2Existing?: ProductData
+  ): number {
+    const base = t1Data.stokFillim - t1Data.shiriti;
+    return base + (t2Existing?.furnizime || 0);
+  }
 }
+

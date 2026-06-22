@@ -11,7 +11,13 @@ interface InvoiceMappingManagerProps {
   kitchenProducts: string[];
   alcoholicDrinks?: string[];
   isAdmin?: boolean;
-  onApplySupplies?: (mapping: MappingData) => void;
+  /**
+   * Turni në të cilin do të aplikohen furnizimet. Kapet **kur përdoruesi hap
+   * dialogun** — nuk varet nga `activeTurn` global, kështu që ndryshimi i tab-it
+   * pas hapjes nuk e ridrejton faturën në turnin gabim.
+   */
+  targetTurn?: "turn1" | "turn2";
+  onApplySupplies?: (mapping: MappingData, targetTurn?: "turn1" | "turn2") => void;
 }
 
 export const InvoiceMappingManager = ({ 
@@ -19,6 +25,7 @@ export const InvoiceMappingManager = ({
   kitchenProducts, 
   alcoholicDrinks = [], 
   isAdmin = false, 
+  targetTurn,
   onApplySupplies 
 }: InvoiceMappingManagerProps) => {
   const {
@@ -50,11 +57,17 @@ export const InvoiceMappingManager = ({
   };
 
   const handleApply = () => {
-    const success = applySupplies(onApplySupplies);
+    // `targetTurn` mbahet konstant për gjithë jetën e dialogut.
+    const success = applySupplies(
+      onApplySupplies
+        ? (mapping) => onApplySupplies(mapping, targetTurn)
+        : undefined
+    );
     if (success) {
       handleClose();
     }
   };
+
 
   return (
     <>

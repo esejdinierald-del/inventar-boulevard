@@ -155,19 +155,26 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
             }
           }
           
-          // KRITIKE: Sinkronizo T2 stokFillim nga T1 — përfshi edhe produktet që mungojnë në T2
+          // KRITIKE: Sinkronizo T2 stokFillim nga T1, por **ruaj** furnizimet që janë
+          // futur tashmë në T2 (përndryshe ngarkimi i mëparshëm i faturës humbet).
           const syncedT2Products: { [key: string]: ProductData } = { ...migratedT2.products };
           Object.entries(migratedT1.products).forEach(([key, t1Data]) => {
-            const newStokFillim = CalculationService.calculateNewStock(t1Data);
             const existing = syncedT2Products[key] || { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 };
+            const newStokFillim = CalculationService.calculateT2StokFillim(t1Data, existing);
             syncedT2Products[key] = { ...existing, stokFillim: newStokFillim };
           });
+
+          // Mulliri T2.fillim: mos e zero-o nga T1 nëse T1.mulliriPerfund=0
+          const t2MulliriFillim = migratedT1.mulliriPerfund > 0
+            ? migratedT1.mulliriPerfund
+            : (migratedT2.mulliriFillim || 0);
 
           const syncedT2 = {
             ...migratedT2,
             products: syncedT2Products,
-            mulliriFillim: migratedT1.mulliriPerfund
+            mulliriFillim: t2MulliriFillim
           };
+
           console.log(`🔄 Syncing T1 → T2 (gjendje if filled, otherwise calculated)`);
           console.log('📊 T1 data:', { mulliriFillim: migratedT1.mulliriFillim, mulliriPerfund: migratedT1.mulliriPerfund });
           console.log('📊 T2 data:', { mulliriFillim: syncedT2.mulliriFillim, mulliriPerfund: syncedT2.mulliriPerfund });
@@ -285,24 +292,27 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     if (isInitialLoad.current) return;
     
     const syncAndPropagate = async () => {
-      console.log('🔄 Syncing T1 → T2 (stokFillim − shiriti, pa gjendje)');
+      console.log('🔄 Syncing T1 → T2 (ruaj T2.furnizime, mos zero-o mulliri nga T1 bosh)');
       setTurn2(prev => {
         const merged: { [key: string]: ProductData } = { ...prev.products };
 
         Object.entries(turn1.products).forEach(([key, t1Data]) => {
-          const newStokFillim = CalculationService.calculateStockForNextTurn(t1Data);
           const existing = merged[key] || { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 };
+          const newStokFillim = CalculationService.calculateT2StokFillim(t1Data, existing);
           merged[key] = { ...existing, stokFillim: newStokFillim };
-          console.log(`  ${key}: T1 → T2.stokFillim = ${newStokFillim}`);
+          console.log(`  ${key}: T1 → T2.stokFillim = ${newStokFillim} (furnizime T2=${existing.furnizime || 0})`);
         });
 
-        const newT2 = {
+        // Mos e zero-o mulliriFillim nga T1.mulliriPerfund=0
+        const nextMulliriFillim = turn1.mulliriPerfund > 0
+          ? turn1.mulliriPerfund
+          : prev.mulliriFillim;
+
+        return {
           ...prev,
           products: merged,
-          mulliriFillim: turn1.mulliriPerfund
+          mulliriFillim: nextMulliriFillim
         };
-        console.log(`📊 Auto-sync T2 mulliriFillim = T1 mulliriPerfund (${turn1.mulliriPerfund})`);
-        return newT2;
       });
     };
     
@@ -310,6 +320,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
 
     return () => clearTimeout(timeoutId);
   }, [turn1, selectedDate]);
+
 
   // Auto-save T2 stock to next day when T2 changes AND propagate to future dates if past date
   useEffect(() => {
@@ -408,6 +419,24 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     }));
   }, []);
 
+  /**
+   * Sinkronizim direkt: T2.mulliriPerfund → next_day_stock.mulliri_fillim
+   * (pa pritur debounce-in 1200ms). Thirret nga GrinderPhotoScanner kur stafi
+   * konfirmon foton e T2, që dita pasardhëse të ketë menjëherë vlerën e re.
+   */
+  const syncMulliriT2ToNextDay = useCallback(async (perfundValue: number) => {
+    try {
+      const nextDay = new Date(selectedDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const nextDayDate = nextDay.toISOString().split('T')[0];
+      await StorageService.setMulliriForDate(nextDayDate, perfundValue);
+      console.log(`✅ syncMulliriT2ToNextDay → ${nextDayDate} = ${perfundValue}`);
+    } catch (e) {
+      console.error('❌ syncMulliriT2ToNextDay failed:', e);
+    }
+  }, [selectedDate]);
+
+
   // Copy T1 stock to T2 - përdor gjendje (vlera reale) jo llogaritje teorike
   const copyT1ToT2 = useCallback(() => {
     setTurn2(prev => ({
@@ -497,54 +526,98 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     }
   }, [selectedDate]);
 
-  // Funksion për të zbritur menjëherë pijet alkoolike nga inventari
-  const applyAlcoholicDrinksImmediately = useCallback(async (alcoholicDrinksData: { [key: string]: number }) => {
+  /**
+   * Zbrit pijet alkoolike nga inventari në mënyrë **idempotente** për (datë, turn).
+   *
+   * Përdor `alcohol_deductions` për të mbajtur sasinë e fundit të aplikuar për
+   * çdo (datë, turn, pije). Në çdo aplikim:
+   *   delta = quantityRe − applied_quantity_ekzistues
+   *   inventory.shitje += delta
+   *   inventory.gjendje = furnizime − shitje
+   *
+   * Kështu re-upload i recetës nuk dyfishon zbritjen, dhe T1+T2 mund të zbresin
+   * pavarësisht pa konflikt.
+   */
+  const applyAlcoholicDrinksImmediately = useCallback(async (
+    alcoholicDrinksData: { [key: string]: number },
+    turnNumber: 1 | 2
+  ) => {
     try {
-      for (const [drinkName, soldQuantity] of Object.entries(alcoholicDrinksData)) {
-        if (soldQuantity > 0) {
-          // Merr gjendjen aktuale
-          const { data: drink, error: fetchError } = await supabase
-            .from('alcoholic_drinks_inventory')
-            .select('*')
-            .eq('drink_name', drinkName)
-            .single();
+      for (const [drinkName, soldQuantityRaw] of Object.entries(alcoholicDrinksData)) {
+        const soldQuantity = Number(soldQuantityRaw) || 0;
 
-          if (fetchError) {
-            console.error(`Error fetching ${drinkName}:`, fetchError);
-            continue;
-          }
+        // Sasia e mëparshme e aplikuar për këtë (datë, turn, pije)
+        const { data: prevDeduction } = await supabase
+          .from('alcohol_deductions')
+          .select('applied_quantity')
+          .eq('entry_date', selectedDate)
+          .eq('turn_number', turnNumber)
+          .eq('drink_name', drinkName)
+          .maybeSingle();
+        const previousApplied = Number(prevDeduction?.applied_quantity) || 0;
 
-          if (!drink) {
-            console.warn(`Drink not found: ${drinkName}`);
-            continue;
-          }
+        const delta = soldQuantity - previousApplied;
+        if (delta === 0) continue;
 
-          // Përditëso shitjet dhe gjendjen
-          const newShitje = drink.shitje + soldQuantity;
-          const newGjendje = drink.furnizime - newShitje;
+        // Merr inventarin aktual
+        const { data: drink, error: fetchError } = await supabase
+          .from('alcoholic_drinks_inventory')
+          .select('*')
+          .eq('drink_name', drinkName)
+          .single();
 
-          const { error: updateError } = await supabase
-            .from('alcoholic_drinks_inventory')
-            .update({
-              shitje: newShitje,
-              gjendje: newGjendje
-            })
-            .eq('drink_name', drinkName);
-
-          if (updateError) {
-            console.error(`Error updating ${drinkName}:`, updateError);
-            toast.error(`Gabim në përditësimin e ${drinkName}`);
-          } else {
-            console.log(`✅ Zbritur ${drinkName}: shitje +${soldQuantity}, gjendje: ${newGjendje}`);
-          }
+        if (fetchError || !drink) {
+          console.warn(`Drink not found: ${drinkName}`);
+          continue;
         }
+
+        const newShitje = (drink.shitje || 0) + delta;
+        const newGjendje = (drink.furnizime || 0) - newShitje;
+
+        const { error: updateError } = await supabase
+          .from('alcoholic_drinks_inventory')
+          .update({ shitje: newShitje, gjendje: newGjendje })
+          .eq('drink_name', drinkName);
+
+        if (updateError) {
+          console.error(`Error updating ${drinkName}:`, updateError);
+          toast.error(`Gabim në përditësimin e ${drinkName}`);
+          continue;
+        }
+
+        // Upsert sasinë e re të aplikuar për këtë (datë, turn, pije)
+        if (soldQuantity > 0) {
+          await supabase
+            .from('alcohol_deductions')
+            .upsert(
+              {
+                entry_date: selectedDate,
+                turn_number: turnNumber,
+                drink_name: drinkName,
+                applied_quantity: soldQuantity,
+                source: 'receipt',
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'entry_date,turn_number,drink_name' }
+            );
+        } else {
+          await supabase
+            .from('alcohol_deductions')
+            .delete()
+            .eq('entry_date', selectedDate)
+            .eq('turn_number', turnNumber)
+            .eq('drink_name', drinkName);
+        }
+
+        console.log(`✅ T${turnNumber} ${drinkName}: delta=${delta} → shitje=${newShitje}, gjendje=${newGjendje}`);
       }
-      toast.success('Pijet alkoolike u zbritën automatikisht!');
+      toast.success('Pijet alkoolike u përditësuan automatikisht!');
     } catch (error) {
       console.error('Error applying alcoholic drinks:', error);
       toast.error('Gabim në zbritjen e pijeve alkoolike');
     }
-  }, []);
+  }, [selectedDate]);
+
 
   // Handle receipt data
   /**
@@ -576,7 +649,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     
     // Zbrit menjëherë pijet alkoolike nga inventari
     if (alcoholicDrinksData && Object.keys(alcoholicDrinksData).length > 0) {
-      applyAlcoholicDrinksImmediately(alcoholicDrinksData);
+      applyAlcoholicDrinksImmediately(alcoholicDrinksData, 1);
+
     }
   }, [applyAlcoholicDrinksImmediately]);
 
@@ -606,7 +680,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     
     // Zbrit menjëherë pijet alkoolike nga inventari
     if (alcoholicDrinksData && Object.keys(alcoholicDrinksData).length > 0) {
-      applyAlcoholicDrinksImmediately(alcoholicDrinksData);
+      applyAlcoholicDrinksImmediately(alcoholicDrinksData, 2);
     }
   }, [applyAlcoholicDrinksImmediately]);
 
@@ -647,6 +721,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     updateTurn1Product,
     updateTurn2Product,
     syncMulliriT1ToT2,
+    syncMulliriT2ToNextDay,
+
     copyT1ToT2,
     saveForNextDay,
     loadFromPreviousDay,
