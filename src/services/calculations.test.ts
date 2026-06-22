@@ -161,6 +161,42 @@ describe("CalculationService", () => {
     });
   });
 
+  // ---- calculateT2StokFillim ----
+  // Formula: (T1.stokFillim − T1.shiriti) + T2.furnizime
+  describe("calculateT2StokFillim", () => {
+    it("kthen T1.stokFillim − T1.shiriti kur T2 nuk ka furnizime", () => {
+      const t1: ProductData = { stokFillim: 20, furnizime: 0, shiriti: 5, gjendje: 0 };
+      const t2: ProductData = { stokFillim: 0, furnizime: 0, shiriti: 0, gjendje: 0 };
+      expect(CalculationService.calculateT2StokFillim(t1, t2)).toBe(15);
+    });
+
+    it("shton T2.furnizime mbi bazën e T1", () => {
+      const t1: ProductData = { stokFillim: 20, furnizime: 0, shiriti: 5, gjendje: 0 };
+      const t2: ProductData = { stokFillim: 0, furnizime: 7, shiriti: 0, gjendje: 0 };
+      // 20 − 5 + 7 = 22
+      expect(CalculationService.calculateT2StokFillim(t1, t2)).toBe(22);
+    });
+
+    it("trajton T2 të pacaktuar (treats as no furnizime)", () => {
+      const t1: ProductData = { stokFillim: 10, furnizime: 0, shiriti: 3, gjendje: 0 };
+      expect(CalculationService.calculateT2StokFillim(t1, undefined)).toBe(7);
+    });
+
+    it("punon kur T1.shiriti = 0", () => {
+      const t1: ProductData = { stokFillim: 10, furnizime: 0, shiriti: 0, gjendje: 0 };
+      const t2: ProductData = { stokFillim: 0, furnizime: 3, shiriti: 0, gjendje: 0 };
+      expect(CalculationService.calculateT2StokFillim(t1, t2)).toBe(13);
+    });
+
+    it("ruan furnizime edhe kur baza T1 është negative", () => {
+      const t1: ProductData = { stokFillim: 5, furnizime: 0, shiriti: 8, gjendje: 0 };
+      const t2: ProductData = { stokFillim: 0, furnizime: 4, shiriti: 0, gjendje: 0 };
+      // 5 − 8 + 4 = 1
+      expect(CalculationService.calculateT2StokFillim(t1, t2)).toBe(1);
+    });
+  });
+
+
   // ---- hasAnyDifferences ----
   describe("hasAnyDifferences", () => {
     it("kthen true kur ka diferenca", () => {
