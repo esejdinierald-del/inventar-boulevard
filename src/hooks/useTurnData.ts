@@ -721,6 +721,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     updateTurn1Product,
     updateTurn2Product,
     syncMulliriT1ToT2,
+    syncMulliriT2ToNextDay,
+
     copyT1ToT2,
     saveForNextDay,
     loadFromPreviousDay,
