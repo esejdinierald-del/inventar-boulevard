@@ -347,8 +347,9 @@ export class StockPropagationService {
       const t1Data = t1.products[productName] as ProductData;
       
       if (t1Data) {
-        // KRITIKE: Respekto gjendje (numërim fizik) nëse > 0, përndryshe llogarit teorikisht
-        const newStokFillim = CalculationService.calculateStockForNextTurn(t1Data);
+        // KRITIKE: Ruaj T2.furnizime — `calculateT2StokFillim` shton furnizimet
+        // që janë futur tashmë në T2 (përndryshe propagimi i fshin).
+        const newStokFillim = CalculationService.calculateT2StokFillim(t1Data, productData);
         updatedProducts[productName] = {
           ...productData,
           stokFillim: newStokFillim
@@ -358,10 +359,14 @@ export class StockPropagationService {
       }
     });
 
+    // Mos e zero-o mulliriFillim nga T1.mulliriPerfund=0
+    const nextMulliriFillim = t1.mulliriPerfund > 0 ? t1.mulliriPerfund : t2.mulliriFillim;
+
     return {
       ...t2,
       products: updatedProducts,
-      mulliriFillim: t1.mulliriPerfund
+      mulliriFillim: nextMulliriFillim
     };
   }
 }
+
