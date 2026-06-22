@@ -797,8 +797,10 @@ const DailyEntry = () => {
                   kitchenProducts={kitchenProducts}
                   alcoholicDrinks={alcoholicDrinks}
                   isAdmin={isAdminUnlocked}
+                  targetTurn="turn1"
                   onApplySupplies={handleApplySupplies}
                 />
+
               }
             />
           </TabsContent>
