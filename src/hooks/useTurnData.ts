@@ -680,7 +680,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     
     // Zbrit menjëherë pijet alkoolike nga inventari
     if (alcoholicDrinksData && Object.keys(alcoholicDrinksData).length > 0) {
-      applyAlcoholicDrinksImmediately(alcoholicDrinksData);
+      applyAlcoholicDrinksImmediately(alcoholicDrinksData, 2);
     }
   }, [applyAlcoholicDrinksImmediately]);
 
