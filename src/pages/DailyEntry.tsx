@@ -452,9 +452,12 @@ const DailyEntry = () => {
     syncMulliriT1ToT2(value);
   }, [updateTurn1Field, syncMulliriT1ToT2]);
 
-  const handleApplySupplies = useCallback(async (mapping: any) => {
-    console.log("Applying supplies from mapping:", mapping);
-    console.log("Active turn:", activeTurn);
+  const handleApplySupplies = useCallback(async (mapping: any, targetTurn?: "turn1" | "turn2") => {
+    // `targetTurn` kapet **në çastin që dialogu u hap** (kalohet eksplicit nga
+    // secila instancë e InvoiceMappingManager). Kjo eliminon bug-un kur stafi
+    // ndron tab pas hapjes së dialogut: faturat shkojnë gjithmonë në turnin e duhur.
+    const turnToUse: "turn1" | "turn2" = targetTurn ?? activeTurn;
+    console.log("Applying supplies from mapping:", mapping, "→ target turn:", turnToUse);
 
     // Bllokim: stafi nuk mund të ngarkojë furnizime në data jo të sotme
     if (!hasElevatedAccess() && selectedDate !== TODAY()) {
@@ -470,11 +473,11 @@ const DailyEntry = () => {
       if (!item.name) continue;
       
       const quantity = item.quantity || 1;
-      console.log(`Applying ${quantity} of ${item.name} (type: ${item.type}) to ${activeTurn}`);
+      console.log(`Applying ${quantity} of ${item.name} (type: ${item.type}) to ${turnToUse}`);
       
       if (item.type === 'product') {
         // ADD to existing furnizime (not replace)
-        if (activeTurn === 'turn1') {
+        if (turnToUse === 'turn1') {
           const currentFurnizime = turn1.products[item.name]?.furnizime || 0;
           updateTurn1Product(item.name, 'furnizime', currentFurnizime + quantity);
         } else {
@@ -483,14 +486,11 @@ const DailyEntry = () => {
         }
       } else if (item.type === 'coffee') {
         // Kafeja mbahet në copa - furnizimet janë kg kafe të bluar, jo copa
-        // Do të implementohet si inventar i veçantë nëse nevojitet
         console.log(`Coffee supplies: ${item.name} x${quantity} (struktura aktuale nuk e mbështet)`);
         toast.info(`Kafe furnizime: ${item.name} - duhet inventar i veçantë për kg kafe`);
       } else if (item.type === 'kitchen') {
-        // Kitchen products nuk kanë inventar në databazë aktualisht
         console.log(`Kitchen supplies: ${item.name} x${quantity}`);
       } else if (item.type === 'alcoholic_drink' || item.type === 'alcoholic') {
-        // Grumbullo pijet alkoolike për t'i përditësuar në fund
         alcoholicUpdates.push({ name: item.name, quantity });
       }
     }
@@ -502,7 +502,6 @@ const DailyEntry = () => {
       
       for (const update of alcoholicUpdates) {
         try {
-          // Merr gjendjen aktuale
           const { data: drink, error: fetchError } = await supabase
             .from('alcoholic_drinks_inventory')
             .select('*')
@@ -515,7 +514,6 @@ const DailyEntry = () => {
             continue;
           }
           
-          // Shto furnizimin në gjendjen aktuale
           const newFurnizime = drink.furnizime + update.quantity;
           const newGjendje = newFurnizime - drink.shitje;
           
@@ -545,6 +543,7 @@ const DailyEntry = () => {
       }
     }
   }, [updateTurn1Product, updateTurn2Product, activeTurn, turn1, turn2, hasElevatedAccess, selectedDate]);
+
 
   // Save handler
   const handleSave = useCallback(async () => {
