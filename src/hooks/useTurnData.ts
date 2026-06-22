@@ -419,6 +419,24 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     }));
   }, []);
 
+  /**
+   * Sinkronizim direkt: T2.mulliriPerfund → next_day_stock.mulliri_fillim
+   * (pa pritur debounce-in 1200ms). Thirret nga GrinderPhotoScanner kur stafi
+   * konfirmon foton e T2, që dita pasardhëse të ketë menjëherë vlerën e re.
+   */
+  const syncMulliriT2ToNextDay = useCallback(async (perfundValue: number) => {
+    try {
+      const nextDay = new Date(selectedDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const nextDayDate = nextDay.toISOString().split('T')[0];
+      await StorageService.setMulliriForDate(nextDayDate, perfundValue);
+      console.log(`✅ syncMulliriT2ToNextDay → ${nextDayDate} = ${perfundValue}`);
+    } catch (e) {
+      console.error('❌ syncMulliriT2ToNextDay failed:', e);
+    }
+  }, [selectedDate]);
+
+
   // Copy T1 stock to T2 - përdor gjendje (vlera reale) jo llogaritje teorike
   const copyT1ToT2 = useCallback(() => {
     setTurn2(prev => ({
