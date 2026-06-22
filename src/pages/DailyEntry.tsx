@@ -22,7 +22,7 @@ import { useTurnData } from "@/hooks/useTurnData";
 import { useTurnLock } from "@/hooks/useTurnLock";
 import { useKitchenProducts } from "@/hooks/useKitchenProducts";
 import { useAlcoholicDrinksList } from "@/hooks/useAlcoholicDrinksList";
-import { AlcoholicDrinksService } from "@/services/alcoholic-drinks.service";
+// AlcoholicDrinksService nuk përdoret më: zbritja bëhet idempotente në useTurnData.
 import { TurnData, ShpenzimiData } from "@/types/turn.types";
 
 /** Kthen datën lokale (jo UTC) në format YYYY-MM-DD. */
