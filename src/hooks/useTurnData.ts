@@ -292,24 +292,27 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     if (isInitialLoad.current) return;
     
     const syncAndPropagate = async () => {
-      console.log('🔄 Syncing T1 → T2 (stokFillim − shiriti, pa gjendje)');
+      console.log('🔄 Syncing T1 → T2 (ruaj T2.furnizime, mos zero-o mulliri nga T1 bosh)');
       setTurn2(prev => {
         const merged: { [key: string]: ProductData } = { ...prev.products };
 
         Object.entries(turn1.products).forEach(([key, t1Data]) => {
-          const newStokFillim = CalculationService.calculateStockForNextTurn(t1Data);
           const existing = merged[key] || { stokFillim: 0, gjendje: 0, shiriti: 0, furnizime: 0 };
+          const newStokFillim = CalculationService.calculateT2StokFillim(t1Data, existing);
           merged[key] = { ...existing, stokFillim: newStokFillim };
-          console.log(`  ${key}: T1 → T2.stokFillim = ${newStokFillim}`);
+          console.log(`  ${key}: T1 → T2.stokFillim = ${newStokFillim} (furnizime T2=${existing.furnizime || 0})`);
         });
 
-        const newT2 = {
+        // Mos e zero-o mulliriFillim nga T1.mulliriPerfund=0
+        const nextMulliriFillim = turn1.mulliriPerfund > 0
+          ? turn1.mulliriPerfund
+          : prev.mulliriFillim;
+
+        return {
           ...prev,
           products: merged,
-          mulliriFillim: turn1.mulliriPerfund
+          mulliriFillim: nextMulliriFillim
         };
-        console.log(`📊 Auto-sync T2 mulliriFillim = T1 mulliriPerfund (${turn1.mulliriPerfund})`);
-        return newT2;
       });
     };
     
@@ -317,6 +320,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
 
     return () => clearTimeout(timeoutId);
   }, [turn1, selectedDate]);
+
 
   // Auto-save T2 stock to next day when T2 changes AND propagate to future dates if past date
   useEffect(() => {
