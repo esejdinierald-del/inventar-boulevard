@@ -1,55 +1,45 @@
 
-# Raport teknik për konsultim me Claude
+# Plan: Zbatim i 6 Fix-eve nga Claude
 
-Jam në plan mode, kështu që për të gjeneruar dokumentin e plotë më duhet të kalosh në build mode. Po e përgatis raportin si një skedar të vetëm Markdown që mund ta kopjosh ose ta ngarkosh direkt te Claude.
+Mori sygjerimet e Claude dhe i strukturova si plan zbatimi. Të 6 janë të sigurta, të vogla, dhe nuk prishin logjikën që ndërtuam.
 
-## Çfarë do të krijoj
+## Ndryshimet
 
-Një skedar të vetëm: **`/mnt/documents/raport-per-claude.md`** (≈1500-2000 rreshta, vetëm-lexim për ty, jo prek kodin e projektit).
+### 1. `src/services/stock-propagation.service.ts` — Lock kundër propagimit paralel
+- Shto `private static isPropagating = false`
+- Në `propagateFromDate` dhe `rebaseFromGjendje`: nëse `isPropagating === true` → return menjëherë
+- Vendos `isPropagating = true` në fillim, `false` në `finally`
+- **Pse**: Parandalon dy thirrje paralele që shkruajnë mbi njëra-tjetrën në Supabase
 
-### Përmbajtja
+### 2. `src/hooks/useTurnData.ts` → `applyAlcoholicDrinksImmediately` — Math.max(0, ...) për shitje
+- `newShitje = Math.max(0, (drink.shitje || 0) + delta)`
+- **Pse**: Mbron nga shitje negative kur delta < 0 (re-upload me sasi më të vogël)
 
-1. **Konteksti i biznesit** (në shqip + anglisht teknik)
-   - Modeli: 2 turne/ditë, struktura `ProductData = {stokFillim, furnizime, gjendje, shiriti}`
-   - Formula e Dif: `shiriti + gjendje − stokFillim`
-   - Rregulli kritik: furnizime shtohen automatikisht te stokFillim (që Dif të mos numërohet 2 herë)
-   - Propagimi: T1 → T2 (e njëjta ditë) → T1 (D+1) përmes `next_day_stock`
-   - Mulliri, pijet alkoolike, mapimet e faturave
+### 3. `src/services/alcoholic-drinks.service.ts` — Deprecate `applyAlcoholicDrinksSales`
+- Shto JSDoc `@deprecated`
+- `return;` menjëherë në krye të metodës me `console.error('DEPRECATED…')`
+- **Pse**: Bllokon dyfishim nëse dikush e thërret aksidentalisht në të ardhmen
 
-2. **Problemet që raportove ti** (T2 furnizime, foto mulliri, mapime, propagim)
+### 4. `src/hooks/useTurnData.ts` → `copyT1ToT2` — Fallback kur `gjendje = 0`
+- `newStokFillim = t1Data.gjendje > 0 ? t1Data.gjendje : calculateStockForNextTurn(t1Data)`
+- **Pse**: Nëse stafi kopjon T1→T2 para se të numërojë gjendjen, T2 nuk fillon me 0
 
-3. **Bug-et që identifikova** (A–F):
-   - A: T2.stokFillim humbiste furnizimet sepse auto-sync 800ms rillogariste vetëm nga T1
-   - B: `handleApplySupplies` lexonte `activeTurn` në moment të klikut → faturat shkonin në turnin gabim nëse stafi ndërronte tab pas hapjes së dialogut
-   - C: T2.mulliriFillim zerohej kur T1.mulliriPerfund=0
-   - D: Mulliri T2 → D+1 vetëm me debounce 1200ms (humbej në print/largim)
-   - E: Pijet alkoolike zbriteshin 2 herë (`handleSave` + `handleReceiptData`)
-   - F (i hapur): `invoice_mappings` pa kolonë `turn`
+### 5. `src/components/InvoiceMappingManager.tsx` — Konfirmim para fshirjes
+- Wrap `deleteMapping(isAdmin)` me `window.confirm('⚠️ Je i sigurt? Kjo do të fshijë TË GJITHA mapinget')`
+- **Pse**: Mbron nga klik aksidental që fshin gjithë historinë
 
-4. **Fix-et që zbatova** (tabelë me skedar/ndryshim) + arsyetimi
+### 6. `src/hooks/useTurnData.ts` — `Math.max(0, …)` te `updateTurn1Product` dhe `updateTurn2Product`
+- Kur `field === 'furnizime'`: `next.stokFillim = Math.max(0, (existing.stokFillim || 0) + delta)`
+- **Pse**: Parandalon stokFillim negativ kur stafi zvogëlon furnizimet
 
-5. **Pyetjet specifike për Claude**:
-   - Edge case-e te formula `(T1.stokFillim − T1.shiriti) + T2.furnizime`
-   - Race condition midis 3 useEffect-eve me debounce të ndryshëm te `useTurnData`
-   - Siguria e idempotencës me upsert te `alcohol_deductions` nën konkurrencë
-   - Risku i `propagateFromDate` pa lock
-   - A ia vlen kolona `turn` te `invoice_mappings`
+## Çfarë NUK preket
+- Formula `calculateT2StokFillim` (mbetet siç është)
+- Auto-sync useEffect debounces
+- Tabela `alcohol_deductions` (Claude propozoi migration; verifikoj nëse ekziston përpara — mendoj se po, e krijuam në punën e mëparshme)
 
-6. **Kodi i plotë i skedarëve kritikë** (që Claude të ketë kontekst të mjaftueshëm pa supozime):
-   - `src/types/turn.types.ts`
-   - `src/types/mapping.types.ts`
-   - `src/services/calculations.ts` + `calculations.test.ts`
-   - `src/services/stock-propagation.service.ts`
-   - `src/services/alcoholic-drinks.service.ts`
-   - `src/hooks/useTurnData.ts` (735 rreshta — qendra e logjikës)
-   - `src/hooks/useInvoiceMappings.ts`
-   - `src/components/InvoiceMappingManager.tsx`
-   - Pjesa rrjedhëse e `src/pages/DailyEntry.tsx` (handleApplySupplies, handleSave, tabat)
+## Verifikim
+- `bunx vitest run` — të 26 testet ekzistuese duhet të kalojnë
+- Build pa errore
 
-## Çfarë NUK do prekë
-
-Asnjë skedar i projektit nuk modifikohet. Vetëm krijohet artifact-i te `/mnt/documents/` që do të shfaqet me një buton "Download" për ta dërguar te Claude.
-
-## Pas miratimit
-
-Kalo në build mode → unë gjeneroj skedarin → ti e shkarkon dhe e ngjit te Claude. Pastaj më kthe sygjerimet e tija dhe diskutojmë cilat ia vlen të zbatohen.
+## Pyetje për ty para se të zbatoj
+A i miraton të 6 ndryshimet, apo do të heqim ndonjë? Të gjitha janë defensive — nuk ndryshojnë logjikën, vetëm shtojnë mbrojtje.
