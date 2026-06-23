@@ -86,6 +86,34 @@ const DailyEntry = () => {
   // Custom hooks
   const { isAdminUnlocked, isViewOnlyUnlocked, showPasswordDialog, showViewOnlyDialog, validatePassword, validateViewOnlyPassword, toggleAdminMode, requestViewOnly, closePasswordDialog, closeViewOnlyDialog, isWithinStaffEditWindow, unlockAdmin } = useAuth();
 
+  // Ref për debounce të mulliri T2 → next_day_stock (FIX 6)
+  const mulliriDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // FIX 7: Rate limiting për tentativa PIN admin — max 3 para bllokimit 5 minutësh
+  const [adminFailedAttempts, setAdminFailedAttempts] = useState(0);
+  const [adminBlockedUntil, setAdminBlockedUntil] = useState<number | null>(null);
+  const handleValidatePassword = useCallback((password: string) => {
+    if (adminBlockedUntil && Date.now() < adminBlockedUntil) {
+      const minutesLeft = Math.ceil((adminBlockedUntil - Date.now()) / 60000);
+      toast.error(`Shumë tentativa të gabuara. Prisni ${minutesLeft} minutë.`);
+      return false;
+    }
+    const result = validatePassword(password);
+    if (!result) {
+      const newAttempts = adminFailedAttempts + 1;
+      setAdminFailedAttempts(newAttempts);
+      if (newAttempts >= 3) {
+        setAdminBlockedUntil(Date.now() + 5 * 60 * 1000);
+        setAdminFailedAttempts(0);
+        toast.error('3 tentativa të gabuara — bllokuar për 5 minuta.');
+      }
+    } else {
+      setAdminFailedAttempts(0);
+      setAdminBlockedUntil(null);
+    }
+    return result;
+  }, [validatePassword, adminFailedAttempts, adminBlockedUntil]);
+
   // Sesion 60min nga login fiks (vetëm për staf/menaxher; admin pa skadencë).
   const staffSession = useStaffSession(() => {
     setVerifiedStaff(null);
@@ -203,47 +231,94 @@ const DailyEntry = () => {
     setShowPinDialog(true);
   }, [selectedDate]);
 
-  // Lexo gjendjeUploaded nga localStorage për datën aktuale
+  // FIX 3: Lexo gjendjeUploaded nga Supabase (sinkronizuar midis pajisjeve)
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(`gjendjeUploaded:${selectedDate}`);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        setGjendjeUploaded({ turn1: !!parsed.turn1, turn2: !!parsed.turn2 });
-      } else {
+    const loadGjendjeStatus = async () => {
+      try {
+        const { data } = await supabase
+          .from('daily_entries')
+          .select('gjendje_confirmed_t1, gjendje_confirmed_t2, gjendje_print_lock_t1_until, gjendje_print_lock_t2_until')
+          .eq('entry_date', selectedDate)
+          .maybeSingle();
+        if (data) {
+          setGjendjeUploaded({
+            turn1: !!(data as any).gjendje_confirmed_t1,
+            turn2: !!(data as any).gjendje_confirmed_t2,
+          });
+          setGjendjePrintLockUntil({
+            turn1: (data as any).gjendje_print_lock_t1_until ? new Date((data as any).gjendje_print_lock_t1_until).getTime() : null,
+            turn2: (data as any).gjendje_print_lock_t2_until ? new Date((data as any).gjendje_print_lock_t2_until).getTime() : null,
+          });
+        } else {
+          // Fallback te localStorage nëse entry nuk ekziston ende
+          try {
+            const raw = localStorage.getItem(`gjendjeUploaded:${selectedDate}`);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              setGjendjeUploaded({ turn1: !!parsed.turn1, turn2: !!parsed.turn2 });
+            } else {
+              setGjendjeUploaded({ turn1: false, turn2: false });
+            }
+          } catch {
+            setGjendjeUploaded({ turn1: false, turn2: false });
+          }
+        }
+      } catch {
         setGjendjeUploaded({ turn1: false, turn2: false });
       }
-    } catch {
-      setGjendjeUploaded({ turn1: false, turn2: false });
-    }
+    };
+    loadGjendjeStatus();
   }, [selectedDate]);
 
-  const confirmGjendje = useCallback((turn: 'turn1' | 'turn2') => {
+  const confirmGjendje = useCallback(async (turn: 'turn1' | 'turn2') => {
+    const col = turn === 'turn1' ? 'gjendje_confirmed_t1' : 'gjendje_confirmed_t2';
+    const colBy = turn === 'turn1' ? 'gjendje_confirmed_t1_by' : 'gjendje_confirmed_t2_by';
+    const colAt = turn === 'turn1' ? 'gjendje_confirmed_t1_at' : 'gjendje_confirmed_t2_at';
+    try {
+      const { data: existing } = await supabase
+        .from('daily_entries')
+        .select('id')
+        .eq('entry_date', selectedDate)
+        .maybeSingle();
+      if (existing) {
+        await supabase
+          .from('daily_entries')
+          .update({
+            [col]: true,
+            [colBy]: verifiedStaff || 'unknown',
+            [colAt]: new Date().toISOString(),
+          } as any)
+          .eq('entry_date', selectedDate);
+      }
+    } catch (e) {
+      console.warn('Nuk u ruajt gjendjeUploaded në DB:', e);
+    }
     setGjendjeUploaded(prev => {
       const next = { ...prev, [turn]: true };
-      try {
-        localStorage.setItem(`gjendjeUploaded:${selectedDate}`, JSON.stringify(next));
-      } catch (e) {
-        console.warn('Nuk u ruajt gjendjeUploaded:', e);
-      }
+      try { localStorage.setItem(`gjendjeUploaded:${selectedDate}`, JSON.stringify(next)); } catch {}
       return next;
     });
-    toast.success(`Gjendja u ngarkua për Turnin ${turn === 'turn1' ? '1' : '2'}`);
-  }, [selectedDate]);
+    toast.success(`Gjendja u konfirmua për Turnin ${turn === 'turn1' ? '1' : '2'}`);
+  }, [selectedDate, verifiedStaff]);
 
   /** Admin-only: riaktivizon stafin që të modifikojë sërish Gjendjen e turnit. */
-  const unlockGjendje = useCallback((turn: 'turn1' | 'turn2') => {
+  const unlockGjendje = useCallback(async (turn: 'turn1' | 'turn2') => {
     if (!isAdminUnlocked) {
       toast.error("Vetëm admini mund të riaktivizojë stafin");
       return;
     }
+    const col = turn === 'turn1' ? 'gjendje_confirmed_t1' : 'gjendje_confirmed_t2';
+    try {
+      await supabase
+        .from('daily_entries')
+        .update({ [col]: false } as any)
+        .eq('entry_date', selectedDate);
+    } catch (e) {
+      console.warn('Nuk u rivendos gjendjeUploaded në DB:', e);
+    }
     setGjendjeUploaded(prev => {
       const next = { ...prev, [turn]: false };
-      try {
-        localStorage.setItem(`gjendjeUploaded:${selectedDate}`, JSON.stringify(next));
-      } catch (e) {
-        console.warn('Nuk u ruajt gjendjeUploaded:', e);
-      }
+      try { localStorage.setItem(`gjendjeUploaded:${selectedDate}`, JSON.stringify(next)); } catch {}
       return next;
     });
     toast.success(`Stafi u riaktivizua të modifikojë Gjendjen e Turnit ${turn === 'turn1' ? '1' : '2'}`);
@@ -971,7 +1046,7 @@ const DailyEntry = () => {
         <AdminPasswordDialog
           isOpen={showPasswordDialog}
           onClose={closePasswordDialog}
-          onSubmit={validatePassword}
+          onSubmit={handleValidatePassword}
         />
 
         {/* View-Only Password Dialog */}
