@@ -51,31 +51,30 @@ export class StorageService {
 
   static async setProducts(products: string[]): Promise<void> {
     try {
-      // Fshi të gjitha dhe ri-shto me order të ri
-      const { error: deleteError } = await supabase
-        .from('products')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
-      
-      if (deleteError) {
-        console.error('Error deleting products:', deleteError);
-      }
-      
+      // Upsert — nuk fshin, nuk rrezikon humbje të dhënash nëse insert dështon
       const productsData = products.map((name, index) => ({
         name,
         sort_order: index
       }));
-      
       if (productsData.length > 0) {
-        const { error } = await supabase.from('products').insert(productsData);
+        const { error } = await supabase
+          .from('products')
+          .upsert(productsData, { onConflict: 'name' });
         if (error) throw error;
       }
-      
-      // Backup në localStorage
+      // Fshi produktet që u hoqën (jo më në listë)
+      const { data: existing } = await supabase.from('products').select('name');
+      if (existing) {
+        const toDelete = existing
+          .map(r => r.name)
+          .filter(name => !products.includes(name));
+        if (toDelete.length > 0) {
+          await supabase.from('products').delete().in('name', toDelete);
+        }
+      }
       this.setItem('products_list', products);
     } catch (error) {
       console.error('Error saving products:', error);
-      // Fallback to localStorage only
       this.setItem('products_list', products);
     }
   }
@@ -99,31 +98,30 @@ export class StorageService {
 
   static async setCoffeeTypes(coffeeTypes: string[]): Promise<void> {
     try {
-      // Fshi të gjitha dhe ri-shto me order të ri
-      const { error: deleteError } = await supabase
-        .from('coffee_types')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
-      
-      if (deleteError) {
-        console.error('Error deleting coffee types:', deleteError);
-      }
-      
+      // Upsert — nuk fshin, nuk rrezikon humbje të dhënash nëse insert dështon
       const coffeeTypesData = coffeeTypes.map((name, index) => ({
         name,
         sort_order: index
       }));
-      
       if (coffeeTypesData.length > 0) {
-        const { error } = await supabase.from('coffee_types').insert(coffeeTypesData);
+        const { error } = await supabase
+          .from('coffee_types')
+          .upsert(coffeeTypesData, { onConflict: 'name' });
         if (error) throw error;
       }
-      
-      // Backup në localStorage
+      // Fshi llojet e kafes që u hoqën (jo më në listë)
+      const { data: existing } = await supabase.from('coffee_types').select('name');
+      if (existing) {
+        const toDelete = existing
+          .map(r => r.name)
+          .filter(name => !coffeeTypes.includes(name));
+        if (toDelete.length > 0) {
+          await supabase.from('coffee_types').delete().in('name', toDelete);
+        }
+      }
       this.setItem('coffee_types_list', coffeeTypes);
     } catch (error) {
       console.error('Error saving coffee types:', error);
-      // Fallback to localStorage only
       this.setItem('coffee_types_list', coffeeTypes);
     }
   }
