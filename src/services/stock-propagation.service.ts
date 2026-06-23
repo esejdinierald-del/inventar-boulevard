@@ -10,29 +10,46 @@ interface DailyEntry {
 }
 
 export class StockPropagationService {
-  // Guard kundër ekzekutimit paralel të propagimit/rebase
-  private static isPropagating = false;
+  // Lock per-datë me timeout automatik — zëvendëson boolean global të vjetër
+  private static activePropagations = new Map<string, { startedAt: Date }>();
+  private static readonly LOCK_TIMEOUT_MS = 60_000; // 60s max për një propagim
+
+  private static acquireLock(fromDate: string): boolean {
+    const existing = StockPropagationService.activePropagations.get(fromDate);
+    if (existing) {
+      const ageMs = Date.now() - existing.startedAt.getTime();
+      if (ageMs < StockPropagationService.LOCK_TIMEOUT_MS) {
+        console.warn(`⚠️ Propagimi për ${fromDate} aktiv (${Math.round(ageMs / 1000)}s) — duke shmangur`);
+        return false;
+      }
+      console.warn(`⏱️ Lock për ${fromDate} skadoi (${Math.round(ageMs / 1000)}s) — rimerr automatikisht`);
+    }
+    StockPropagationService.activePropagations.set(fromDate, { startedAt: new Date() });
+    return true;
+  }
+
+  private static releaseLock(fromDate: string): void {
+    StockPropagationService.activePropagations.delete(fromDate);
+  }
 
   /**
-   * Propago ndryshimet e stokut nga një datë e caktuar deri tek data aktuale
-   * Kjo thirret kur modifikohen të dhënat e një date të kaluar
+   * Propago ndryshimet e stokut nga një datë e caktuar deri tek data aktuale.
+   * Kjo thirret kur modifikohen të dhënat e një date të kaluar.
    */
   static async propagateFromDate(fromDate: string): Promise<void> {
-    if (StockPropagationService.isPropagating) {
-      console.warn('⚠️ Propagimi është duke u ekzekutuar tashmë — duke shmangur ekzekutimin paralel');
-      return;
-    }
-    StockPropagationService.isPropagating = true;
+    if (!StockPropagationService.acquireLock(fromDate)) return;
+
     const today = new Date().toISOString().split('T')[0];
-    
+
     // Nëse data është sot ose e ardhme, nuk ka nevojë për propagim
     if (fromDate >= today) {
       console.log('📅 Data është sot ose e ardhme - nuk ka propagim');
+      StockPropagationService.releaseLock(fromDate);
       return;
     }
 
     console.log(`🔄 Filloj propagimin nga ${fromDate} deri ${today}`);
-    
+
     try {
       // 1. Merr të dhënat e datës fillestare
       const { data: sourceEntry, error: sourceError } = await supabase
@@ -50,7 +67,7 @@ export class StockPropagationService {
       // 2. Llogarit stokun përfundimtar të T2 për datën fillestare
       const sourceT2 = sourceEntry.turn2_data as unknown as TurnData;
       const sourceT1 = sourceEntry.turn1_data as unknown as TurnData;
-      
+
       // Llogarit stokun e ri për secilin produkt
       // KRITIKE: Përdor calculateStockForNextTurn që respekton gjendje (numërim fizik)
       const calculatedStock: { [key: string]: number } = {};
@@ -60,14 +77,14 @@ export class StockPropagationService {
       });
 
       // Llogarit mulliri për ditën tjetër (T2 nëse > 0, përndryshe T1)
-      const mulliriForNextDay = sourceT2.mulliriPerfund > 0 
-        ? sourceT2.mulliriPerfund 
+      const mulliriForNextDay = sourceT2.mulliriPerfund > 0
+        ? sourceT2.mulliriPerfund
         : sourceT1.mulliriPerfund;
 
       // 3. Itero për çdo ditë nga fromDate+1 deri sot
       let currentDate = new Date(fromDate);
       currentDate.setDate(currentDate.getDate() + 1);
-      
+
       let previousStock = calculatedStock;
       let previousMulliri = mulliriForNextDay;
 
@@ -121,8 +138,8 @@ export class StockPropagationService {
             previousStock[productName] = CalculationService.calculateStockForNextTurn(productData);
           });
 
-          previousMulliri = updatedT2.mulliriPerfund > 0 
-            ? updatedT2.mulliriPerfund 
+          previousMulliri = updatedT2.mulliriPerfund > 0
+            ? updatedT2.mulliriPerfund
             : updatedT1.mulliriPerfund;
 
           console.log(`✅ ${dateStr} përditësuar`);
@@ -149,7 +166,7 @@ export class StockPropagationService {
       toast.error('Gabim në propagimin e të dhënave');
       throw error;
     } finally {
-      StockPropagationService.isPropagating = false;
+      StockPropagationService.releaseLock(fromDate);
     }
   }
 
@@ -163,11 +180,8 @@ export class StockPropagationService {
    *                : calculateStockForNextTurn(T2)
    */
   static async rebaseFromGjendje(fromDate: string): Promise<void> {
-    if (StockPropagationService.isPropagating) {
-      console.warn('⚠️ Propagimi është duke u ekzekutuar tashmë — duke shmangur rebase paralel');
-      return;
-    }
-    StockPropagationService.isPropagating = true;
+    if (!StockPropagationService.acquireLock(fromDate)) return;
+
     const today = new Date().toISOString().split('T')[0];
     console.log(`🧮 Rebase nga gjendja: ${fromDate} → ${today}`);
 
@@ -275,7 +289,7 @@ export class StockPropagationService {
       toast.error('Gabim në rivendosjen e stokut');
       throw error;
     } finally {
-      StockPropagationService.isPropagating = false;
+      StockPropagationService.releaseLock(fromDate);
     }
   }
 
@@ -283,7 +297,7 @@ export class StockPropagationService {
    * Përditëso next_day_stock për një datë specifike
    */
   private static async updateNextDayStock(
-    date: string, 
+    date: string,
     stock: { [key: string]: number },
     mulliri: number
   ): Promise<void> {
@@ -322,7 +336,7 @@ export class StockPropagationService {
     newMulliri: number
   ): TurnData {
     const updatedProducts: { [key: string]: ProductData } = {};
-    
+
     // 1. Përditëso produktet ekzistuese me stokun e ri
     Object.entries(t1.products).forEach(([productName, data]) => {
       const productData = data as ProductData;
@@ -353,16 +367,17 @@ export class StockPropagationService {
   }
 
   /**
-   * Përditëso T2 stokFillim bazuar në T1.gjendje (nëse plotësuar) ose llogaritje teorike
-   * KRITIKE: Nëse gjendje > 0 përdor atë, përndryshe llogarit stokFillim + furnizime - shiriti
+   * Përditëso T2 stokFillim bazuar në T1 (ruaj T2.furnizime gjithmonë).
+   * KRITIKE: calculateT2StokFillim shton furnizimet T2 mbi bazën T1 —
+   * pa këtë, çdo propagim do të fshinte furnizimet e ngarkuara në T2.
    */
   private static updateT2FromT1(t2: TurnData, t1: TurnData): TurnData {
     const updatedProducts: { [key: string]: ProductData } = {};
-    
+
     Object.entries(t2.products).forEach(([productName, data]) => {
       const productData = data as ProductData;
       const t1Data = t1.products[productName] as ProductData;
-      
+
       if (t1Data) {
         // KRITIKE: Ruaj T2.furnizime — `calculateT2StokFillim` shton furnizimet
         // që janë futur tashmë në T2 (përndryshe propagimi i fshin).
@@ -386,4 +401,3 @@ export class StockPropagationService {
     };
   }
 }
-
