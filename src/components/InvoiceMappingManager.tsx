@@ -85,7 +85,11 @@ export const InvoiceMappingManager = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => deleteMapping(isAdmin)}
+            onClick={() => {
+              if (window.confirm('⚠️ Je i sigurt? Kjo do të fshijë TË GJITHA mapinget e faturave. Veprimi nuk mund të zhbëhet.')) {
+                deleteMapping(isAdmin);
+              }
+            }}
             className="text-xs text-destructive"
           >
             <Trash2 className="h-3 w-3 mr-1" />
