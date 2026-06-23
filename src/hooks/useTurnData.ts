@@ -444,12 +444,17 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       products: Object.fromEntries(
         Object.entries(prev.products).map(([key, data]) => {
           const t1Data = turn1.products[key];
-          // KRITIKE: Përdor gjendje (vlera reale e numëruar)
-          return [key, { ...data, stokFillim: t1Data.gjendje }];
+          if (!t1Data) return [key, data];
+          // Përdor gjendje fizike nëse është plotësuar (> 0),
+          // përndryshe fallback te formula teorike: stokFillim - shiriti
+          const newStokFillim = t1Data.gjendje > 0
+            ? t1Data.gjendje
+            : CalculationService.calculateStockForNextTurn(t1Data);
+          return [key, { ...data, stokFillim: newStokFillim }];
         })
       )
     }));
-    toast.success("Gjendje e T1 u kopjua në T2 stokFillim");
+    toast.success("T1 → T2: stokFillim u kopjua (gjendje fizike ose llogaritje teorike)");
   }, [turn1]);
 
   // Save current day data
