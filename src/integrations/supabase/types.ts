@@ -105,6 +105,14 @@ export type Database = {
         Row: {
           created_at: string | null
           entry_date: string
+          gjendje_confirmed_t1: boolean
+          gjendje_confirmed_t1_at: string | null
+          gjendje_confirmed_t1_by: string | null
+          gjendje_confirmed_t2: boolean
+          gjendje_confirmed_t2_at: string | null
+          gjendje_confirmed_t2_by: string | null
+          gjendje_print_lock_t1_until: string | null
+          gjendje_print_lock_t2_until: string | null
           id: string
           turn1_data: Json
           turn1_locked: boolean
@@ -119,6 +127,14 @@ export type Database = {
         Insert: {
           created_at?: string | null
           entry_date: string
+          gjendje_confirmed_t1?: boolean
+          gjendje_confirmed_t1_at?: string | null
+          gjendje_confirmed_t1_by?: string | null
+          gjendje_confirmed_t2?: boolean
+          gjendje_confirmed_t2_at?: string | null
+          gjendje_confirmed_t2_by?: string | null
+          gjendje_print_lock_t1_until?: string | null
+          gjendje_print_lock_t2_until?: string | null
           id?: string
           turn1_data?: Json
           turn1_locked?: boolean
@@ -133,6 +149,14 @@ export type Database = {
         Update: {
           created_at?: string | null
           entry_date?: string
+          gjendje_confirmed_t1?: boolean
+          gjendje_confirmed_t1_at?: string | null
+          gjendje_confirmed_t1_by?: string | null
+          gjendje_confirmed_t2?: boolean
+          gjendje_confirmed_t2_at?: string | null
+          gjendje_confirmed_t2_by?: string | null
+          gjendje_print_lock_t1_until?: string | null
+          gjendje_print_lock_t2_until?: string | null
           id?: string
           turn1_data?: Json
           turn1_locked?: boolean
