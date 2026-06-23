@@ -386,7 +386,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       // Furnizime mbetet si regjistër historie; Dif tashmë llogaritet pa Furnizime.
       if (field === 'furnizime') {
         const delta = value - (existing.furnizime || 0);
-        next.stokFillim = (existing.stokFillim || 0) + delta;
+        next.stokFillim = Math.max(0, (existing.stokFillim || 0) + delta);
       }
       return {
         ...prev,
