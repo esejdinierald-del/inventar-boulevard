@@ -163,6 +163,11 @@ export class StockPropagationService {
    *                : calculateStockForNextTurn(T2)
    */
   static async rebaseFromGjendje(fromDate: string): Promise<void> {
+    if (StockPropagationService.isPropagating) {
+      console.warn('⚠️ Propagimi është duke u ekzekutuar tashmë — duke shmangur rebase paralel');
+      return;
+    }
+    StockPropagationService.isPropagating = true;
     const today = new Date().toISOString().split('T')[0];
     console.log(`🧮 Rebase nga gjendja: ${fromDate} → ${today}`);
 
