@@ -476,6 +476,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
 
   // Save data for next day
   const saveForNextDay = useCallback(async () => {
+    // Shëno kohën e save-it manual — useEffect do ta kapërcejë write-in e vet brenda 2s
+    lastManualSaveRef.current = Date.now();
     // First save current day
     await saveCurrentDay();
 

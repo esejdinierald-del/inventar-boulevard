@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -828,9 +828,11 @@ const DailyEntry = () => {
               onTurnUpdate={updateTurn2Field}
               onMulliriPerfundUpdate={(value) => {
                 updateTurn2Field('mulliriPerfund', value);
-                // Sinkronizim direkt (pa pritur debounce) që dita pasardhëse të
-                // marrë menjëherë vlerën e re të mullirit nga foto e T2.
-                syncMulliriT2ToNextDay(value);
+                // Debounce 600ms — shmang shkrime të shumta gjatë shtypjes
+                if (mulliriDebounceRef.current) clearTimeout(mulliriDebounceRef.current);
+                mulliriDebounceRef.current = setTimeout(() => {
+                  syncMulliriT2ToNextDay(value);
+                }, 600);
               }}
 
               onReceiptData={handleReceiptDataT2}
