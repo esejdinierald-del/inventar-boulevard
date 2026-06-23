@@ -571,7 +571,7 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
           continue;
         }
 
-        const newShitje = (drink.shitje || 0) + delta;
+        const newShitje = Math.max(0, (drink.shitje || 0) + delta);
         const newGjendje = (drink.furnizime || 0) - newShitje;
 
         const { error: updateError } = await supabase
