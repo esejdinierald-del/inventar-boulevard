@@ -148,6 +148,8 @@ export class StockPropagationService {
       console.error('❌ Gabim në propagim:', error);
       toast.error('Gabim në propagimin e të dhënave');
       throw error;
+    } finally {
+      StockPropagationService.isPropagating = false;
     }
   }
 
