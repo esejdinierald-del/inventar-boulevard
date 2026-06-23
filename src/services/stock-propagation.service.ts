@@ -274,6 +274,8 @@ export class StockPropagationService {
       console.error('❌ Gabim në rebase:', error);
       toast.error('Gabim në rivendosjen e stokut');
       throw error;
+    } finally {
+      StockPropagationService.isPropagating = false;
     }
   }
 
