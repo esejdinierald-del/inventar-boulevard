@@ -3,9 +3,14 @@ import { toast } from 'sonner';
 
 export class AlcoholicDrinksService {
   /**
-   * Apliko zbritjet e pijeve alkoolike nga shiritat në inventar
+   * @deprecated MOS E THIRR — kjo metodë është jo-idempotente dhe dyfishon zbritjet.
+   * Zbritja bëhet tashmë nga `applyAlcoholicDrinksImmediately` në useTurnData.ts
+   * me logjikë delta + `alcohol_deductions` tabele.
+   * Kjo metodë ekziston vetëm për referencë historike dhe do të fshihet.
    */
   static async applyAlcoholicDrinksSales(selectedDate: string): Promise<void> {
+    console.error('❌ DEPRECATED: applyAlcoholicDrinksSales u thirr aksidentalisht — bllokuar.');
+    return; // Blloko ekzekutimin e logjikës jo-idempotente
     try {
       // Ngarko shitjet e turn1 dhe turn2 - UNIFIKUAR me useAlcoholicDrinks hook
       const key = `alcoholic_drinks_${selectedDate}`;
