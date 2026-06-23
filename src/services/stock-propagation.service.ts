@@ -10,11 +10,19 @@ interface DailyEntry {
 }
 
 export class StockPropagationService {
+  // Guard kundër ekzekutimit paralel të propagimit/rebase
+  private static isPropagating = false;
+
   /**
    * Propago ndryshimet e stokut nga një datë e caktuar deri tek data aktuale
    * Kjo thirret kur modifikohen të dhënat e një date të kaluar
    */
   static async propagateFromDate(fromDate: string): Promise<void> {
+    if (StockPropagationService.isPropagating) {
+      console.warn('⚠️ Propagimi është duke u ekzekutuar tashmë — duke shmangur ekzekutimin paralel');
+      return;
+    }
+    StockPropagationService.isPropagating = true;
     const today = new Date().toISOString().split('T')[0];
     
     // Nëse data është sot ose e ardhme, nuk ka nevojë për propagim
