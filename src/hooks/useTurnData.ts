@@ -58,6 +58,8 @@ const migrateProductNames = (turnData: TurnData, productList: string[]): TurnDat
 
 export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnDataProps) => {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  // Guard: shmang double-write nga useEffect kur saveForNextDay thirret manualisht
+  const lastManualSaveRef = useRef<number>(0);
   
   const createEmptyTurnData = useCallback((): TurnData => ({
     products: Object.fromEntries(products.map(p => [p, {
@@ -327,6 +329,11 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
     if (isInitialLoad.current) return;
     
     const saveNextDayAndPropagate = async () => {
+      // Shmang double-write: nëse saveForNextDay u thirr manualisht brenda 2s, kalon
+      if (Date.now() - lastManualSaveRef.current < 2000) {
+        console.log('⏭️ Skipping useEffect next_day write — manual save ishte i fundit');
+        return;
+      }
       try {
         // MBROJTJE SHTESË: Mos mbishkruaj next_day_stock me 0 nëse T2 nuk ka të dhëna reale
         const hasAnyT2Data = Object.values(turn2.products).some(
@@ -469,6 +476,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
 
   // Save data for next day
   const saveForNextDay = useCallback(async () => {
+    // Shëno kohën e save-it manual — useEffect do ta kapërcejë write-in e vet brenda 2s
+    lastManualSaveRef.current = Date.now();
     // First save current day
     await saveCurrentDay();
 
