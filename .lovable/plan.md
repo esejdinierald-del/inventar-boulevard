@@ -1,45 +1,42 @@
 
-# Plan: Zbatim i 6 Fix-eve nga Claude
+# Plan: ZIP i projektit për Claude
 
-Mori sygjerimet e Claude dhe i strukturova si plan zbatimi. Të 6 janë të sigurta, të vogla, dhe nuk prishin logjikën që ndërtuam.
+Claude.ai pranon ngarkim ZIP-i direkt në bisedë (deri ~30MB për plan-in falas, më shumë me Pro). Po të përgatis një arkiv të pastër, pa skedarë të panevojshëm.
 
-## Ndryshimet
+## Çfarë do bëj
 
-### 1. `src/services/stock-propagation.service.ts` — Lock kundër propagimit paralel
-- Shto `private static isPropagating = false`
-- Në `propagateFromDate` dhe `rebaseFromGjendje`: nëse `isPropagating === true` → return menjëherë
-- Vendos `isPropagating = true` në fillim, `false` në `finally`
-- **Pse**: Parandalon dy thirrje paralele që shkruajnë mbi njëra-tjetrën në Supabase
+1. **Krijo ZIP** te `/mnt/documents/inventar-boulevard-source.zip` që përmban:
+   - `src/` (gjithë kodi React/TS)
+   - `supabase/` (edge functions + config)
+   - `public/`
+   - `index.html`, `package.json`, `tsconfig*.json`, `vite.config.ts`, `tailwind.config.ts`, `vitest.config.ts`, `components.json`, `eslint.config.js`, `postcss.config.js`
+   - `README.md`
+   - `.lovable/memory/` (kontekst i rregullave të biznesit — e dobishme për Claude)
 
-### 2. `src/hooks/useTurnData.ts` → `applyAlcoholicDrinksImmediately` — Math.max(0, ...) për shitje
-- `newShitje = Math.max(0, (drink.shitje || 0) + delta)`
-- **Pse**: Mbron nga shitje negative kur delta < 0 (re-upload me sasi më të vogël)
+2. **Përjashto** (që ZIP-i të jetë i vogël dhe pa zhurmë):
+   - `node_modules/`, `dist/`, `.git/`, `.cache/`, `bun.lockb`, `package-lock.json`
+   - `.env` (sekretet — KURRË në ZIP për Claude)
+   - `src/integrations/supabase/types.ts` (auto-gjeneruar, i madh) — opsionale; mund të mbahet nëse Claude pyet për tipet
 
-### 3. `src/services/alcoholic-drinks.service.ts` — Deprecate `applyAlcoholicDrinksSales`
-- Shto JSDoc `@deprecated`
-- `return;` menjëherë në krye të metodës me `console.error('DEPRECATED…')`
-- **Pse**: Bllokon dyfishim nëse dikush e thërret aksidentalisht në të ardhmen
+3. **Shto një `CONTEXT.md` në krye të ZIP-it** me:
+   - Përshkrim të shkurtër të projektit (aplikacion menaxhimi inventari + xhiro për kafene/bar)
+   - Stack: React 18 + Vite + TS + Tailwind + Lovable Cloud (Supabase)
+   - Problemi aktual që po debug-ojmë (T2 stokFillim / furnizime / propagim)
+   - Skedarët kyç ku Claude duhet të fokusohet: `src/services/calculations.ts`, `src/services/stock-propagation.service.ts`, `src/hooks/useTurnData.ts`, `src/pages/DailyEntry.tsx`
 
-### 4. `src/hooks/useTurnData.ts` → `copyT1ToT2` — Fallback kur `gjendje = 0`
-- `newStokFillim = t1Data.gjendje > 0 ? t1Data.gjendje : calculateStockForNextTurn(t1Data)`
-- **Pse**: Nëse stafi kopjon T1→T2 para se të numërojë gjendjen, T2 nuk fillon me 0
+4. **Verifikim**: kontrolloj madhësinë; nëse > 25MB, heq edhe `.lovable/memory/` ose ndaj në dy ZIP.
 
-### 5. `src/components/InvoiceMappingManager.tsx` — Konfirmim para fshirjes
-- Wrap `deleteMapping(isAdmin)` me `window.confirm('⚠️ Je i sigurt? Kjo do të fshijë TË GJITHA mapinget')`
-- **Pse**: Mbron nga klik aksidental që fshin gjithë historinë
+5. **Dorëzimi**: lë `<presentation-artifact>` për ta shkarkuar direkt.
 
-### 6. `src/hooks/useTurnData.ts` — `Math.max(0, …)` te `updateTurn1Product` dhe `updateTurn2Product`
-- Kur `field === 'furnizime'`: `next.stokFillim = Math.max(0, (existing.stokFillim || 0) + delta)`
-- **Pse**: Parandalon stokFillim negativ kur stafi zvogëlon furnizimet
+## Si ta përdorësh me Claude
 
-## Çfarë NUK preket
-- Formula `calculateT2StokFillim` (mbetet siç është)
-- Auto-sync useEffect debounces
-- Tabela `alcohol_deductions` (Claude propozoi migration; verifikoj nëse ekziston përpara — mendoj se po, e krijuam në punën e mëparshme)
+1. Shkarko ZIP-in nga butoni që do shfaqet.
+2. Hap [claude.ai](https://claude.ai) → bisedë e re (mundësisht me model Sonnet 4.5 ose Opus).
+3. Tërhiq ZIP-in në bisedë + shkruaj pyetjen, p.sh.:
+   > "Lexo `CONTEXT.md` së pari. Pastaj më jep mendim mbi logjikën e propagimit të stokut në `stock-propagation.service.ts` dhe `useTurnData.ts`. A ka race condition apo bug që mund të shkaktojnë T2.stokFillim të gabuar?"
 
-## Verifikim
-- `bunx vitest run` — të 26 testet ekzistuese duhet të kalojnë
-- Build pa errore
+## Pse jo opsione të tjera
+- **GitHub**: ti the që s'e merr dot — kalojmë.
+- **MCP / Claude Code**: kërkojnë lidhje me repo; ZIP është më i shpejtë për një konsultim një-herësh.
 
-## Pyetje për ty para se të zbatoj
-A i miraton të 6 ndryshimet, apo do të heqim ndonjë? Të gjitha janë defensive — nuk ndryshojnë logjikën, vetëm shtojnë mbrojtje.
+A ta krijoj ZIP-in tani?
