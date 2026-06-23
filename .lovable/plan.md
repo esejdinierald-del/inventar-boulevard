@@ -1,42 +1,19 @@
+## Zëvendëso `src/services/stock-propagation.service.ts`
 
-# Plan: ZIP i projektit për Claude
+Aplikoj versionin e ri nga Claude që zëvendëson lock-un global boolean (`isPropagating`) me një **lock per-datë me timeout 60s** (`activePropagations: Map<string, {startedAt}>`).
 
-Claude.ai pranon ngarkim ZIP-i direkt në bisedë (deri ~30MB për plan-in falas, më shumë me Pro). Po të përgatis një arkiv të pastër, pa skedarë të panevojshëm.
+### Përfitimet
+- Propagime për data të ndryshme mund të ekzekutohen paralelisht (nuk bllokojnë njëra-tjetrën).
+- Vetëm i njëjti `fromDate` bllokohet nga vetvetja (parandalon dyfishim).
+- Timeout 60s e çliron lock-un automatikisht nëse një propagim ngec (p.sh. nga gabim rrjeti pa `finally`).
 
-## Çfarë do bëj
+### Ndryshimet
+- Hiq: `private static isPropagating = false`.
+- Shto: `activePropagations: Map`, `LOCK_TIMEOUT_MS`, helperat `acquireLock(fromDate)` dhe `releaseLock(fromDate)`.
+- `propagateFromDate` dhe `rebaseFromGjendje`: zëvendësojnë check-un e vjetër me `if (!acquireLock(fromDate)) return;` dhe `finally { releaseLock(fromDate); }`.
+- Pjesa tjetër e logjikës (propagimi, rebase, `updateT1WithNewStock`, `updateT2FromT1`, `updateNextDayStock`) mbetet **identike** me kodin aktual.
 
-1. **Krijo ZIP** te `/mnt/documents/inventar-boulevard-source.zip` që përmban:
-   - `src/` (gjithë kodi React/TS)
-   - `supabase/` (edge functions + config)
-   - `public/`
-   - `index.html`, `package.json`, `tsconfig*.json`, `vite.config.ts`, `tailwind.config.ts`, `vitest.config.ts`, `components.json`, `eslint.config.js`, `postcss.config.js`
-   - `README.md`
-   - `.lovable/memory/` (kontekst i rregullave të biznesit — e dobishme për Claude)
+### Verifikim
+- Të 30 testet ekzistuese duhet të vazhdojnë të kalojnë (asnjë ndryshim formule).
 
-2. **Përjashto** (që ZIP-i të jetë i vogël dhe pa zhurmë):
-   - `node_modules/`, `dist/`, `.git/`, `.cache/`, `bun.lockb`, `package-lock.json`
-   - `.env` (sekretet — KURRË në ZIP për Claude)
-   - `src/integrations/supabase/types.ts` (auto-gjeneruar, i madh) — opsionale; mund të mbahet nëse Claude pyet për tipet
-
-3. **Shto një `CONTEXT.md` në krye të ZIP-it** me:
-   - Përshkrim të shkurtër të projektit (aplikacion menaxhimi inventari + xhiro për kafene/bar)
-   - Stack: React 18 + Vite + TS + Tailwind + Lovable Cloud (Supabase)
-   - Problemi aktual që po debug-ojmë (T2 stokFillim / furnizime / propagim)
-   - Skedarët kyç ku Claude duhet të fokusohet: `src/services/calculations.ts`, `src/services/stock-propagation.service.ts`, `src/hooks/useTurnData.ts`, `src/pages/DailyEntry.tsx`
-
-4. **Verifikim**: kontrolloj madhësinë; nëse > 25MB, heq edhe `.lovable/memory/` ose ndaj në dy ZIP.
-
-5. **Dorëzimi**: lë `<presentation-artifact>` për ta shkarkuar direkt.
-
-## Si ta përdorësh me Claude
-
-1. Shkarko ZIP-in nga butoni që do shfaqet.
-2. Hap [claude.ai](https://claude.ai) → bisedë e re (mundësisht me model Sonnet 4.5 ose Opus).
-3. Tërhiq ZIP-in në bisedë + shkruaj pyetjen, p.sh.:
-   > "Lexo `CONTEXT.md` së pari. Pastaj më jep mendim mbi logjikën e propagimit të stokut në `stock-propagation.service.ts` dhe `useTurnData.ts`. A ka race condition apo bug që mund të shkaktojnë T2.stokFillim të gabuar?"
-
-## Pse jo opsione të tjera
-- **GitHub**: ti the që s'e merr dot — kalojmë.
-- **MCP / Claude Code**: kërkojnë lidhje me repo; ZIP është më i shpejtë për një konsultim një-herësh.
-
-A ta krijoj ZIP-in tani?
+Asnjë skedar tjetër nuk preket.
