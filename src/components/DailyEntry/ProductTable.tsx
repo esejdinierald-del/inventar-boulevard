@@ -129,7 +129,7 @@ export const ProductTable = ({
 
 
       <div className="overflow-x-auto">
-        <Table className="[&_th]:px-1 [&_th]:md:px-4 [&_td]:px-1 [&_td]:md:px-4 [&_th]:text-xs [&_th]:md:text-sm">
+        <Table className="[&_th]:px-1 [&_th]:md:px-2 [&_td]:px-1 [&_td]:md:px-2 [&_th]:text-xs [&_th]:md:text-sm [&_th]:whitespace-nowrap">
         <TableHeader>
           <TableRow>
             <TableHead>Produkti</TableHead>
