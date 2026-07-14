@@ -90,12 +90,12 @@ export const AlcoholicDrinksTable = ({ turnName, onDataExtracted, isFieldDisable
       </CardHeader>
       <CardContent>
         <div className="rounded-md border overflow-x-auto">
-          <table className="w-full [&_th]:px-1 [&_th]:md:px-2 [&_td]:px-1 [&_td]:md:px-2">
+          <table className="w-auto [&_th]:px-1 [&_th]:md:px-2 [&_td]:px-1 [&_td]:md:px-2 [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
             <thead>
               <tr className="border-b bg-muted/50">
-                <th className="p-2 md:p-2 text-left font-medium text-xs md:text-sm whitespace-nowrap">Pija</th>
-                <th className="p-2 md:p-2 text-left font-medium text-xs md:text-sm whitespace-nowrap">Gjendje</th>
-                <th className="p-2 md:p-2 text-left font-medium text-xs md:text-sm whitespace-nowrap">Shitje</th>
+                <th className="p-2 md:p-2 text-left font-medium text-xs md:text-sm max-w-[140px] md:max-w-[200px]">Pija</th>
+                <th className="p-2 md:p-2 text-left font-medium text-xs md:text-sm w-px">Gjendje</th>
+                <th className="p-2 md:p-2 text-left font-medium text-xs md:text-sm w-px">Shitje</th>
               </tr>
             </thead>
             <tbody>
