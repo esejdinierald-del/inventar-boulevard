@@ -129,7 +129,7 @@ export const ProductTable = ({
 
 
       <div className="overflow-x-auto">
-        <Table>
+        <Table className="[&_th]:px-1 [&_th]:md:px-4 [&_td]:px-1 [&_td]:md:px-4 [&_th]:text-xs [&_th]:md:text-sm">
         <TableHeader>
           <TableRow>
             <TableHead>Produkti</TableHead>
@@ -185,7 +185,7 @@ export const ProductTable = ({
                     step="any"
                     value={data.stokFillim || ""}
                     onChange={(e) => onProductUpdate(product, 'stokFillim', Number(e.target.value))}
-                    className="w-20"
+                    className="w-14 md:w-20"
                     disabled={!isAdminUnlocked}
                     tabIndex={isBlurred ? -1 : 0}
                   />
@@ -196,7 +196,7 @@ export const ProductTable = ({
                     step="any"
                     value={data.gjendje || ""}
                     onChange={(e) => onProductUpdate(product, 'gjendje', Number(e.target.value))}
-                    className="w-20"
+                    className="w-14 md:w-20"
                     disabled={isGjendjeDisabled(isFieldDisabled) || (gjendjeUploaded && !isAdminUnlocked) || isGjendjePrintBlurred}
                     tabIndex={isGjendjePrintBlurred ? -1 : 0}
                   />
@@ -207,7 +207,7 @@ export const ProductTable = ({
                     step="any"
                     value={data.shiriti || ""}
                     onChange={(e) => onProductUpdate(product, 'shiriti', Number(e.target.value))}
-                    className="w-20"
+                    className="w-14 md:w-20"
                     disabled={!isAdminUnlocked}
                     tabIndex={isBlurred ? -1 : 0}
                   />
@@ -218,7 +218,7 @@ export const ProductTable = ({
                     step="any"
                     value={data.furnizime || ""}
                     onChange={(e) => onProductUpdate(product, 'furnizime', Number(e.target.value))}
-                    className="w-20 bg-success/10"
+                    className="w-14 md:w-20 bg-success/10"
                     disabled={isFurnizimeDisabled(isFieldDisabled) || (gjendjeUploaded && !isAdminUnlocked)}
                   />
                 </TableCell>

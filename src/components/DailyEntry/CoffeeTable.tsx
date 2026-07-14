@@ -22,7 +22,7 @@ export const CoffeeTable = ({
 
   return (
     <div className="overflow-x-auto">
-      <Table>
+      <Table className="[&_th]:px-1 [&_th]:md:px-4 [&_td]:px-1 [&_td]:md:px-4 [&_th]:text-xs [&_th]:md:text-sm">
         <TableHeader>
           <TableRow>
             <TableHead>Lloji</TableHead>
@@ -39,7 +39,7 @@ export const CoffeeTable = ({
                   step="any"
                   value={coffeeData[coffee] || ""}
                   onChange={(e) => onCoffeeUpdate(coffee, Number(e.target.value))}
-                  className="w-24"
+                  className="w-16 md:w-24"
                   disabled={isFieldDisabled}
                 />
               </TableCell>

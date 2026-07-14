@@ -90,30 +90,30 @@ export const AlcoholicDrinksTable = ({ turnName, onDataExtracted, isFieldDisable
       </CardHeader>
       <CardContent>
         <div className="rounded-md border overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full [&_th]:px-1 [&_th]:md:px-3 [&_td]:px-1 [&_td]:md:px-3">
             <thead>
               <tr className="border-b bg-muted/50">
-                <th className="p-3 text-left font-medium text-sm">Pija</th>
-                <th className="p-3 text-left font-medium text-sm">Gjendje Aktuale</th>
-                <th className="p-3 text-left font-medium text-sm">Shitje</th>
+                <th className="p-2 md:p-3 text-left font-medium text-xs md:text-sm">Pija</th>
+                <th className="p-2 md:p-3 text-left font-medium text-xs md:text-sm">Gjendje</th>
+                <th className="p-2 md:p-3 text-left font-medium text-xs md:text-sm">Shitje</th>
               </tr>
             </thead>
             <tbody>
               {drinks.map((drink) => (
                 <tr key={drink.id} className="border-b">
-                  <td className="p-3 font-medium text-sm">{drink.drink_name}</td>
-                  <td className="p-3">
-                    <span className={`font-medium text-sm ${drink.gjendje < 5 ? 'text-warning' : 'text-muted-foreground'}`}>
+                  <td className="p-2 md:p-3 font-medium text-xs md:text-sm">{drink.drink_name}</td>
+                  <td className="p-2 md:p-3">
+                    <span className={`font-medium text-xs md:text-sm ${drink.gjendje < 5 ? 'text-warning' : 'text-muted-foreground'}`}>
                       {drink.gjendje}
                     </span>
                   </td>
-                  <td className="p-3">
+                  <td className="p-2 md:p-3">
                     <Input
                       type="number"
                       value={sales[drink.drink_name] || ""}
                       onChange={(e) => handleSaleChange(drink.drink_name, parseInt(e.target.value) || 0)}
                       disabled={isFieldDisabled}
-                      className="w-24"
+                      className="w-16 md:w-24"
                       min="0"
                       placeholder="0"
                     />

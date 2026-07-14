@@ -45,7 +45,7 @@ export const ShpenzimiTable = ({
 
   return (
     <div className="space-y-2">
-      <Table>
+      <Table className="[&_th]:px-1 [&_th]:md:px-4 [&_td]:px-1 [&_td]:md:px-4 [&_th]:text-xs [&_th]:md:text-sm">
         <TableHeader>
           <TableRow>
             <TableHead className="w-[60%]">Emërtimi</TableHead>
