@@ -22,11 +22,11 @@ export const CoffeeTable = ({
 
   return (
     <div className="overflow-x-auto">
-      <Table className="[&_th]:px-1 [&_th]:md:px-2 [&_td]:px-1 [&_td]:md:px-2 [&_th]:text-xs [&_th]:md:text-sm [&_th]:whitespace-nowrap">
+      <Table className="w-auto min-w-0 [&_th]:px-1 [&_th]:md:px-2 [&_td]:px-1 [&_td]:md:px-2 [&_th]:text-xs [&_th]:md:text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
         <TableHeader>
           <TableRow>
-            <TableHead>Lloji</TableHead>
-            <TableHead>Sasia</TableHead>
+            <TableHead className="max-w-[140px] md:max-w-[200px]">Lloji</TableHead>
+            <TableHead className="w-px">Sasia</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
