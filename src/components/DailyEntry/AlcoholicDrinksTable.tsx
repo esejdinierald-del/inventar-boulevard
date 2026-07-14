@@ -101,13 +101,13 @@ export const AlcoholicDrinksTable = ({ turnName, onDataExtracted, isFieldDisable
             <tbody>
               {drinks.map((drink) => (
                 <tr key={drink.id} className="border-b">
-                  <td className="p-3 font-medium text-sm">{drink.drink_name}</td>
-                  <td className="p-3">
-                    <span className={`font-medium text-sm ${drink.gjendje < 5 ? 'text-warning' : 'text-muted-foreground'}`}>
+                  <td className="p-2 md:p-3 font-medium text-xs md:text-sm">{drink.drink_name}</td>
+                  <td className="p-2 md:p-3">
+                    <span className={`font-medium text-xs md:text-sm ${drink.gjendje < 5 ? 'text-warning' : 'text-muted-foreground'}`}>
                       {drink.gjendje}
                     </span>
                   </td>
-                  <td className="p-3">
+                  <td className="p-2 md:p-3">
                     <Input
                       type="number"
                       value={sales[drink.drink_name] || ""}
