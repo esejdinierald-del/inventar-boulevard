@@ -113,7 +113,7 @@ export const AlcoholicDrinksTable = ({ turnName, onDataExtracted, isFieldDisable
                       value={sales[drink.drink_name] || ""}
                       onChange={(e) => handleSaleChange(drink.drink_name, parseInt(e.target.value) || 0)}
                       disabled={isFieldDisabled}
-                      className="w-24"
+                      className="w-16 md:w-24"
                       min="0"
                       placeholder="0"
                     />
