@@ -125,34 +125,36 @@ export const TurnSection = ({
               turnData={turnData}
               calculateDif={CalculationService.calculateDif}
             />
-            {showCopyButton && onCopyToNextTurn && (
-              <Button variant="outline" size="sm" onClick={onCopyToNextTurn} className="text-xs">
-                Kopjo në T2 →
-              </Button>
-            )}
             {isAdminUnlocked && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="text-xs" disabled={rebasing}>
-                    <RefreshCw className={`h-3 w-3 mr-1 ${rebasing ? 'animate-spin' : ''}`} />
-                    Rivendos stokun nga gjendja
+              <>
+                {showCopyButton && onCopyToNextTurn && (
+                  <Button variant="outline" size="sm" onClick={onCopyToNextTurn} className="text-xs">
+                    Kopjo në T2 →
                   </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Rivendos stokun nga gjendja?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Për çdo produkt të kësaj date ({selectedDate}), gjendja fizike (T2 → T1 si rezervë)
-                      bëhet stok fillestar i ditës pasardhëse. Të gjitha ditët deri sot do të rillogariten
-                      me formulën standarde. Veprimi nuk zhbëhet automatikisht.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Anulo</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleRebase}>Po, rivendos</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                )}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="text-xs" disabled={rebasing}>
+                      <RefreshCw className={`h-3 w-3 mr-1 ${rebasing ? 'animate-spin' : ''}`} />
+                      Rivendos stokun nga gjendja
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Rivendos stokun nga gjendja?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Për çdo produkt të kësaj date ({selectedDate}), gjendja fizike (T2 → T1 si rezervë)
+                        bëhet stok fillestar i ditës pasardhëse. Të gjitha ditët deri sot do të rillogariten
+                        me formulën standarde. Veprimi nuk zhbëhet automatikisht.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Anulo</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleRebase}>Po, rivendos</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
             )}
           </div>
         </CardHeader>

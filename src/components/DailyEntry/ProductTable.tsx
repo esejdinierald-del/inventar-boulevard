@@ -129,17 +129,17 @@ export const ProductTable = ({
 
 
       <div className="overflow-x-auto">
-        <Table className="[&_th]:px-1 [&_th]:md:px-2 [&_td]:px-1 [&_td]:md:px-2 [&_th]:text-xs [&_th]:md:text-sm [&_th]:whitespace-nowrap">
+        <Table className="w-auto min-w-0 [&_th]:px-1 [&_th]:md:px-2 [&_td]:px-1 [&_td]:md:px-2 [&_th]:text-xs [&_th]:md:text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
         <TableHeader>
           <TableRow>
-            <TableHead>Produkti</TableHead>
-            <TableHead>Stok Fillim</TableHead>
-            <TableHead>Gjendje</TableHead>
-            <TableHead>Shiriti</TableHead>
-            <TableHead>Furnizime</TableHead>
-            <TableHead>Dif</TableHead>
-            <TableHead title="Data kur ka filluar diferenca (deri 30d prapa)">Dif fillon</TableHead>
-            {isAdminUnlocked && <TableHead className="w-[50px]"></TableHead>}
+            <TableHead className="max-w-[140px] md:max-w-[200px]">Produkti</TableHead>
+            <TableHead className="w-px">Stok Fillim</TableHead>
+            <TableHead className="w-px">Gjendje</TableHead>
+            <TableHead className="w-px">Shiriti</TableHead>
+            <TableHead className="w-px">Furnizime</TableHead>
+            <TableHead className="w-px">Dif</TableHead>
+            <TableHead className="w-px" title="Data kur ka filluar diferenca (deri 30d prapa)">Dif fillon</TableHead>
+            {isAdminUnlocked && <TableHead className="w-px"></TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
