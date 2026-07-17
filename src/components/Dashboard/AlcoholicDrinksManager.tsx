@@ -31,7 +31,7 @@ interface DrinkRowProps {
   onReload: () => void | Promise<void>;
 }
 
-const DrinkRow = ({ drink, onUpdate, onDelete }: DrinkRowProps) => {
+const DrinkRow = ({ drink, idx, total, prevRow, nextRow, onUpdate, onDelete, onReload }: DrinkRowProps) => {
   const [values, setValues] = useState({
     furnizime: String(drink.furnizime),
     shitje: String(drink.shitje),
