@@ -150,7 +150,7 @@ export const AlcoholicDrinksManager = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('alcoholic_drinks_inventory')
-        .select('id, drink_name, furnizime, shitje, gjendje, sort_order, updated_at, purchase_price')
+        .select('id, drink_name, furnizime, shitje, gjendje, sort_order, track_daily, updated_at, purchase_price')
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
