@@ -207,11 +207,12 @@ export const CoffeeTypesManager = () => {
                   <TableRow>
                     <TableHead>Lloji i Kafes</TableHead>
                     <TableHead className="w-32">Çmim Blerje (ALL)</TableHead>
+                    <TableHead className="w-40">Renditje / Ditore</TableHead>
                     <TableHead className="w-24">Veprime</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {coffeeTypes.map((coffeeType) => (
+                  {coffeeTypes.map((coffeeType, idx) => (
                     <TableRow key={coffeeType.id}>
                       <TableCell className="font-medium">
                         {editingCoffeeType === coffeeType.id ? (
@@ -222,7 +223,9 @@ export const CoffeeTypesManager = () => {
                             autoFocus
                           />
                         ) : (
-                          coffeeType.name
+                          <span className={coffeeType.track_daily ? "" : "text-muted-foreground italic"}>
+                            {coffeeType.name}
+                          </span>
                         )}
                       </TableCell>
                       <TableCell>
