@@ -207,11 +207,12 @@ export const KitchenProductsManager = () => {
                   <TableRow>
                     <TableHead>Produkti</TableHead>
                     <TableHead className="w-32">Çmim Blerje (ALL)</TableHead>
+                    <TableHead className="w-40">Renditje / Ditore</TableHead>
                     <TableHead className="w-24">Veprime</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {products.map((product) => (
+                  {products.map((product, idx) => (
                     <TableRow key={product.id}>
                       <TableCell className="font-medium">
                         {editingProduct === product.id ? (
@@ -222,7 +223,9 @@ export const KitchenProductsManager = () => {
                             autoFocus
                           />
                         ) : (
-                          product.name
+                          <span className={product.track_daily ? "" : "text-muted-foreground italic"}>
+                            {product.name}
+                          </span>
                         )}
                       </TableCell>
                       <TableCell>
