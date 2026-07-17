@@ -34,7 +34,7 @@ export const CoffeeTypesManager = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('coffee_types')
-        .select('id, name, purchase_price, sort_order')
+        .select('id, name, purchase_price, sort_order, track_daily')
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
