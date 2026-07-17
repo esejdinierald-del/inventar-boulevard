@@ -130,9 +130,9 @@ const DailyEntry = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const { products, coffeeTypes, addProduct: originalAddProduct, deleteProduct: originalDeleteProduct, updateProduct, addCoffeeType: originalAddCoffeeType, deleteCoffeeType: originalDeleteCoffeeType } = useProductList();
-  const { kitchenProducts } = useKitchenProducts();
-  const { alcoholicDrinks } = useAlcoholicDrinksList();
+  const { products, coffeeTypes, addProduct: originalAddProduct, deleteProduct: originalDeleteProduct, updateProduct, addCoffeeType: originalAddCoffeeType, deleteCoffeeType: originalDeleteCoffeeType } = useProductList({ dailyOnly: true });
+  const { kitchenProducts } = useKitchenProducts({ dailyOnly: true });
+  const { alcoholicDrinks } = useAlcoholicDrinksList({ dailyOnly: true });
   const { lockState, lockTurn, unlockTurn, isTurnLocked, getLockedBy } = useTurnLock(selectedDate);
   const {
     turn1,
