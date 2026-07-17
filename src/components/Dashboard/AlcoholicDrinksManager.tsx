@@ -288,16 +288,22 @@ export const AlcoholicDrinksManager = () => {
                   <th className="p-3 text-left font-medium">Shitje</th>
                   <th className="p-3 text-left font-medium">Gjendje</th>
                   <th className="p-3 text-left font-medium">Përditësuar</th>
+                  <th className="p-3 text-left font-medium">Renditje / Ditore</th>
                   <th className="p-3 text-left font-medium">Veprime</th>
                 </tr>
               </thead>
               <tbody>
-                {drinks.map((drink) => (
-                  <DrinkRow 
-                    key={drink.id} 
-                    drink={drink} 
-                    onUpdate={updateDrink} 
-                    onDelete={deleteDrink} 
+                {drinks.map((drink, idx) => (
+                  <DrinkRow
+                    key={drink.id}
+                    drink={drink}
+                    idx={idx}
+                    total={drinks.length}
+                    prevRow={idx > 0 ? { id: drinks[idx - 1].id, sort_order: drinks[idx - 1].sort_order } : undefined}
+                    nextRow={idx < drinks.length - 1 ? { id: drinks[idx + 1].id, sort_order: drinks[idx + 1].sort_order } : undefined}
+                    onUpdate={updateDrink}
+                    onDelete={deleteDrink}
+                    onReload={loadDrinks}
                   />
                 ))}
               </tbody>
