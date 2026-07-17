@@ -6,6 +6,7 @@ import { Plus, Save, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { AdminRowControls } from "./AdminRowControls";
 
 interface AlcoholicDrink {
   id: string;
@@ -14,14 +15,20 @@ interface AlcoholicDrink {
   shitje: number;
   gjendje: number;
   sort_order: number;
+  track_daily: boolean;
   updated_at: string;
   purchase_price: number;
 }
 
 interface DrinkRowProps {
   drink: AlcoholicDrink;
+  idx: number;
+  total: number;
+  prevRow?: { id: string; sort_order: number };
+  nextRow?: { id: string; sort_order: number };
   onUpdate: (id: string, field: 'furnizime' | 'shitje' | 'gjendje' | 'purchase_price', value: number) => void;
   onDelete: (id: string) => void;
+  onReload: () => void | Promise<void>;
 }
 
 const DrinkRow = ({ drink, onUpdate, onDelete }: DrinkRowProps) => {
