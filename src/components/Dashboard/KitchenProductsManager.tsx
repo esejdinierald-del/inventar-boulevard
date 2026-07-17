@@ -251,6 +251,19 @@ export const KitchenProductsManager = () => {
                         )}
                       </TableCell>
                       <TableCell>
+                        <AdminRowControls
+                          tableName="kitchen_products"
+                          rowId={product.id}
+                          sortOrder={product.sort_order}
+                          trackDaily={product.track_daily}
+                          isFirst={idx === 0}
+                          isLast={idx === products.length - 1}
+                          prevRow={idx > 0 ? { id: products[idx - 1].id, sort_order: products[idx - 1].sort_order } : undefined}
+                          nextRow={idx < products.length - 1 ? { id: products[idx + 1].id, sort_order: products[idx + 1].sort_order } : undefined}
+                          onChanged={loadProducts}
+                        />
+                      </TableCell>
+                      <TableCell>
                         {editingProduct === product.id ? (
                           <div className="flex gap-1">
                             <Button
