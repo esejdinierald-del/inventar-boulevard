@@ -32,7 +32,13 @@ const normalizeProductName = (name: string): string => {
   return PRODUCT_NAME_MIGRATION[name] || name;
 };
 
-export const useProductList = () => {
+/**
+ * Hook për listën e produkteve dhe llojeve të kafeve.
+ * @param options.dailyOnly Kur true, filtron vetëm produktet/kafet me `track_daily=true`
+ *   (përdoret nga faqja e Regjistrimit Ditor). Default: false (kthen të gjitha).
+ */
+export const useProductList = (options: { dailyOnly?: boolean } = {}) => {
+  const { dailyOnly = false } = options;
   const [products, setProducts] = useState<string[]>(DEFAULT_PRODUCTS);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -42,21 +48,45 @@ export const useProductList = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [savedProducts, savedCoffeeTypes] = await Promise.all([
-          StorageService.getProducts(),
-          StorageService.getCoffeeTypes()
-        ]);
-        
-        if (savedProducts && savedProducts.length > 0) {
-          // Migro emrat e vjetër në të rinj
-          const normalized = savedProducts.map(p => normalizeProductName(p));
-          setProducts(normalized);
-          // Ruaj emrat e normalizuar
-          await StorageService.setProducts(normalized);
-        }
-        
-        if (savedCoffeeTypes && savedCoffeeTypes.length > 0) {
-          setCoffeeTypes(savedCoffeeTypes);
+        if (dailyOnly) {
+          // Kur filtron sipas track_daily, kërko direkt nga Supabase (StorageService nuk filtron).
+          const { supabase } = await import('@/integrations/supabase/client');
+          const [{ data: prodData }, { data: coffeeData }] = await Promise.all([
+            supabase
+              .from('products')
+              .select('name')
+              .eq('track_daily', true)
+              .order('sort_order', { ascending: true }),
+            supabase
+              .from('coffee_types')
+              .select('name')
+              .eq('track_daily', true)
+              .order('sort_order', { ascending: true }),
+          ]);
+          if (prodData) {
+            const normalized = prodData.map((p) => normalizeProductName(p.name));
+            setProducts(normalized);
+          }
+          if (coffeeData) {
+            setCoffeeTypes(coffeeData.map((c) => c.name));
+          }
+        } else {
+          const [savedProducts, savedCoffeeTypes] = await Promise.all([
+            StorageService.getProducts(),
+            StorageService.getCoffeeTypes()
+          ]);
+
+          if (savedProducts && savedProducts.length > 0) {
+            // Migro emrat e vjetër në të rinj
+            const normalized = savedProducts.map(p => normalizeProductName(p));
+            setProducts(normalized);
+            // Ruaj emrat e normalizuar
+            await StorageService.setProducts(normalized);
+          }
+
+          if (savedCoffeeTypes && savedCoffeeTypes.length > 0) {
+            setCoffeeTypes(savedCoffeeTypes);
+          }
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -65,7 +95,7 @@ export const useProductList = () => {
       }
     };
     loadData();
-  }, []);
+  }, [dailyOnly]);
 
   const addProduct = useCallback(async (productName: string) => {
     const trimmed = productName.trim();
