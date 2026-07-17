@@ -34,7 +34,7 @@ export const KitchenProductsManager = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('kitchen_products')
-        .select('id, name, purchase_price, sort_order')
+        .select('id, name, purchase_price, sort_order, track_daily')
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
