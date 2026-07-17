@@ -194,7 +194,7 @@ export const useProductList = (options: { dailyOnly?: boolean } = {}) => {
 
   const addCoffeeType = useCallback(async (coffeeTypeName: string) => {
     const trimmed = coffeeTypeName.trim();
-    
+
     if (!trimmed) {
       toast.error("Shkruaj emrin e kafes!");
       return false;
@@ -205,19 +205,48 @@ export const useProductList = (options: { dailyOnly?: boolean } = {}) => {
       return false;
     }
 
+    if (dailyOnly) {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { error } = await supabase.from('coffee_types').insert({
+        name: trimmed,
+        sort_order: coffeeTypes.length,
+        track_daily: true,
+      });
+      if (error) {
+        console.error('Error adding coffee type:', error);
+        toast.error('Gabim në shtimin e kafes');
+        return false;
+      }
+      setCoffeeTypes([...coffeeTypes, trimmed]);
+      toast.success("Lloji i kafes u shtua!");
+      return true;
+    }
+
     const updatedCoffeeTypes = [...coffeeTypes, trimmed];
     setCoffeeTypes(updatedCoffeeTypes);
     await StorageService.setCoffeeTypes(updatedCoffeeTypes);
     toast.success("Lloji i kafes u shtua!");
     return true;
-  }, [coffeeTypes]);
+  }, [coffeeTypes, dailyOnly]);
 
   const deleteCoffeeType = useCallback(async (coffeeTypeName: string) => {
+    if (dailyOnly) {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { error } = await supabase.from('coffee_types').delete().eq('name', coffeeTypeName);
+      if (error) {
+        console.error('Error deleting coffee type:', error);
+        toast.error('Gabim në fshirje');
+        return;
+      }
+      setCoffeeTypes(coffeeTypes.filter(c => c !== coffeeTypeName));
+      toast.success("Lloji i kafes u fshi!");
+      return;
+    }
     const updatedCoffeeTypes = coffeeTypes.filter(c => c !== coffeeTypeName);
     setCoffeeTypes(updatedCoffeeTypes);
     await StorageService.setCoffeeTypes(updatedCoffeeTypes);
     toast.success("Lloji i kafes u fshi!");
-  }, [coffeeTypes]);
+  }, [coffeeTypes, dailyOnly]);
 
   const updateCoffeeType = useCallback(async (oldName: string, newName: string) => {
     const trimmed = newName.trim();
