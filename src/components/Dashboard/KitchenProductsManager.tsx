@@ -6,12 +6,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ChefHat, Trash2, Edit2, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AdminRowControls } from "./AdminRowControls";
 
 interface KitchenProduct {
   id: string;
   name: string;
   purchase_price: number;
   sort_order: number;
+  track_daily: boolean;
 }
 
 export const KitchenProductsManager = () => {
@@ -32,7 +34,7 @@ export const KitchenProductsManager = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('kitchen_products')
-        .select('id, name, purchase_price, sort_order')
+        .select('id, name, purchase_price, sort_order, track_daily')
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
@@ -205,11 +207,12 @@ export const KitchenProductsManager = () => {
                   <TableRow>
                     <TableHead>Produkti</TableHead>
                     <TableHead className="w-32">Çmim Blerje (ALL)</TableHead>
+                    <TableHead className="w-40">Renditje / Ditore</TableHead>
                     <TableHead className="w-24">Veprime</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {products.map((product) => (
+                  {products.map((product, idx) => (
                     <TableRow key={product.id}>
                       <TableCell className="font-medium">
                         {editingProduct === product.id ? (
@@ -220,7 +223,9 @@ export const KitchenProductsManager = () => {
                             autoFocus
                           />
                         ) : (
-                          product.name
+                          <span className={product.track_daily ? "" : "text-muted-foreground italic"}>
+                            {product.name}
+                          </span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -244,6 +249,19 @@ export const KitchenProductsManager = () => {
                             }}
                           />
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <AdminRowControls
+                          tableName="kitchen_products"
+                          rowId={product.id}
+                          sortOrder={product.sort_order}
+                          trackDaily={product.track_daily}
+                          isFirst={idx === 0}
+                          isLast={idx === products.length - 1}
+                          prevRow={idx > 0 ? { id: products[idx - 1].id, sort_order: products[idx - 1].sort_order } : undefined}
+                          nextRow={idx < products.length - 1 ? { id: products[idx + 1].id, sort_order: products[idx + 1].sort_order } : undefined}
+                          onChanged={loadProducts}
+                        />
                       </TableCell>
                       <TableCell>
                         {editingProduct === product.id ? (

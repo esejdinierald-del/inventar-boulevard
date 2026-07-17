@@ -32,7 +32,13 @@ const normalizeProductName = (name: string): string => {
   return PRODUCT_NAME_MIGRATION[name] || name;
 };
 
-export const useProductList = () => {
+/**
+ * Hook për listën e produkteve dhe llojeve të kafeve.
+ * @param options.dailyOnly Kur true, filtron vetëm produktet/kafet me `track_daily=true`
+ *   (përdoret nga faqja e Regjistrimit Ditor). Default: false (kthen të gjitha).
+ */
+export const useProductList = (options: { dailyOnly?: boolean } = {}) => {
+  const { dailyOnly = false } = options;
   const [products, setProducts] = useState<string[]>(DEFAULT_PRODUCTS);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -42,21 +48,45 @@ export const useProductList = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [savedProducts, savedCoffeeTypes] = await Promise.all([
-          StorageService.getProducts(),
-          StorageService.getCoffeeTypes()
-        ]);
-        
-        if (savedProducts && savedProducts.length > 0) {
-          // Migro emrat e vjetër në të rinj
-          const normalized = savedProducts.map(p => normalizeProductName(p));
-          setProducts(normalized);
-          // Ruaj emrat e normalizuar
-          await StorageService.setProducts(normalized);
-        }
-        
-        if (savedCoffeeTypes && savedCoffeeTypes.length > 0) {
-          setCoffeeTypes(savedCoffeeTypes);
+        if (dailyOnly) {
+          // Kur filtron sipas track_daily, kërko direkt nga Supabase (StorageService nuk filtron).
+          const { supabase } = await import('@/integrations/supabase/client');
+          const [{ data: prodData }, { data: coffeeData }] = await Promise.all([
+            supabase
+              .from('products')
+              .select('name')
+              .eq('track_daily', true)
+              .order('sort_order', { ascending: true }),
+            supabase
+              .from('coffee_types')
+              .select('name')
+              .eq('track_daily', true)
+              .order('sort_order', { ascending: true }),
+          ]);
+          if (prodData) {
+            const normalized = prodData.map((p) => normalizeProductName(p.name));
+            setProducts(normalized);
+          }
+          if (coffeeData) {
+            setCoffeeTypes(coffeeData.map((c) => c.name));
+          }
+        } else {
+          const [savedProducts, savedCoffeeTypes] = await Promise.all([
+            StorageService.getProducts(),
+            StorageService.getCoffeeTypes()
+          ]);
+
+          if (savedProducts && savedProducts.length > 0) {
+            // Migro emrat e vjetër në të rinj
+            const normalized = savedProducts.map(p => normalizeProductName(p));
+            setProducts(normalized);
+            // Ruaj emrat e normalizuar
+            await StorageService.setProducts(normalized);
+          }
+
+          if (savedCoffeeTypes && savedCoffeeTypes.length > 0) {
+            setCoffeeTypes(savedCoffeeTypes);
+          }
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -65,11 +95,11 @@ export const useProductList = () => {
       }
     };
     loadData();
-  }, []);
+  }, [dailyOnly]);
 
   const addProduct = useCallback(async (productName: string) => {
     const trimmed = productName.trim();
-    
+
     if (!trimmed) {
       toast.error("Shkruaj emrin e produktit!");
       return false;
@@ -80,19 +110,50 @@ export const useProductList = () => {
       return false;
     }
 
+    if (dailyOnly) {
+      // Në dailyOnly `products` përmban vetëm rreshtat me track_daily=true.
+      // StorageService.setProducts do t'i fshinte rreshtat e tjerë — përdorim Supabase direkt.
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { error } = await supabase.from('products').insert({
+        name: trimmed,
+        sort_order: products.length,
+        track_daily: true,
+      });
+      if (error) {
+        console.error('Error adding product:', error);
+        toast.error('Gabim në shtimin e produktit');
+        return false;
+      }
+      setProducts([...products, trimmed]);
+      toast.success("Produkti u shtua!");
+      return true;
+    }
+
     const updatedProducts = [...products, trimmed];
     setProducts(updatedProducts);
     await StorageService.setProducts(updatedProducts);
     toast.success("Produkti u shtua!");
     return true;
-  }, [products]);
+  }, [products, dailyOnly]);
 
   const deleteProduct = useCallback(async (productName: string) => {
+    if (dailyOnly) {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { error } = await supabase.from('products').delete().eq('name', productName);
+      if (error) {
+        console.error('Error deleting product:', error);
+        toast.error('Gabim në fshirjen e produktit');
+        return;
+      }
+      setProducts(products.filter(p => p !== productName));
+      toast.success("Produkti u fshi!");
+      return;
+    }
     const updatedProducts = products.filter(p => p !== productName);
     setProducts(updatedProducts);
     await StorageService.setProducts(updatedProducts);
     toast.success("Produkti u fshi!");
-  }, [products]);
+  }, [products, dailyOnly]);
 
   const updateProduct = useCallback(async (oldName: string, newName: string) => {
     const trimmed = newName.trim();
@@ -133,7 +194,7 @@ export const useProductList = () => {
 
   const addCoffeeType = useCallback(async (coffeeTypeName: string) => {
     const trimmed = coffeeTypeName.trim();
-    
+
     if (!trimmed) {
       toast.error("Shkruaj emrin e kafes!");
       return false;
@@ -144,19 +205,48 @@ export const useProductList = () => {
       return false;
     }
 
+    if (dailyOnly) {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { error } = await supabase.from('coffee_types').insert({
+        name: trimmed,
+        sort_order: coffeeTypes.length,
+        track_daily: true,
+      });
+      if (error) {
+        console.error('Error adding coffee type:', error);
+        toast.error('Gabim në shtimin e kafes');
+        return false;
+      }
+      setCoffeeTypes([...coffeeTypes, trimmed]);
+      toast.success("Lloji i kafes u shtua!");
+      return true;
+    }
+
     const updatedCoffeeTypes = [...coffeeTypes, trimmed];
     setCoffeeTypes(updatedCoffeeTypes);
     await StorageService.setCoffeeTypes(updatedCoffeeTypes);
     toast.success("Lloji i kafes u shtua!");
     return true;
-  }, [coffeeTypes]);
+  }, [coffeeTypes, dailyOnly]);
 
   const deleteCoffeeType = useCallback(async (coffeeTypeName: string) => {
+    if (dailyOnly) {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { error } = await supabase.from('coffee_types').delete().eq('name', coffeeTypeName);
+      if (error) {
+        console.error('Error deleting coffee type:', error);
+        toast.error('Gabim në fshirje');
+        return;
+      }
+      setCoffeeTypes(coffeeTypes.filter(c => c !== coffeeTypeName));
+      toast.success("Lloji i kafes u fshi!");
+      return;
+    }
     const updatedCoffeeTypes = coffeeTypes.filter(c => c !== coffeeTypeName);
     setCoffeeTypes(updatedCoffeeTypes);
     await StorageService.setCoffeeTypes(updatedCoffeeTypes);
     toast.success("Lloji i kafes u fshi!");
-  }, [coffeeTypes]);
+  }, [coffeeTypes, dailyOnly]);
 
   const updateCoffeeType = useCallback(async (oldName: string, newName: string) => {
     const trimmed = newName.trim();

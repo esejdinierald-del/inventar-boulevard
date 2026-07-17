@@ -6,12 +6,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Coffee, Trash2, Edit2, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AdminRowControls } from "./AdminRowControls";
 
 interface CoffeeType {
   id: string;
   name: string;
   purchase_price: number;
   sort_order: number;
+  track_daily: boolean;
 }
 
 export const CoffeeTypesManager = () => {
@@ -32,7 +34,7 @@ export const CoffeeTypesManager = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('coffee_types')
-        .select('id, name, purchase_price, sort_order')
+        .select('id, name, purchase_price, sort_order, track_daily')
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
@@ -205,11 +207,12 @@ export const CoffeeTypesManager = () => {
                   <TableRow>
                     <TableHead>Lloji i Kafes</TableHead>
                     <TableHead className="w-32">Çmim Blerje (ALL)</TableHead>
+                    <TableHead className="w-40">Renditje / Ditore</TableHead>
                     <TableHead className="w-24">Veprime</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {coffeeTypes.map((coffeeType) => (
+                  {coffeeTypes.map((coffeeType, idx) => (
                     <TableRow key={coffeeType.id}>
                       <TableCell className="font-medium">
                         {editingCoffeeType === coffeeType.id ? (
@@ -220,7 +223,9 @@ export const CoffeeTypesManager = () => {
                             autoFocus
                           />
                         ) : (
-                          coffeeType.name
+                          <span className={coffeeType.track_daily ? "" : "text-muted-foreground italic"}>
+                            {coffeeType.name}
+                          </span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -244,6 +249,19 @@ export const CoffeeTypesManager = () => {
                             }}
                           />
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <AdminRowControls
+                          tableName="coffee_types"
+                          rowId={coffeeType.id}
+                          sortOrder={coffeeType.sort_order}
+                          trackDaily={coffeeType.track_daily}
+                          isFirst={idx === 0}
+                          isLast={idx === coffeeTypes.length - 1}
+                          prevRow={idx > 0 ? { id: coffeeTypes[idx - 1].id, sort_order: coffeeTypes[idx - 1].sort_order } : undefined}
+                          nextRow={idx < coffeeTypes.length - 1 ? { id: coffeeTypes[idx + 1].id, sort_order: coffeeTypes[idx + 1].sort_order } : undefined}
+                          onChanged={loadCoffeeTypes}
+                        />
                       </TableCell>
                       <TableCell>
                         {editingCoffeeType === coffeeType.id ? (

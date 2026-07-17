@@ -2,7 +2,12 @@ import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export const useKitchenProducts = () => {
+/**
+ * @param options.dailyOnly Kur true, kthen vetëm produktet e kuzhinës me `track_daily=true`
+ *   (përdoret nga faqja e Regjistrimit Ditor). Default: false.
+ */
+export const useKitchenProducts = (options: { dailyOnly?: boolean } = {}) => {
+  const { dailyOnly = false } = options;
   const [kitchenProducts, setKitchenProducts] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -10,15 +15,23 @@ export const useKitchenProducts = () => {
   useEffect(() => {
     const loadKitchenProducts = async () => {
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('kitchen_products')
-          .select('name')
+          .select('name, track_daily')
           .order('sort_order', { ascending: true });
-        
+
+        if (dailyOnly) {
+          query = query.eq('track_daily', true);
+        }
+
+        const { data, error } = await query;
+
         if (error) throw error;
-        
+
         if (data && data.length > 0) {
           setKitchenProducts(data.map(p => p.name));
+        } else {
+          setKitchenProducts([]);
         }
       } catch (error) {
         console.error('Error loading kitchen products:', error);
@@ -28,7 +41,7 @@ export const useKitchenProducts = () => {
       }
     };
     loadKitchenProducts();
-  }, []);
+  }, [dailyOnly]);
 
   const addKitchenProduct = useCallback(async (productName: string) => {
     const trimmed = productName.trim();

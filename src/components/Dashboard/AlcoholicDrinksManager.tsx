@@ -6,6 +6,7 @@ import { Plus, Save, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { AdminRowControls } from "./AdminRowControls";
 
 interface AlcoholicDrink {
   id: string;
@@ -14,17 +15,23 @@ interface AlcoholicDrink {
   shitje: number;
   gjendje: number;
   sort_order: number;
+  track_daily: boolean;
   updated_at: string;
   purchase_price: number;
 }
 
 interface DrinkRowProps {
   drink: AlcoholicDrink;
+  idx: number;
+  total: number;
+  prevRow?: { id: string; sort_order: number };
+  nextRow?: { id: string; sort_order: number };
   onUpdate: (id: string, field: 'furnizime' | 'shitje' | 'gjendje' | 'purchase_price', value: number) => void;
   onDelete: (id: string) => void;
+  onReload: () => void | Promise<void>;
 }
 
-const DrinkRow = ({ drink, onUpdate, onDelete }: DrinkRowProps) => {
+const DrinkRow = ({ drink, idx, total, prevRow, nextRow, onUpdate, onDelete, onReload }: DrinkRowProps) => {
   const [values, setValues] = useState({
     furnizime: String(drink.furnizime),
     shitje: String(drink.shitje),
@@ -104,6 +111,19 @@ const DrinkRow = ({ drink, onUpdate, onDelete }: DrinkRowProps) => {
         {format(new Date(drink.updated_at), 'dd/MM/yyyy HH:mm')}
       </td>
       <td className="p-3">
+        <AdminRowControls
+          tableName="alcoholic_drinks_inventory"
+          rowId={drink.id}
+          sortOrder={drink.sort_order}
+          trackDaily={drink.track_daily}
+          isFirst={idx === 0}
+          isLast={idx === total - 1}
+          prevRow={prevRow}
+          nextRow={nextRow}
+          onChanged={onReload}
+        />
+      </td>
+      <td className="p-3">
         <Button
           variant="ghost"
           size="icon"
@@ -130,7 +150,7 @@ export const AlcoholicDrinksManager = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('alcoholic_drinks_inventory')
-        .select('id, drink_name, furnizime, shitje, gjendje, sort_order, updated_at, purchase_price')
+        .select('id, drink_name, furnizime, shitje, gjendje, sort_order, track_daily, updated_at, purchase_price')
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
@@ -268,16 +288,22 @@ export const AlcoholicDrinksManager = () => {
                   <th className="p-3 text-left font-medium">Shitje</th>
                   <th className="p-3 text-left font-medium">Gjendje</th>
                   <th className="p-3 text-left font-medium">Përditësuar</th>
+                  <th className="p-3 text-left font-medium">Renditje / Ditore</th>
                   <th className="p-3 text-left font-medium">Veprime</th>
                 </tr>
               </thead>
               <tbody>
-                {drinks.map((drink) => (
-                  <DrinkRow 
-                    key={drink.id} 
-                    drink={drink} 
-                    onUpdate={updateDrink} 
-                    onDelete={deleteDrink} 
+                {drinks.map((drink, idx) => (
+                  <DrinkRow
+                    key={drink.id}
+                    drink={drink}
+                    idx={idx}
+                    total={drinks.length}
+                    prevRow={idx > 0 ? { id: drinks[idx - 1].id, sort_order: drinks[idx - 1].sort_order } : undefined}
+                    nextRow={idx < drinks.length - 1 ? { id: drinks[idx + 1].id, sort_order: drinks[idx + 1].sort_order } : undefined}
+                    onUpdate={updateDrink}
+                    onDelete={deleteDrink}
+                    onReload={loadDrinks}
                   />
                 ))}
               </tbody>

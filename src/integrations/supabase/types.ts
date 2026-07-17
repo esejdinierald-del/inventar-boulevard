@@ -51,6 +51,7 @@ export type Database = {
           purchase_price: number | null
           shitje: number
           sort_order: number | null
+          track_daily: boolean
           updated_at: string | null
         }
         Insert: {
@@ -62,6 +63,7 @@ export type Database = {
           purchase_price?: number | null
           shitje?: number
           sort_order?: number | null
+          track_daily?: boolean
           updated_at?: string | null
         }
         Update: {
@@ -73,6 +75,7 @@ export type Database = {
           purchase_price?: number | null
           shitje?: number
           sort_order?: number | null
+          track_daily?: boolean
           updated_at?: string | null
         }
         Relationships: []
@@ -84,6 +87,7 @@ export type Database = {
           name: string
           purchase_price: number | null
           sort_order: number | null
+          track_daily: boolean
         }
         Insert: {
           created_at?: string | null
@@ -91,6 +95,7 @@ export type Database = {
           name: string
           purchase_price?: number | null
           sort_order?: number | null
+          track_daily?: boolean
         }
         Update: {
           created_at?: string | null
@@ -98,6 +103,7 @@ export type Database = {
           name?: string
           purchase_price?: number | null
           sort_order?: number | null
+          track_daily?: boolean
         }
         Relationships: []
       }
@@ -321,6 +327,7 @@ export type Database = {
           name: string
           purchase_price: number | null
           sort_order: number | null
+          track_daily: boolean
         }
         Insert: {
           created_at?: string | null
@@ -328,6 +335,7 @@ export type Database = {
           name: string
           purchase_price?: number | null
           sort_order?: number | null
+          track_daily?: boolean
         }
         Update: {
           created_at?: string | null
@@ -335,6 +343,7 @@ export type Database = {
           name?: string
           purchase_price?: number | null
           sort_order?: number | null
+          track_daily?: boolean
         }
         Relationships: []
       }
@@ -402,6 +411,7 @@ export type Database = {
           name: string
           purchase_price: number | null
           sort_order: number | null
+          track_daily: boolean
         }
         Insert: {
           created_at?: string | null
@@ -409,6 +419,7 @@ export type Database = {
           name: string
           purchase_price?: number | null
           sort_order?: number | null
+          track_daily?: boolean
         }
         Update: {
           created_at?: string | null
@@ -416,6 +427,7 @@ export type Database = {
           name?: string
           purchase_price?: number | null
           sort_order?: number | null
+          track_daily?: boolean
         }
         Relationships: []
       }
