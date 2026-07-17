@@ -111,6 +111,19 @@ const DrinkRow = ({ drink, onUpdate, onDelete }: DrinkRowProps) => {
         {format(new Date(drink.updated_at), 'dd/MM/yyyy HH:mm')}
       </td>
       <td className="p-3">
+        <AdminRowControls
+          tableName="alcoholic_drinks_inventory"
+          rowId={drink.id}
+          sortOrder={drink.sort_order}
+          trackDaily={drink.track_daily}
+          isFirst={idx === 0}
+          isLast={idx === total - 1}
+          prevRow={prevRow}
+          nextRow={nextRow}
+          onChanged={onReload}
+        />
+      </td>
+      <td className="p-3">
         <Button
           variant="ghost"
           size="icon"
