@@ -6,12 +6,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Coffee, Trash2, Edit2, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AdminRowControls } from "./AdminRowControls";
 
 interface CoffeeType {
   id: string;
   name: string;
   purchase_price: number;
   sort_order: number;
+  track_daily: boolean;
 }
 
 export const CoffeeTypesManager = () => {
