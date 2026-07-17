@@ -99,7 +99,7 @@ export const useProductList = (options: { dailyOnly?: boolean } = {}) => {
 
   const addProduct = useCallback(async (productName: string) => {
     const trimmed = productName.trim();
-    
+
     if (!trimmed) {
       toast.error("Shkruaj emrin e produktit!");
       return false;
@@ -110,19 +110,50 @@ export const useProductList = (options: { dailyOnly?: boolean } = {}) => {
       return false;
     }
 
+    if (dailyOnly) {
+      // Në dailyOnly `products` përmban vetëm rreshtat me track_daily=true.
+      // StorageService.setProducts do t'i fshinte rreshtat e tjerë — përdorim Supabase direkt.
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { error } = await supabase.from('products').insert({
+        name: trimmed,
+        sort_order: products.length,
+        track_daily: true,
+      });
+      if (error) {
+        console.error('Error adding product:', error);
+        toast.error('Gabim në shtimin e produktit');
+        return false;
+      }
+      setProducts([...products, trimmed]);
+      toast.success("Produkti u shtua!");
+      return true;
+    }
+
     const updatedProducts = [...products, trimmed];
     setProducts(updatedProducts);
     await StorageService.setProducts(updatedProducts);
     toast.success("Produkti u shtua!");
     return true;
-  }, [products]);
+  }, [products, dailyOnly]);
 
   const deleteProduct = useCallback(async (productName: string) => {
+    if (dailyOnly) {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { error } = await supabase.from('products').delete().eq('name', productName);
+      if (error) {
+        console.error('Error deleting product:', error);
+        toast.error('Gabim në fshirjen e produktit');
+        return;
+      }
+      setProducts(products.filter(p => p !== productName));
+      toast.success("Produkti u fshi!");
+      return;
+    }
     const updatedProducts = products.filter(p => p !== productName);
     setProducts(updatedProducts);
     await StorageService.setProducts(updatedProducts);
     toast.success("Produkti u fshi!");
-  }, [products]);
+  }, [products, dailyOnly]);
 
   const updateProduct = useCallback(async (oldName: string, newName: string) => {
     const trimmed = newName.trim();
