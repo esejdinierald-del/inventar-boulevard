@@ -251,6 +251,19 @@ export const CoffeeTypesManager = () => {
                         )}
                       </TableCell>
                       <TableCell>
+                        <AdminRowControls
+                          tableName="coffee_types"
+                          rowId={coffeeType.id}
+                          sortOrder={coffeeType.sort_order}
+                          trackDaily={coffeeType.track_daily}
+                          isFirst={idx === 0}
+                          isLast={idx === coffeeTypes.length - 1}
+                          prevRow={idx > 0 ? { id: coffeeTypes[idx - 1].id, sort_order: coffeeTypes[idx - 1].sort_order } : undefined}
+                          nextRow={idx < coffeeTypes.length - 1 ? { id: coffeeTypes[idx + 1].id, sort_order: coffeeTypes[idx + 1].sort_order } : undefined}
+                          onChanged={loadCoffeeTypes}
+                        />
+                      </TableCell>
+                      <TableCell>
                         {editingCoffeeType === coffeeType.id ? (
                           <div className="flex gap-1">
                             <Button
