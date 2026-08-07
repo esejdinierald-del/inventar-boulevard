@@ -380,12 +380,19 @@ const Dashboard = () => {
         </Card>
 
         {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <StatsCard
             title={`Xhiro Progresive - ${format(selectedMonth, 'MMMM', { locale: sq })}`}
             value={isLoading ? "Duke ngarkuar..." : `${monthlyData.totalXhiro.toLocaleString()} ALL`}
             icon={<DollarSign className="h-4 w-4" />}
           />
+          <StatsCard
+            title="Kesh Gjendje"
+            value={isLoading ? "..." : `${monthlyData.cashBalance.toLocaleString()} ALL`}
+            icon={<Wallet className="h-4 w-4" />}
+            description="Xhiro − shpenzime turni − shpenzime mujore"
+          />
+
           <StatsCard
             title="Shpenzime Mujore"
             value={isLoading ? "..." : `${monthlyData.totalExpenses.toLocaleString()} ALL`}
