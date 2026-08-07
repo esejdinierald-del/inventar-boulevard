@@ -260,7 +260,9 @@ const Dashboard = () => {
         topProducts,
         totalCoffee,
         totalProductsInStock,
-        totalExpenses
+        totalExpenses,
+        totalTurnExpenses,
+        cashBalance: totalXhiro - totalTurnExpenses - totalExpenses
       });
     } catch (error) {
       console.error('Error:', error);
