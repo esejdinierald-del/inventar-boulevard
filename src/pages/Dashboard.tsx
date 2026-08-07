@@ -390,8 +390,8 @@ const Dashboard = () => {
             title="Kesh Gjendje"
             value={isLoading ? "..." : `${monthlyData.cashBalance.toLocaleString()} ALL`}
             icon={<Wallet className="h-4 w-4" />}
-            />
           />
+
 
           <StatsCard
             title="Shpenzime Mujore"
