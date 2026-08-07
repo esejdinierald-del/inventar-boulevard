@@ -46,6 +46,8 @@ interface MonthlyData {
   totalCoffee: number;
   totalProductsInStock: number;
   totalExpenses: number;
+  totalTurnExpenses: number;
+  cashBalance: number;
 }
 
 const Dashboard = () => {
