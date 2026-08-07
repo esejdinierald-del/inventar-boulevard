@@ -276,7 +276,10 @@ const Dashboard = () => {
     const monthName = format(selectedMonth, 'MMMM yyyy', { locale: sq });
     
     let csvContent = `Raporti Mujor - ${monthName}\n\n`;
-    csvContent += `Xhiro Totale,${monthlyData.totalXhiro} ALL\n\n`;
+    csvContent += `Xhiro Totale,${monthlyData.totalXhiro} ALL\n`;
+    csvContent += `Shpenzime Turnesh,${monthlyData.totalTurnExpenses} ALL\n`;
+    csvContent += `Shpenzime Mujore,${monthlyData.totalExpenses} ALL\n`;
+    csvContent += `Kesh Gjendje,${monthlyData.cashBalance} ALL\n\n`;
     csvContent += `Javë,Periudha,Xhiro\n`;
     
     monthlyData.weeklyBreakdown.forEach(week => {
