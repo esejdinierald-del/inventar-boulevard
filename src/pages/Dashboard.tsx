@@ -1,7 +1,7 @@
 import Layout from "@/components/Layout";
 import StatsCard from "@/components/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, DollarSign, Package, ShoppingCart, Lock, Download, ChevronLeft, ChevronRight, User, Shield } from "lucide-react";
+import { TrendingUp, DollarSign, Package, ShoppingCart, Lock, Download, ChevronLeft, ChevronRight, User, Shield, Wallet } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +46,8 @@ interface MonthlyData {
   totalCoffee: number;
   totalProductsInStock: number;
   totalExpenses: number;
+  totalTurnExpenses: number;
+  cashBalance: number;
 }
 
 const Dashboard = () => {
@@ -60,7 +62,10 @@ const Dashboard = () => {
     topProducts: [],
     totalCoffee: 0,
     totalProductsInStock: 0,
-    totalExpenses: 0
+    totalExpenses: 0,
+    totalTurnExpenses: 0,
+    cashBalance: 0
+
   });
   const [isLoading, setIsLoading] = useState(true);
   
@@ -192,14 +197,21 @@ const Dashboard = () => {
 
       // Calculate total xhiro and aggregate product sales
       let totalXhiro = 0;
+      let totalTurnExpenses = 0;
       let totalCoffee = 0;
       const productSalesMap: { [key: string]: number } = {};
       let latestStockData: { [key: string]: number } = {};
-      
+
+      /** Totali i shpenzimeve/anullimeve të futura brenda një turni. */
+      const sumTurnShpenzime = (turn?: TurnData) =>
+        (turn?.shpenzime || []).reduce((sum, s) => sum + (Number(s?.vlera) || 0), 0);
+
       entries?.forEach(entry => {
         const turn1 = entry.turn1_data as unknown as TurnData;
         const turn2 = entry.turn2_data as unknown as TurnData;
         totalXhiro += (turn1?.xhiro || 0) + (turn2?.xhiro || 0);
+        totalTurnExpenses += sumTurnShpenzime(turn1) + sumTurnShpenzime(turn2);
+
         
         // Aggregate coffee sales
         if (turn1?.coffee) {
@@ -248,7 +260,9 @@ const Dashboard = () => {
         topProducts,
         totalCoffee,
         totalProductsInStock,
-        totalExpenses
+        totalExpenses,
+        totalTurnExpenses,
+        cashBalance: totalXhiro - totalTurnExpenses - totalExpenses
       });
     } catch (error) {
       console.error('Error:', error);
@@ -262,7 +276,10 @@ const Dashboard = () => {
     const monthName = format(selectedMonth, 'MMMM yyyy', { locale: sq });
     
     let csvContent = `Raporti Mujor - ${monthName}\n\n`;
-    csvContent += `Xhiro Totale,${monthlyData.totalXhiro} ALL\n\n`;
+    csvContent += `Xhiro Totale,${monthlyData.totalXhiro} ALL\n`;
+    csvContent += `Shpenzime Turnesh,${monthlyData.totalTurnExpenses} ALL\n`;
+    csvContent += `Shpenzime Mujore,${monthlyData.totalExpenses} ALL\n`;
+    csvContent += `Kesh Gjendje,${monthlyData.cashBalance} ALL\n\n`;
     csvContent += `Javë,Periudha,Xhiro\n`;
     
     monthlyData.weeklyBreakdown.forEach(week => {
@@ -366,12 +383,19 @@ const Dashboard = () => {
         </Card>
 
         {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <StatsCard
             title={`Xhiro Progresive - ${format(selectedMonth, 'MMMM', { locale: sq })}`}
             value={isLoading ? "Duke ngarkuar..." : `${monthlyData.totalXhiro.toLocaleString()} ALL`}
             icon={<DollarSign className="h-4 w-4" />}
           />
+          <StatsCard
+            title="Kesh Gjendje"
+            value={isLoading ? "..." : `${monthlyData.cashBalance.toLocaleString()} ALL`}
+            icon={<Wallet className="h-4 w-4" />}
+          />
+
+
           <StatsCard
             title="Shpenzime Mujore"
             value={isLoading ? "..." : `${monthlyData.totalExpenses.toLocaleString()} ALL`}
