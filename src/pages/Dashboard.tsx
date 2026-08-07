@@ -1,7 +1,7 @@
 import Layout from "@/components/Layout";
 import StatsCard from "@/components/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, DollarSign, Package, ShoppingCart, Lock, Download, ChevronLeft, ChevronRight, User, Shield } from "lucide-react";
+import { TrendingUp, DollarSign, Package, ShoppingCart, Lock, Download, ChevronLeft, ChevronRight, User, Shield, Wallet } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
