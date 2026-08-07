@@ -62,7 +62,10 @@ const Dashboard = () => {
     topProducts: [],
     totalCoffee: 0,
     totalProductsInStock: 0,
-    totalExpenses: 0
+    totalExpenses: 0,
+    totalTurnExpenses: 0,
+    cashBalance: 0
+
   });
   const [isLoading, setIsLoading] = useState(true);
   
