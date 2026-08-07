@@ -197,14 +197,21 @@ const Dashboard = () => {
 
       // Calculate total xhiro and aggregate product sales
       let totalXhiro = 0;
+      let totalTurnExpenses = 0;
       let totalCoffee = 0;
       const productSalesMap: { [key: string]: number } = {};
       let latestStockData: { [key: string]: number } = {};
-      
+
+      /** Totali i shpenzimeve/anullimeve të futura brenda një turni. */
+      const sumTurnShpenzime = (turn?: TurnData) =>
+        (turn?.shpenzime || []).reduce((sum, s) => sum + (Number(s?.vlera) || 0), 0);
+
       entries?.forEach(entry => {
         const turn1 = entry.turn1_data as unknown as TurnData;
         const turn2 = entry.turn2_data as unknown as TurnData;
         totalXhiro += (turn1?.xhiro || 0) + (turn2?.xhiro || 0);
+        totalTurnExpenses += sumTurnShpenzime(turn1) + sumTurnShpenzime(turn2);
+
         
         // Aggregate coffee sales
         if (turn1?.coffee) {
