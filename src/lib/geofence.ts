@@ -5,6 +5,9 @@
  * to access /daily. Admin bypasses this check entirely.
  */
 
+/** TEST MODE — vendos false për të rikthyer kontrollin real të GPS-it në lokal */
+export const GEOFENCE_TEST_MODE_DISABLED = true;
+
 /** Venue coordinates (Bulevard). */
 export const VENUE_LAT = 41.1148324;
 export const VENUE_LNG = 20.0888188;
@@ -84,6 +87,10 @@ function getCurrentPosition(maximumAge: number, timeout: number): Promise<Positi
  * Retries once with fresher GPS if the first reading is too imprecise.
  */
 export async function checkVenueProximity(): Promise<GeofenceCheckResult> {
+  // TEST MODE — vendos false për të rikthyer kontrollin real të GPS-it në lokal
+  if (GEOFENCE_TEST_MODE_DISABLED) {
+    return { ok: true, distance: 0, accuracy: 0 };
+  }
   try {
     let pos = await getCurrentPosition(30_000, 15_000);
     if (pos.accuracy > MAX_ACCEPTABLE_ACCURACY_M) {
