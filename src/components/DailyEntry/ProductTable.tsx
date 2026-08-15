@@ -70,27 +70,47 @@ export const ProductTable = ({
   const blurClass = isBlurred ? "blur-sm opacity-40 select-none pointer-events-none" : "";
   // Pas printit: kolona Gjendje sfumohet & bllokohet për 10h (vetëm staf)
   const isGjendjePrintBlurred = !isAdminUnlocked && gjendjeLockedByPrint;
-  const gjendjeBlurClass = isGjendjePrintBlurred ? "blur-sm opacity-40 select-none pointer-events-none" : "";
+  // Hapi 1 i pambaruar: Gjendje bllokohet & sfumohet për stafin
+  const isGjendjeStepBlocked = !isAdminUnlocked && !furnizimeConfirmed;
+  const gjendjeBlurClass = (isGjendjePrintBlurred || isGjendjeStepBlocked)
+    ? "blur-sm opacity-40 select-none pointer-events-none"
+    : "";
 
   // Kontrollo nëse të paktën një produkt ka gjendje > 0 (lejojmë konfirmimin)
   const hasAnyGjendje = Object.values(turnProducts).some(p => p && p.gjendje > 0);
 
   return (
     <div className="space-y-3">
-      {/* Banner para konfirmimit — stafi numëron dhe ngarkon gjendjen */}
-      {!isAdminUnlocked && !gjendjeUploaded && onConfirmGjendje && (
+      {/* Faza A — stafi ngarkon furnizimet dhe vazhdon te gjendja */}
+      {!isAdminUnlocked && !gjendjeUploaded && !furnizimeConfirmed && onConfirmFurnizime && (
         <div className="rounded-lg border border-warning/50 bg-warning/10 p-3 space-y-3">
           <div className="text-sm">
-            <p className="font-medium">📋 Hapat para konfirmimit</p>
+            <p className="font-medium">📦 Hapi 1: Furnizimet</p>
             <ol className="text-xs text-muted-foreground list-decimal list-inside space-y-0.5 mt-1">
               <li>Ngarko furnizimet (faturat) — nëse ka.</li>
-              <li>Numëro fizikisht gjendjen e secilit produkt.</li>
-              <li>Shtyp <strong>Ngarko Gjendjen</strong> për të zbuluar <strong>Stok Fillim</strong> dhe <strong>Dif</strong>.</li>
             </ol>
           </div>
           {invoiceUploadSlot && (
             <div className="flex flex-wrap gap-2">{invoiceUploadSlot}</div>
           )}
+          <div className="flex justify-end">
+            <Button size="sm" onClick={onConfirmFurnizime} className="whitespace-nowrap">
+              Vazhdo te Gjendja →
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Faza B — stafi numëron dhe ngarkon gjendjen */}
+      {!isAdminUnlocked && furnizimeConfirmed && !gjendjeUploaded && onConfirmGjendje && (
+        <div className="rounded-lg border border-warning/50 bg-warning/10 p-3 space-y-3">
+          <div className="text-sm">
+            <p className="font-medium">📋 Hapat para konfirmimit</p>
+            <ol className="text-xs text-muted-foreground list-decimal list-inside space-y-0.5 mt-1">
+              <li>Numëro fizikisht gjendjen e secilit produkt.</li>
+              <li>Shtyp <strong>Ngarko Gjendjen</strong> për të zbuluar <strong>Stok Fillim</strong> dhe <strong>Dif</strong>.</li>
+            </ol>
+          </div>
           <div className="flex justify-end">
             <Button
               size="sm"
@@ -104,6 +124,7 @@ export const ProductTable = ({
           </div>
         </div>
       )}
+
 
       {/* Banner pas konfirmimit — kolona Gjendje e kyçur; vetëm admini riaktivizon */}
       {gjendjeUploaded && (
