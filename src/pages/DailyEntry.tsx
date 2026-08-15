@@ -346,6 +346,11 @@ const DailyEntry = () => {
       try { localStorage.setItem(`gjendjeUploaded:${selectedDate}`, JSON.stringify(next)); } catch {}
       return next;
     });
+    setFurnizimeConfirmed(prev => {
+      const next = { ...prev, [turn]: false };
+      try { localStorage.setItem(`furnizimeConfirmed:${selectedDate}`, JSON.stringify(next)); } catch {}
+      return next;
+    });
     toast.success(`Stafi u riaktivizua të modifikojë Gjendjen e Turnit ${turn === 'turn1' ? '1' : '2'}`);
   }, [isAdminUnlocked, selectedDate]);
 
