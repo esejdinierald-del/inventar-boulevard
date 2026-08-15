@@ -41,6 +41,9 @@ interface TurnSectionProps {
   gjendjeUploaded?: boolean;
   /** Kyçja 10-orëshe e kolonës Gjendje pas printit. */
   gjendjeLockedByPrint?: boolean;
+  /** Hapi 1 (furnizimet) i konfirmuar nga stafi. */
+  furnizimeConfirmed?: boolean;
+  onConfirmFurnizime?: () => void;
   onConfirmGjendje?: () => void;
   onUnlockGjendje?: () => void;
   onProductUpdate: (product: string, field: keyof ProductData, value: number) => void;
@@ -78,6 +81,8 @@ export const TurnSection = ({
   isTurnLocked = false,
   gjendjeUploaded = true,
   gjendjeLockedByPrint = false,
+  furnizimeConfirmed = true,
+  onConfirmFurnizime,
   onConfirmGjendje,
   onUnlockGjendje,
   onProductUpdate,
@@ -166,6 +171,8 @@ export const TurnSection = ({
             isFieldDisabled={isFieldDisabled}
             gjendjeUploaded={gjendjeUploaded}
             gjendjeLockedByPrint={gjendjeLockedByPrint}
+            furnizimeConfirmed={furnizimeConfirmed}
+            onConfirmFurnizime={onConfirmFurnizime}
             onConfirmGjendje={onConfirmGjendje}
             onUnlockGjendje={onUnlockGjendje}
             onProductUpdate={onProductUpdate}

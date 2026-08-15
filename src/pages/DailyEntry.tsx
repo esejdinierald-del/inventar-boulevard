@@ -53,6 +53,8 @@ const DailyEntry = () => {
   const [verifiedStaffData, setVerifiedStaffData] = useState<VerifiedStaffData | null>(null);
   // Gjendje e konfirmuar nga stafi për ditën/turnin aktual (ruhet në localStorage)
   const [gjendjeUploaded, setGjendjeUploaded] = useState<{ turn1: boolean; turn2: boolean }>({ turn1: false, turn2: false });
+  // Hapi 1: konfirmimi i furnizimeve nga stafi (localStorage, per date)
+  const [furnizimeConfirmed, setFurnizimeConfirmed] = useState<{ turn1: boolean; turn2: boolean }>({ turn1: false, turn2: false });
   // Kyçja 10-orëshe e kolonës Gjendje pas printit (timestamp ms i skadimit, per turn)
   const [gjendjePrintLockUntil, setGjendjePrintLockUntil] = useState<{ turn1: number | null; turn2: number | null }>({ turn1: null, turn2: null });
   // Ticker që rifreskon UI-në kur skadon kyçja
@@ -270,6 +272,29 @@ const DailyEntry = () => {
     loadGjendjeStatus();
   }, [selectedDate]);
 
+  // Hapi 1: lexo konfirmimin e furnizimeve nga localStorage per daten
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`furnizimeConfirmed:${selectedDate}`);
+      const parsed = raw ? JSON.parse(raw) : null;
+      setFurnizimeConfirmed({ turn1: !!parsed?.turn1, turn2: !!parsed?.turn2 });
+    } catch {
+      setFurnizimeConfirmed({ turn1: false, turn2: false });
+    }
+  }, [selectedDate]);
+
+  /** Stafi konfirmon se ka mbaruar futjen e furnizimeve → hapet kolona Gjendje. */
+  const confirmFurnizime = useCallback((turn: 'turn1' | 'turn2') => {
+    setFurnizimeConfirmed(prev => {
+      const next = { ...prev, [turn]: true };
+      try { localStorage.setItem(`furnizimeConfirmed:${selectedDate}`, JSON.stringify(next)); } catch {}
+      return next;
+    });
+    toast.success(`Furnizimet u konfirmuan për Turnin ${turn === 'turn1' ? '1' : '2'}`);
+  }, [selectedDate]);
+
+
+
   const confirmGjendje = useCallback(async (turn: 'turn1' | 'turn2') => {
     const col = turn === 'turn1' ? 'gjendje_confirmed_t1' : 'gjendje_confirmed_t2';
     const colBy = turn === 'turn1' ? 'gjendje_confirmed_t1_by' : 'gjendje_confirmed_t2_by';
@@ -319,6 +344,11 @@ const DailyEntry = () => {
     setGjendjeUploaded(prev => {
       const next = { ...prev, [turn]: false };
       try { localStorage.setItem(`gjendjeUploaded:${selectedDate}`, JSON.stringify(next)); } catch {}
+      return next;
+    });
+    setFurnizimeConfirmed(prev => {
+      const next = { ...prev, [turn]: false };
+      try { localStorage.setItem(`furnizimeConfirmed:${selectedDate}`, JSON.stringify(next)); } catch {}
       return next;
     });
     toast.success(`Stafi u riaktivizua të modifikojë Gjendjen e Turnit ${turn === 'turn1' ? '1' : '2'}`);
@@ -653,6 +683,13 @@ const DailyEntry = () => {
       return next;
     });
 
+    // Rifillo nga hapi i furnizimeve për turnin e printuar
+    setFurnizimeConfirmed(prev => {
+      const next = { ...prev, [activeTurn]: false };
+      try { localStorage.setItem(`furnizimeConfirmed:${selectedDate}`, JSON.stringify(next)); } catch {}
+      return next;
+    });
+
     // Kyç kolonën Gjendje për 10 orë pas printit (vec e vec T1/T2)
     const until = Date.now() + 10 * 60 * 60 * 1000;
     setGjendjePrintLockUntil(prev => {
@@ -848,6 +885,8 @@ const DailyEntry = () => {
               isTurnLocked={isTurnLocked(1)}
               gjendjeUploaded={gjendjeUploaded.turn1}
               gjendjeLockedByPrint={isGjendjePrintLocked('turn1') || isTurnLocked(1)}
+              furnizimeConfirmed={furnizimeConfirmed.turn1}
+              onConfirmFurnizime={() => confirmFurnizime('turn1')}
               onConfirmGjendje={() => confirmGjendje('turn1')}
               onUnlockGjendje={() => unlockGjendje('turn1')}
               showCopyButton
@@ -895,6 +934,8 @@ const DailyEntry = () => {
               isTurnLocked={isTurnLocked(2)}
               gjendjeUploaded={gjendjeUploaded.turn2}
               gjendjeLockedByPrint={isGjendjePrintLocked('turn2') || isTurnLocked(2)}
+              furnizimeConfirmed={furnizimeConfirmed.turn2}
+              onConfirmFurnizime={() => confirmFurnizime('turn2')}
               onConfirmGjendje={() => confirmGjendje('turn2')}
               onUnlockGjendje={() => unlockGjendje('turn2')}
               mulliriFillimDisabled
