@@ -340,11 +340,15 @@ export class StockPropagationService {
     // 1. Përditëso produktet ekzistuese me stokun e ri
     Object.entries(t1.products).forEach(([productName, data]) => {
       const productData = data as ProductData;
+      // Stoku i trashëguar është BAZA; furnizimet e T1 i shtohen sipër.
       updatedProducts[productName] = {
         ...productData,
-        stokFillim: newStock[productName] ?? productData.stokFillim
+        stokFillim: productName in newStock
+          ? (newStock[productName] || 0) + (productData.furnizime || 0)
+          : productData.stokFillim
       };
     });
+
 
     // 2. Shto produktet që ekzistojnë në newStock por jo në T1 aktual
     // (rastet kur produkti u shtua më vonë dhe ka humbur propagimin)
