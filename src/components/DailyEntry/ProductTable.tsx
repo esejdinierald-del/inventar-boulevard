@@ -224,8 +224,8 @@ export const ProductTable = ({
                     value={data.gjendje || ""}
                     onChange={(e) => onProductUpdate(product, 'gjendje', Number(e.target.value))}
                     className="w-14 md:w-20"
-                    disabled={isGjendjeDisabled(isFieldDisabled) || (gjendjeUploaded && !isAdminUnlocked) || isGjendjePrintBlurred}
-                    tabIndex={isGjendjePrintBlurred ? -1 : 0}
+                    disabled={isGjendjeDisabled(isFieldDisabled) || (gjendjeUploaded && !isAdminUnlocked) || isGjendjePrintBlurred || isGjendjeStepBlocked}
+                    tabIndex={(isGjendjePrintBlurred || isGjendjeStepBlocked) ? -1 : 0}
                   />
                 </TableCell>
                 <TableCell className={blurClass}>
@@ -246,7 +246,7 @@ export const ProductTable = ({
                     value={data.furnizime || ""}
                     onChange={(e) => onProductUpdate(product, 'furnizime', Number(e.target.value))}
                     className="w-14 md:w-20 bg-success/10"
-                    disabled={isFurnizimeDisabled(isFieldDisabled) || (gjendjeUploaded && !isAdminUnlocked)}
+                    disabled={isFurnizimeDisabled(isFieldDisabled) || (gjendjeUploaded && !isAdminUnlocked) || (furnizimeConfirmed && !isAdminUnlocked)}
                   />
                 </TableCell>
                 <TableCell className={`font-medium ${dif !== 0 ? 'text-warning' : 'text-success'} ${blurClass}`}>
