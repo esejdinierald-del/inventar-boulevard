@@ -272,6 +272,29 @@ const DailyEntry = () => {
     loadGjendjeStatus();
   }, [selectedDate]);
 
+  // Hapi 1: lexo konfirmimin e furnizimeve nga localStorage per daten
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`furnizimeConfirmed:${selectedDate}`);
+      const parsed = raw ? JSON.parse(raw) : null;
+      setFurnizimeConfirmed({ turn1: !!parsed?.turn1, turn2: !!parsed?.turn2 });
+    } catch {
+      setFurnizimeConfirmed({ turn1: false, turn2: false });
+    }
+  }, [selectedDate]);
+
+  /** Stafi konfirmon se ka mbaruar futjen e furnizimeve → hapet kolona Gjendje. */
+  const confirmFurnizime = useCallback((turn: 'turn1' | 'turn2') => {
+    setFurnizimeConfirmed(prev => {
+      const next = { ...prev, [turn]: true };
+      try { localStorage.setItem(`furnizimeConfirmed:${selectedDate}`, JSON.stringify(next)); } catch {}
+      return next;
+    });
+    toast.success(`Furnizimet u konfirmuan për Turnin ${turn === 'turn1' ? '1' : '2'}`);
+  }, [selectedDate]);
+
+
+
   const confirmGjendje = useCallback(async (turn: 'turn1' | 'turn2') => {
     const col = turn === 'turn1' ? 'gjendje_confirmed_t1' : 'gjendje_confirmed_t2';
     const colBy = turn === 'turn1' ? 'gjendje_confirmed_t1_by' : 'gjendje_confirmed_t2_by';
