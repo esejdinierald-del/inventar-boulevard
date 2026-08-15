@@ -137,15 +137,25 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
               });
               
               console.log('🔄 Loading stock from previous day T2:', migratedStock);
+              // KRITIKE: stoku i trashëguar nga dita e kaluar është BAZA — furnizimet
+              // e futura në T1 duhet t'i shtohen sërish, përndryshe humbasin në çdo
+              // ringarkim të faqes (dhe Dif del negativ sa furnizimet).
+              // Nëse produkti s'ekziston te next_day_stock, ruaj stokFillim ekzistues.
               migratedT1 = {
                 ...migratedT1,
                 products: Object.fromEntries(
                   Object.entries(migratedT1.products).map(([key, data]) => [
                     key,
-                    { ...data, stokFillim: migratedStock[key] || 0 }
+                    {
+                      ...data,
+                      stokFillim: key in migratedStock
+                        ? (migratedStock[key] || 0) + (data.furnizime || 0)
+                        : data.stokFillim,
+                    }
                   ])
                 )
               };
+
             }
             
             if (savedMulliri !== null) {
