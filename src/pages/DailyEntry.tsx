@@ -885,6 +885,8 @@ const DailyEntry = () => {
               isTurnLocked={isTurnLocked(1)}
               gjendjeUploaded={gjendjeUploaded.turn1}
               gjendjeLockedByPrint={isGjendjePrintLocked('turn1') || isTurnLocked(1)}
+              furnizimeConfirmed={furnizimeConfirmed.turn1}
+              onConfirmFurnizime={() => confirmFurnizime('turn1')}
               onConfirmGjendje={() => confirmGjendje('turn1')}
               onUnlockGjendje={() => unlockGjendje('turn1')}
               showCopyButton
