@@ -683,6 +683,13 @@ const DailyEntry = () => {
       return next;
     });
 
+    // Rifillo nga hapi i furnizimeve për turnin e printuar
+    setFurnizimeConfirmed(prev => {
+      const next = { ...prev, [activeTurn]: false };
+      try { localStorage.setItem(`furnizimeConfirmed:${selectedDate}`, JSON.stringify(next)); } catch {}
+      return next;
+    });
+
     // Kyç kolonën Gjendje për 10 orë pas printit (vec e vec T1/T2)
     const until = Date.now() + 10 * 60 * 60 * 1000;
     setGjendjePrintLockUntil(prev => {
