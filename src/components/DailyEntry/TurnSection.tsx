@@ -41,6 +41,9 @@ interface TurnSectionProps {
   gjendjeUploaded?: boolean;
   /** Kyçja 10-orëshe e kolonës Gjendje pas printit. */
   gjendjeLockedByPrint?: boolean;
+  /** Hapi 1 (furnizimet) i konfirmuar nga stafi. */
+  furnizimeConfirmed?: boolean;
+  onConfirmFurnizime?: () => void;
   onConfirmGjendje?: () => void;
   onUnlockGjendje?: () => void;
   onProductUpdate: (product: string, field: keyof ProductData, value: number) => void;
