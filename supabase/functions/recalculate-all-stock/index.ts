@@ -74,8 +74,7 @@ serve(async (req) => {
           for (const [name, data] of Object.entries(t1.products)) {
             const prevT2Data = prevT2.products[name];
             if (prevT2Data) {
-              // Baza e trashëguar + furnizimet e futura në KËTË turn.
-              const expectedStock = calculatePropagatedStock(prevT2Data) + (data.furnizime || 0);
+              const expectedStock = calculatePropagatedStock(prevT2Data);
               if (data.stokFillim !== expectedStock) {
                 (t1.products[name] as ProductData).stokFillim = expectedStock;
                 t1Changed = true;
@@ -98,8 +97,7 @@ serve(async (req) => {
       for (const [name, data] of Object.entries(t2.products)) {
         const t1Data = t1.products[name];
         if (t1Data) {
-          // T2.stokFillim = (T1.stokFillim − T1.shiriti) + T2.furnizime
-          const expectedStock = calculatePropagatedStock(t1Data) + (data.furnizime || 0);
+          const expectedStock = calculatePropagatedStock(t1Data);
           if (data.stokFillim !== expectedStock) {
             (t2.products[name] as ProductData).stokFillim = expectedStock;
             t2Changed = true;
