@@ -49,6 +49,8 @@ export const ProductTable = ({
   isFieldDisabled,
   gjendjeUploaded = true,
   gjendjeLockedByPrint = false,
+  furnizimeConfirmed = true,
+  onConfirmFurnizime,
   onConfirmGjendje,
   onUnlockGjendje,
   onProductUpdate,
