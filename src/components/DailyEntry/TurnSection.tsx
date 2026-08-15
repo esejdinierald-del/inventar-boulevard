@@ -81,6 +81,8 @@ export const TurnSection = ({
   isTurnLocked = false,
   gjendjeUploaded = true,
   gjendjeLockedByPrint = false,
+  furnizimeConfirmed = true,
+  onConfirmFurnizime,
   onConfirmGjendje,
   onUnlockGjendje,
   onProductUpdate,

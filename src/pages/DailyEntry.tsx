@@ -53,6 +53,8 @@ const DailyEntry = () => {
   const [verifiedStaffData, setVerifiedStaffData] = useState<VerifiedStaffData | null>(null);
   // Gjendje e konfirmuar nga stafi për ditën/turnin aktual (ruhet në localStorage)
   const [gjendjeUploaded, setGjendjeUploaded] = useState<{ turn1: boolean; turn2: boolean }>({ turn1: false, turn2: false });
+  // Hapi 1: konfirmimi i furnizimeve nga stafi (localStorage, per date)
+  const [furnizimeConfirmed, setFurnizimeConfirmed] = useState<{ turn1: boolean; turn2: boolean }>({ turn1: false, turn2: false });
   // Kyçja 10-orëshe e kolonës Gjendje pas printit (timestamp ms i skadimit, per turn)
   const [gjendjePrintLockUntil, setGjendjePrintLockUntil] = useState<{ turn1: number | null; turn2: number | null }>({ turn1: null, turn2: null });
   // Ticker që rifreskon UI-në kur skadon kyçja
