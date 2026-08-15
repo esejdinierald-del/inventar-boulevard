@@ -94,14 +94,36 @@ Rregulla:
 
 ---
 
-## 5. Furnizimet për turn (kush shkon ku)
+## 5. Furnizimet — si llogariten (rregulli aktual)
 
+**Hapi 1 — futja e furnizimit (manual ose nga faturë)**
+Delta i shtohet menjëherë `stokFillim` të atij turni:
+`stokFillim += (furnizimeIRi − furnizimeIVjetër)`
+
+**Hapi 2 — Dif**
+`Dif = shiriti + gjendje − stokFillim`
+Furnizimet NUK zbriten veçmas — janë tashmë brenda `stokFillim` (përndryshe numërohen dy herë).
+
+**Hapi 3 — T1 në ngarkim të ditës**
+`T1.stokFillim = next_day_stock (dita e kaluar) + T1.furnizime`
+Stoku i trashëguar është vetëm **bazë**; nuk fshin më furnizimet e futura.
+
+**Hapi 4 — T1 → T2**
+`T2.stokFillim = (T1.stokFillim − T1.shiriti) + T2.furnizime`
+(`CalculationService.calculateT2StokFillim`) — sync-i nga T1 nuk fshin furnizimet e T2.
+
+**Hapi 5 — T2 → dita pasardhëse**
+`next_day_stock = T2.stokFillim − T2.shiriti`; nesër i shtohen furnizimet e T1.
+
+**Rregulla mbi faturat**
 - `InvoiceMappingManager` hapet me `targetTurn = "turn1" | "turn2"` nga banner-i i atij turni.
-- Delta e sasisë shtohet te `stokFillim` **vetëm** i atij turni.
-- Sasitë i vendos stafi (AI nuk vendos sasi); çmimet vijnë nga fatura (çmim njësie).
+- Një faturë futet vetëm në **një** turn. Nëse futet në të dy, stoku fryhet (rasti Uje 144 më 13/08).
+- Sasitë i vendos stafi (AI nuk vendos sasi); çmimet vijnë nga fatura (çmim njësie). Sasi fraksionale (p.sh. 0.5) lejohen.
 - Çelësat e mapimit janë `type:name` (shmang përplasjet mes produkteve/kafeve/alkoolike).
 - Furnizime negative lejohen dhe ruhen në histori.
 - Artikuj pa mapim thjesht injorohen.
+- Alkoolikët zbriten idempotent përmes `alcohol_deductions` — ri-ngarkimi nuk dyfishon.
+
 
 ---
 
