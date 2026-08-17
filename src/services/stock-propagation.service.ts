@@ -343,10 +343,12 @@ export class StockPropagationService {
       // Stoku i trashëguar është BAZA; furnizimet e T1 i shtohen sipër.
       updatedProducts[productName] = {
         ...productData,
-        stokFillim: productName in newStock
-          ? (newStock[productName] || 0) + (productData.furnizime || 0)
-          : productData.stokFillim
+        stokFillim: CalculationService.calculateT1StokFillim(
+          productName in newStock ? (newStock[productName] || 0) : undefined,
+          productData
+        )
       };
+
     });
 
 
