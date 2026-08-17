@@ -285,12 +285,29 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       console.log('📊 Turn2:', turn2);
       setSaveStatus('saving');
       try {
+        // ROJË: furnizimet duhet të jenë gjithmonë brenda stokFillim
+        const guardedT1Products = CalculationService.enforceFurnizimeInStok(
+          turn1.products,
+          inheritedStockRef.current
+        );
+        const t2Base: { [key: string]: number } = {};
+        Object.entries(guardedT1Products).forEach(([key, d]) => {
+          t2Base[key] = d.stokFillim - d.shiriti;
+        });
+        const guardedT2Products = CalculationService.enforceFurnizimeInStok(
+          turn2.products,
+          t2Base
+        );
+        if (guardedT1Products !== turn1.products) setTurn1(prev => ({ ...prev, products: guardedT1Products }));
+        if (guardedT2Products !== turn2.products) setTurn2(prev => ({ ...prev, products: guardedT2Products }));
+
         const dataToSave = {
-          turn1,
-          turn2,
+          turn1: { ...turn1, products: guardedT1Products },
+          turn2: { ...turn2, products: guardedT2Products },
           date: selectedDate
         };
         await StorageService.setDailyEntryData(selectedDate, dataToSave);
+
         console.log('✅ Data saved successfully');
         
         setSaveStatus('saved');
