@@ -108,9 +108,28 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
         // Load saved mapping from Supabase
         const mapping = await StorageService.getProductMapping() || {};
 
-        // Helper: normalizo për matching (lowercase, trim, collapse spaces, hiq pikë/yje)
+        // Helper: normalizo për matching (lowercase, pa theks ë/ç, pa pikë/yje, hapësira të bashkuara)
         const norm = (s: string) =>
-          s.toLowerCase().trim().replace(/[*.]+/g, ' ').replace(/\s+/g, ' ').trim();
+          s
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // heq theksat: ë→e, ç→c
+            .replace(/[*.,\-_/]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        /** Fjalët e vogla që nuk ndihmojnë në matching. */
+        const STOP = new Set(['e', 'i', 'te', 'me', 'nje', 'dhe']);
+        const tokens = (s: string) => norm(s).split(' ').filter(t => t.length > 1 && !STOP.has(t));
+
+        /** Ngjashmëri 0..1 sipas mbivendosjes së fjalëve (Jaccard i thjeshtuar). */
+        const tokenScore = (a: string, b: string) => {
+          const ta = tokens(a), tb = tokens(b);
+          if (!ta.length || !tb.length) return 0;
+          const setB = new Set(tb);
+          const common = ta.filter(t => setB.has(t)).length;
+          return common / Math.max(ta.length, tb.length);
+        };
 
         // Pre-build normalized lookup për O(1) access dhe scoring
         const normalizedMappings: Array<{ normKey: string; origKey: string; value: any }> = 
@@ -121,7 +140,7 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
           // 1. Exact match (case-sensitive)
           if (mapping[itemName]) return mapping[itemName];
           const target = norm(itemName);
-          // 2. Normalized exact
+          // 2. Normalized exact (pa theks)
           const exactNorm = normalizedMappings.find(m => m.normKey === target);
           if (exactNorm) return exactNorm.value;
           // 3. Scoring: më i gjati që përmbahet fiton
@@ -135,7 +154,14 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
               best = { score, value: m.value };
             }
           }
-          return best?.value || null;
+          if (best) return best.value;
+          // 4. Fallback fuzzy me fjalë (kap "KAFE E FTOHTË" ↔ "KAFE FTOHTE")
+          let fuzzy: { score: number; value: any } | null = null;
+          for (const m of normalizedMappings) {
+            const s = tokenScore(target, m.normKey);
+            if (s >= 0.6 && (!fuzzy || s > fuzzy.score)) fuzzy = { score: s, value: m.value };
+          }
+          return fuzzy?.value || null;
         };
 
         // Smart matching helper për listat (products/coffee/drinks)
@@ -152,8 +178,16 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
               best = { score, name: n };
             }
           }
-          return best?.name || null;
+          if (best) return best.name;
+          // Fallback fuzzy me fjalë
+          let fuzzy: { score: number; name: string } | null = null;
+          for (const n of list) {
+            const s = tokenScore(itemNorm, n);
+            if (s >= 0.6 && (!fuzzy || s > fuzzy.score)) fuzzy = { score: s, name: n };
+          }
+          return fuzzy?.name || null;
         };
+
 
         // KRITIKE: Ndërto objekt lokal pastaj një setMappedData jashtë loop-it
         // (shmang race conditions kur skanon foto të reja)
