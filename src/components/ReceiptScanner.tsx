@@ -32,9 +32,11 @@ interface ReceiptScannerProps {
     };
   };
   calculateDif: (stokFillim: number, furnizime: number, gjendje: number, shiriti: number) => number;
+  /** Kur true, admini mund të ndryshojë mapimin dhe ndryshimi ruhet në databazë. */
+  isAdminUnlocked?: boolean;
 }
 
-export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], onDataExtracted, turnName, turnData, calculateDif }: ReceiptScannerProps) => {
+export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], onDataExtracted, turnName, turnData, calculateDif, isAdminUnlocked = false }: ReceiptScannerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -207,11 +209,51 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
     reader.readAsDataURL(file);
   };
 
-  const handleMapProduct = (lineNumber: string, type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink', name: string, quantity: number) => {
+  /**
+   * Ndryshon mapimin e një rreshti (vetëm admin) dhe e ruan menjëherë në databazë,
+   * që të vlejë për çdo datë dhe të dy turnet në vazhdim.
+   */
+  const handleMapProduct = async (
+    lineNumber: string,
+    type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink',
+    name: string,
+    quantity: number
+  ) => {
     setMappedData(prev => ({
       ...prev,
       [lineNumber]: { type, name, quantity }
     }));
+
+    const receiptName = receiptItems[parseInt(lineNumber, 10)]?.name;
+    if (!receiptName) return;
+
+    try {
+      await StorageService.saveProductMappingEntry(receiptName, { type, name, quantity });
+      toast.success(`Mapimi u ruajt: ${receiptName} → ${name} ×${quantity}`);
+    } catch (error) {
+      console.error("Error saving mapping entry:", error);
+      toast.error("Mapimi NUK u ruajt në databazë!");
+    }
+  };
+
+  /** Heq mapimin e një rreshti (vetëm admin) edhe nga databaza. */
+  const handleUnmapProduct = async (lineNumber: string) => {
+    setMappedData(prev => {
+      const next = { ...prev };
+      delete next[lineNumber];
+      return next;
+    });
+
+    const receiptName = receiptItems[parseInt(lineNumber, 10)]?.name;
+    if (!receiptName) return;
+
+    try {
+      await StorageService.removeProductMappingEntry(receiptName);
+      toast.success(`Mapimi u hoq për: ${receiptName}`);
+    } catch (error) {
+      console.error("Error removing mapping entry:", error);
+      toast.error("Mapimi NUK u hoq nga databaza!");
+    }
   };
 
   const proceedWithApply = () => {
@@ -442,9 +484,13 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
               <div className="space-y-4 mt-6 pt-6 border-t">
                 <div className="flex items-start justify-between gap-2 flex-wrap">
                   <div>
-                    <Label className="text-base font-semibold">Hapi 2: Mapo Produktet (Opsionale)</Label>
+                    <Label className="text-base font-semibold">
+                      {isAdminUnlocked ? "Hapi 2: Mapimi (vetëm admin)" : "Hapi 2: Mapimi (i paracaktuar nga admini)"}
+                    </Label>
                     <p className="text-xs text-muted-foreground mt-1">
-                      💡 Mapo vetëm produktet që dëshiron të gjurmosh. Të tjerët do të injiorohen.
+                      {isAdminUnlocked
+                        ? "💡 Çdo ndryshim ruhet menjëherë dhe vlen për çdo datë e të dy turnet në vazhdim."
+                        : "🔒 Mapimi caktohet nga admini. Artikujt pa mapim injorohen automatikisht."}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 text-xs">
@@ -459,7 +505,7 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
                   </div>
                 </div>
 
-                {unmappedCount > 0 && (
+                {isAdminUnlocked && unmappedCount > 0 && (
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -478,76 +524,104 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
                     {(() => {
                       return productLines
                         .map((line, index) => ({ line, index }))
-                        .filter(({ index }) => !showOnlyUnmapped || !mappedData[index.toString()])
+                        .filter(({ index }) => !isAdminUnlocked || !showOnlyUnmapped || !mappedData[index.toString()])
                         .map(({ line, index }) => {
                         const mapping = mappedData[index.toString()];
                         const isMapped = !!mapping;
                         const currentValue = mapping ? `${mapping.type}:${mapping.name}` : "";
-                        
+                        const typeLabel = mapping
+                          ? mapping.type === 'product' ? '📦 Produkt'
+                            : mapping.type === 'coffee' ? '☕ Kafe'
+                            : mapping.type === 'kitchen' ? '🍽️ Guzhinë'
+                            : '🍸 Pije Alkoolike'
+                          : '';
+
                         return (
                           <div key={index} className="space-y-2 p-3 border rounded bg-card">
                             <div className="text-xs font-mono bg-muted p-2 rounded">
                               {line}
                             </div>
-                            <div className="flex gap-2">
-                              <select
-                                value={currentValue}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              const colonIdx = val.indexOf(':');
-                              if (colonIdx === -1) return;
-                              const type = val.substring(0, colonIdx);
-                              const name = val.substring(colonIdx + 1);
-                              if (type && name) {
-                                const currentQuantity = mapping?.quantity || 1;
-                                handleMapProduct(index.toString(), type as 'product' | 'coffee' | 'alcoholic_drink', name, currentQuantity);
-                              }
-                            }}
-                                className={`flex-1 text-sm border rounded p-2 ${
-                                  isMapped ? 'border-green-500 bg-green-50' : 'border-orange-500'
-                                }`}
-                              >
-                                <option value="">⚪ Injoro (mos e mapo)</option>
-                                <optgroup label="📦 Produkte">
-                                  {products.map(product => (
-                                    <option key={product} value={`product:${product}`}>
-                                      {product}
-                                    </option>
-                                  ))}
-                                </optgroup>
-                                <optgroup label="☕ Kafe">
-                                  {coffeeTypes.map(coffee => (
-                                    <option key={coffee} value={`coffee:${coffee}`}>
-                                      {coffee}
-                                    </option>
-                                  ))}
-                                </optgroup>
-                                <optgroup label="🍸 Pijet Alkoolike">
-                                  {alcoholicDrinks.map(drink => (
-                                    <option key={drink} value={`alcoholic_drink:${drink}`}>
-                                      {drink}
-                                    </option>
-                                  ))}
-                                </optgroup>
-                              </select>
-                              {isMapped && (
-                                <Input
-                                  type="number"
-                                  step="0.1"
-                                  min="0"
-                                  value={mapping.quantity || 1}
-                                  onChange={(e) => {
-                                    const quantity = parseFloat(e.target.value) || 1;
-                                    handleMapProduct(index.toString(), mapping.type, mapping.name, quantity);
-                                  }}
-                                  className="w-20 text-sm"
-                                  placeholder="Sasi"
-                                />
-                              )}
-                            </div>
-                            {isMapped && (
-                              <div className="text-xs text-green-600">
-                                ✓ {mapping.type === 'product' ? '📦 Produkt' : mapping.type === 'coffee' ? '☕ Kafe' : '🍸 Pije Alkoolike'}: {mapping.name} x{mapping.quantity}
+
+                            {isAdminUnlocked ? (
+                              <>
+                                <div className="flex gap-2">
+                                  <select
+                                    value={currentValue}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      if (!val) {
+                                        handleUnmapProduct(index.toString());
+                                        return;
+                                      }
+                                      const colonIdx = val.indexOf(':');
+                                      if (colonIdx === -1) return;
+                                      const type = val.substring(0, colonIdx);
+                                      const name = val.substring(colonIdx + 1);
+                                      if (type && name) {
+                                        const currentQuantity = mapping?.quantity || 1;
+                                        handleMapProduct(index.toString(), type as 'product' | 'coffee' | 'alcoholic_drink', name, currentQuantity);
+                                      }
+                                    }}
+                                    className={`flex-1 text-sm border rounded p-2 ${
+                                      isMapped ? 'border-green-500 bg-green-50' : 'border-orange-500'
+                                    }`}
+                                  >
+                                    <option value="">⚪ Injoro (mos e mapo)</option>
+                                    <optgroup label="📦 Produkte">
+                                      {products.map(product => (
+                                        <option key={product} value={`product:${product}`}>
+                                          {product}
+                                        </option>
+                                      ))}
+                                    </optgroup>
+                                    <optgroup label="☕ Kafe">
+                                      {coffeeTypes.map(coffee => (
+                                        <option key={coffee} value={`coffee:${coffee}`}>
+                                          {coffee}
+                                        </option>
+                                      ))}
+                                    </optgroup>
+                                    <optgroup label="🍸 Pijet Alkoolike">
+                                      {alcoholicDrinks.map(drink => (
+                                        <option key={drink} value={`alcoholic_drink:${drink}`}>
+                                          {drink}
+                                        </option>
+                                      ))}
+                                    </optgroup>
+                                  </select>
+                                  {isMapped && (
+                                    <Input
+                                      type="number"
+                                      step="0.1"
+                                      min="0"
+                                      value={mapping.quantity || 1}
+                                      onChange={(e) => {
+                                        const quantity = parseFloat(e.target.value) || 1;
+                                        setMappedData(prev => ({
+                                          ...prev,
+                                          [index.toString()]: { ...mapping, quantity }
+                                        }));
+                                      }}
+                                      onBlur={(e) => {
+                                        const quantity = parseFloat(e.target.value) || 1;
+                                        handleMapProduct(index.toString(), mapping.type, mapping.name, quantity);
+                                      }}
+                                      className="w-20 text-sm"
+                                      placeholder="Sasi"
+                                    />
+                                  )}
+                                </div>
+                                {isMapped && (
+                                  <div className="text-xs text-green-600">
+                                    ✓ {typeLabel}: {mapping.name} x{mapping.quantity}
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <div className={`text-xs ${isMapped ? 'text-green-600' : 'text-muted-foreground'}`}>
+                                {isMapped
+                                  ? `✓ ${typeLabel}: ${mapping.name} ×${mapping.quantity}`
+                                  : '⚪ Injorohet (pa mapim)'}
                               </div>
                             )}
                           </div>
@@ -555,6 +629,7 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
                       });
                     })()}
                 </div>
+
 
                 <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t mt-4">
                   <div className="flex gap-2">

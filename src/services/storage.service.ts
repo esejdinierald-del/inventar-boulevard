@@ -360,35 +360,79 @@ export class StorageService {
     }
   }
 
+  /**
+   * Ruan të gjithë mapimin e shiritit me `upsert` mbi `receipt_name` (UNIQUE).
+   * Nuk fshin gjithçka paraprakisht — heq vetëm çelësat që janë hequr.
+   * Gabimet hidhen lart (pa fallback të heshtur) që UI të shfaqë toast të kuq.
+   */
   static async setProductMapping(mapping: MappingData): Promise<void> {
-    try {
-      // Fshi të gjitha dhe ri-shto
-      const { error: deleteError } = await supabase
+    const mappingsData = Object.entries(mapping).map(([receiptName, value]) => ({
+      receipt_name: receiptName,
+      product_type: value.type,
+      product_name: value.name,
+      quantity: value.quantity ?? 1
+    }));
+
+    if (mappingsData.length > 0) {
+      const { error } = await supabase
+        .from('product_mappings')
+        .upsert(mappingsData, { onConflict: 'receipt_name' });
+      if (error) throw error;
+    }
+
+    // Fshi vetëm ato që janë hequr nga mapimi
+    const { data: existing, error: readError } = await supabase
+      .from('product_mappings')
+      .select('receipt_name');
+    if (readError) throw readError;
+
+    const keys = Object.keys(mapping);
+    const toDelete = (existing || [])
+      .map(r => r.receipt_name)
+      .filter(name => !keys.includes(name));
+    if (toDelete.length > 0) {
+      const { error } = await supabase
         .from('product_mappings')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
-      
-      if (deleteError) {
-        console.error('Error deleting mappings:', deleteError);
-      }
-      
-      const mappingsData = Object.entries(mapping).map(([receiptName, value]) => ({
-        receipt_name: receiptName,
-        product_type: value.type,
-        product_name: value.name,
-        quantity: value.quantity
-      }));
-      
-      if (mappingsData.length > 0) {
-        const { error } = await supabase.from('product_mappings').insert(mappingsData);
-        if (error) throw error;
-      }
-      
-      this.setItem('receipt_product_mapping', mapping);
-    } catch (error) {
-      console.error('Error saving product mapping:', error);
-      this.setItem('receipt_product_mapping', mapping);
+        .in('receipt_name', toDelete);
+      if (error) throw error;
     }
+
+    this.setItem('receipt_product_mapping', mapping);
+  }
+
+  /**
+   * Ruan (ose përditëson) një rresht të vetëm mapimi — përdoret nga skaneri i shiritit (admin).
+   * @param receiptName Emri i artikullit siç shfaqet në shirit.
+   * @param value Tipi, emri i produktit dhe sasia për njësi.
+   */
+  static async saveProductMappingEntry(
+    receiptName: string,
+    value: { type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink'; name: string; quantity: number }
+  ): Promise<void> {
+    const { error } = await supabase
+      .from('product_mappings')
+      .upsert(
+        {
+          receipt_name: receiptName,
+          product_type: value.type,
+          product_name: value.name,
+          quantity: value.quantity ?? 1
+        },
+        { onConflict: 'receipt_name' }
+      );
+    if (error) throw error;
+  }
+
+  /**
+   * Fshin një mapim të vetëm sipas emrit të artikullit në shirit.
+   */
+  static async removeProductMappingEntry(receiptName: string): Promise<void> {
+    const { error } = await supabase
+      .from('product_mappings')
+      .delete()
+      .eq('receipt_name', receiptName);
+    if (error) throw error;
   }
 
   static async removeProductMapping(): Promise<void> {
