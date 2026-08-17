@@ -94,6 +94,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       isInitialLoad.current = true;
       // Reset manual edit tracking për datën e re
       t2ManuallyEditedStokFillim.current = new Set();
+      inheritedStockRef.current = {};
+
       
       try {
         // GJITHMONË kontrollo për next_day_stock fillimisht
