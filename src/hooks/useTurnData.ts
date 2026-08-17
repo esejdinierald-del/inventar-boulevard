@@ -82,6 +82,10 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
   // KRITIKE: Track cilat produkte në T2.stokFillim u redaktuan manualisht
   // që auto-sync T1→T2 të mos i mbishkruajë
   const t2ManuallyEditedStokFillim = useRef<Set<string>>(new Set());
+  // Stoku i trashëguar (next_day_stock) i datës aktuale — përdoret nga roja
+  // që siguron se furnizimet janë gjithmonë brenda T1.stokFillim.
+  const inheritedStockRef = useRef<{ [key: string]: number }>({});
+
 
   // Load data for current date on mount and when date changes
   useEffect(() => {
@@ -90,6 +94,8 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       isInitialLoad.current = true;
       // Reset manual edit tracking për datën e re
       t2ManuallyEditedStokFillim.current = new Set();
+      inheritedStockRef.current = {};
+
       
       try {
         // GJITHMONË kontrollo për next_day_stock fillimisht
@@ -137,9 +143,11 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
               });
               
               console.log('🔄 Loading stock from previous day T2:', migratedStock);
+              inheritedStockRef.current = migratedStock;
               // KRITIKE: stoku i trashëguar nga dita e kaluar është BAZA — furnizimet
               // e futura në T1 duhet t'i shtohen sërish, përndryshe humbasin në çdo
               // ringarkim të faqes (dhe Dif del negativ sa furnizimet).
+
               // Nëse produkti s'ekziston te next_day_stock, ruaj stokFillim ekzistues.
               migratedT1 = {
                 ...migratedT1,
@@ -148,13 +156,15 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
                     key,
                     {
                       ...data,
-                      stokFillim: key in migratedStock
-                        ? (migratedStock[key] || 0) + (data.furnizime || 0)
-                        : data.stokFillim,
+                      stokFillim: CalculationService.calculateT1StokFillim(
+                        key in migratedStock ? (migratedStock[key] || 0) : undefined,
+                        data
+                      ),
                     }
                   ])
                 )
               };
+
 
             }
             
@@ -275,12 +285,29 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
       console.log('📊 Turn2:', turn2);
       setSaveStatus('saving');
       try {
+        // ROJË: furnizimet duhet të jenë gjithmonë brenda stokFillim
+        const guardedT1Products = CalculationService.enforceFurnizimeInStok(
+          turn1.products,
+          inheritedStockRef.current
+        );
+        const t2Base: { [key: string]: number } = {};
+        Object.entries(guardedT1Products).forEach(([key, d]) => {
+          t2Base[key] = d.stokFillim - d.shiriti;
+        });
+        const guardedT2Products = CalculationService.enforceFurnizimeInStok(
+          turn2.products,
+          t2Base
+        );
+        if (guardedT1Products !== turn1.products) setTurn1(prev => ({ ...prev, products: guardedT1Products }));
+        if (guardedT2Products !== turn2.products) setTurn2(prev => ({ ...prev, products: guardedT2Products }));
+
         const dataToSave = {
-          turn1,
-          turn2,
+          turn1: { ...turn1, products: guardedT1Products },
+          turn2: { ...turn2, products: guardedT2Products },
           date: selectedDate
         };
         await StorageService.setDailyEntryData(selectedDate, dataToSave);
+
         console.log('✅ Data saved successfully');
         
         setSaveStatus('saved');
@@ -522,15 +549,25 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
             migratedStock[newName] = value;
           });
           
+          // KRITIKE: stoku i trashëguar është vetëm BAZA — furnizimet e T1 i
+          // shtohen sipër (rregulli i 15 Gushtit). Produktet që s'janë te
+          // stoku i trashëguar e ruajnë stokFillim ekzistues (nuk zerohen).
           setTurn1(prev => ({
             ...prev,
             products: Object.fromEntries(
               Object.entries(prev.products).map(([key, data]) => [
                 key,
-                { ...data, stokFillim: migratedStock[key] || 0 }
+                {
+                  ...data,
+                  stokFillim: CalculationService.calculateT1StokFillim(
+                    key in migratedStock ? (migratedStock[key] || 0) : undefined,
+                    data
+                  ),
+                }
               ])
             )
           }));
+
         }
 
         if (savedMulliri !== null) {
