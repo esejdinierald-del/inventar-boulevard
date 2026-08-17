@@ -40,7 +40,8 @@ export const CoffeeTable = ({
                   value={coffeeData[coffee] || ""}
                   onChange={(e) => onCoffeeUpdate(coffee, Number(e.target.value))}
                   className="w-16 md:w-24"
-                  disabled={isFieldDisabled}
+                  disabled={isFieldDisabled || !isAdminUnlocked}
+                  title={!isAdminUnlocked ? "Vetëm admini mund ta ndryshojë manualisht" : undefined}
                 />
               </TableCell>
             </TableRow>
