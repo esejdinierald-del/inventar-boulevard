@@ -32,6 +32,8 @@ interface ReceiptScannerProps {
     };
   };
   calculateDif: (stokFillim: number, furnizime: number, gjendje: number, shiriti: number) => number;
+  /** Kur true, admini mund të ndryshojë mapimin dhe ndryshimi ruhet në databazë. */
+  isAdminUnlocked?: boolean;
 }
 
 export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], onDataExtracted, turnName, turnData, calculateDif, isAdminUnlocked = false }: ReceiptScannerProps) => {
