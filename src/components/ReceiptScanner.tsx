@@ -209,11 +209,51 @@ export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], on
     reader.readAsDataURL(file);
   };
 
-  const handleMapProduct = (lineNumber: string, type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink', name: string, quantity: number) => {
+  /**
+   * Ndryshon mapimin e një rreshti (vetëm admin) dhe e ruan menjëherë në databazë,
+   * që të vlejë për çdo datë dhe të dy turnet në vazhdim.
+   */
+  const handleMapProduct = async (
+    lineNumber: string,
+    type: 'product' | 'coffee' | 'kitchen' | 'alcoholic_drink',
+    name: string,
+    quantity: number
+  ) => {
     setMappedData(prev => ({
       ...prev,
       [lineNumber]: { type, name, quantity }
     }));
+
+    const receiptName = receiptItems[parseInt(lineNumber, 10)]?.name;
+    if (!receiptName) return;
+
+    try {
+      await StorageService.saveProductMappingEntry(receiptName, { type, name, quantity });
+      toast.success(`Mapimi u ruajt: ${receiptName} → ${name} ×${quantity}`);
+    } catch (error) {
+      console.error("Error saving mapping entry:", error);
+      toast.error("Mapimi NUK u ruajt në databazë!");
+    }
+  };
+
+  /** Heq mapimin e një rreshti (vetëm admin) edhe nga databaza. */
+  const handleUnmapProduct = async (lineNumber: string) => {
+    setMappedData(prev => {
+      const next = { ...prev };
+      delete next[lineNumber];
+      return next;
+    });
+
+    const receiptName = receiptItems[parseInt(lineNumber, 10)]?.name;
+    if (!receiptName) return;
+
+    try {
+      await StorageService.removeProductMappingEntry(receiptName);
+      toast.success(`Mapimi u hoq për: ${receiptName}`);
+    } catch (error) {
+      console.error("Error removing mapping entry:", error);
+      toast.error("Mapimi NUK u hoq nga databaza!");
+    }
   };
 
   const proceedWithApply = () => {
