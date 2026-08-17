@@ -34,7 +34,7 @@ interface ReceiptScannerProps {
   calculateDif: (stokFillim: number, furnizime: number, gjendje: number, shiriti: number) => number;
 }
 
-export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], onDataExtracted, turnName, turnData, calculateDif }: ReceiptScannerProps) => {
+export const ReceiptScanner = ({ products, coffeeTypes, alcoholicDrinks = [], onDataExtracted, turnName, turnData, calculateDif, isAdminUnlocked = false }: ReceiptScannerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
