@@ -217,4 +217,39 @@ describe("CalculationService", () => {
       ).toBe(false);
     });
   });
+
+  // ---- calculateT1StokFillim + enforceFurnizimeInStok (rregulli i 15 Gushtit) ----
+  describe("calculateT1StokFillim", () => {
+    it("shton furnizimet mbi stokun e trashëguar", () => {
+      const p: ProductData = { stokFillim: 47, furnizime: 264, gjendje: 0, shiriti: 0 };
+      expect(CalculationService.calculateT1StokFillim(47, p)).toBe(311);
+    });
+
+    it("ruan stokFillim kur produkti s'ka stok të trashëguar", () => {
+      const p: ProductData = { stokFillim: 20, furnizime: 5, gjendje: 0, shiriti: 0 };
+      expect(CalculationService.calculateT1StokFillim(undefined, p)).toBe(20);
+    });
+
+    it("Dif = 0 kur gjendja përputhet pas furnizimit", () => {
+      const stok = CalculationService.calculateT1StokFillim(36, {
+        stokFillim: 36, furnizime: 180, gjendje: 0, shiriti: 0,
+      });
+      expect(CalculationService.calculateDif(stok, 180, 163, 53)).toBe(0);
+    });
+  });
+
+  describe("enforceFurnizimeInStok", () => {
+    it("korrigjon produktin ku furnizimet mungojnë te stokFillim", () => {
+      const fixed = CalculationService.enforceFurnizimeInStok(
+        { Uje: { stokFillim: 47, furnizime: 264, gjendje: 0, shiriti: 0 } },
+        { Uje: 47 }
+      );
+      expect(fixed.Uje.stokFillim).toBe(311);
+    });
+
+    it("nuk prek produktet e sakta", () => {
+      const products = { Uje: { stokFillim: 311, furnizime: 264, gjendje: 0, shiriti: 0 } };
+      expect(CalculationService.enforceFurnizimeInStok(products, { Uje: 47 })).toBe(products);
+    });
+  });
 });
