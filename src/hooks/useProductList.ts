@@ -283,7 +283,12 @@ export const useProductList = (options: { dailyOnly?: boolean } = {}) => {
           updatedMapping[key] = { type: 'coffee', name: trimmed, quantity: value.quantity || 1 };
         }
       });
-      await StorageService.setProductMapping(updatedMapping);
+      try {
+        await StorageService.setProductMapping(updatedMapping);
+      } catch (error) {
+        console.error("Error updating coffee mapping:", error);
+        toast.error("Mapimet NUK u përditësuan në databazë!");
+      }
     }
 
     toast.success("Emri i kafes dhe mapimet u përditësuan!");
