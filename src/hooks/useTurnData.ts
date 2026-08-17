@@ -524,15 +524,25 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
             migratedStock[newName] = value;
           });
           
+          // KRITIKE: stoku i trashëguar është vetëm BAZA — furnizimet e T1 i
+          // shtohen sipër (rregulli i 15 Gushtit). Produktet që s'janë te
+          // stoku i trashëguar e ruajnë stokFillim ekzistues (nuk zerohen).
           setTurn1(prev => ({
             ...prev,
             products: Object.fromEntries(
               Object.entries(prev.products).map(([key, data]) => [
                 key,
-                { ...data, stokFillim: migratedStock[key] || 0 }
+                {
+                  ...data,
+                  stokFillim: CalculationService.calculateT1StokFillim(
+                    key in migratedStock ? (migratedStock[key] || 0) : undefined,
+                    data
+                  ),
+                }
               ])
             )
           }));
+
         }
 
         if (savedMulliri !== null) {
