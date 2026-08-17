@@ -158,5 +158,61 @@ export class CalculationService {
     const base = t1Data.stokFillim - t1Data.shiriti;
     return base + (t2Existing?.furnizime || 0);
   }
+
+  /**
+   * Llogarit T1.stokFillim nga stoku i trashëguar (next_day_stock) duke ruajtur
+   * GJITHMONË furnizimet e futura në T1.
+   *
+   * Formula (rregulli i 15 Gushtit):
+   *   T1.stokFillim = stok i trashëguar + T1.furnizime
+   *
+   * @param inheritedStock Stoku i trashëguar për këtë produkt (mund të mungojë)
+   * @param existing       ProductData ekzistues i T1
+   */
+  static calculateT1StokFillim(
+    inheritedStock: number | undefined,
+    existing?: ProductData
+  ): number {
+    if (inheritedStock === undefined || inheritedStock === null) {
+      return existing?.stokFillim || 0;
+    }
+    return inheritedStock + (existing?.furnizime || 0);
+  }
+
+  /**
+   * Rojë: siguron që furnizimet të jenë GJITHMONË brenda `stokFillim`.
+   *
+   * Nëse `stokFillim` është saktësisht sa stoku i trashëguar ndërsa produkti ka
+   * `furnizime > 0`, do të thotë që një rrugë shkrimi i ka humbur furnizimet —
+   * vlera korrigjohet automatikisht.
+   *
+   * @param products       Produktet e turnit
+   * @param inheritedStock Stoku i trashëguar (baza) për këtë turn
+   * @returns Produktet e korrigjuara (objekt i ri vetëm nëse pati korrigjim)
+   */
+  static enforceFurnizimeInStok(
+    products: { [key: string]: ProductData },
+    inheritedStock: { [key: string]: number }
+  ): { [key: string]: ProductData } {
+    let changed = false;
+    const fixed: { [key: string]: ProductData } = {};
+
+    Object.entries(products).forEach(([key, data]) => {
+      const base = inheritedStock[key];
+      const furnizime = data?.furnizime || 0;
+      if (base !== undefined && furnizime > 0 && data.stokFillim === base) {
+        console.warn(
+          `⚠️ Guard furnizimesh: ${key} stokFillim=${data.stokFillim} pa furnizime=${furnizime} → ${base + furnizime}`
+        );
+        fixed[key] = { ...data, stokFillim: base + furnizime };
+        changed = true;
+      } else {
+        fixed[key] = data;
+      }
+    });
+
+    return changed ? fixed : products;
+  }
 }
+
 
