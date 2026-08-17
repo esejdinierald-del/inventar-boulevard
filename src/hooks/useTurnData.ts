@@ -82,6 +82,10 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
   // KRITIKE: Track cilat produkte në T2.stokFillim u redaktuan manualisht
   // që auto-sync T1→T2 të mos i mbishkruajë
   const t2ManuallyEditedStokFillim = useRef<Set<string>>(new Set());
+  // Stoku i trashëguar (next_day_stock) i datës aktuale — përdoret nga roja
+  // që siguron se furnizimet janë gjithmonë brenda T1.stokFillim.
+  const inheritedStockRef = useRef<{ [key: string]: number }>({});
+
 
   // Load data for current date on mount and when date changes
   useEffect(() => {
