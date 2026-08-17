@@ -129,6 +129,7 @@ export const TurnSection = ({
               turnName={turnName}
               turnData={turnData}
               calculateDif={CalculationService.calculateDif}
+              isAdminUnlocked={isAdminUnlocked}
             />
             {isAdminUnlocked && (
               <>
