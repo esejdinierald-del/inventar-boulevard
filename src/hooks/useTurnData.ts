@@ -148,13 +148,15 @@ export const useTurnData = ({ products, coffeeTypes, selectedDate }: UseTurnData
                     key,
                     {
                       ...data,
-                      stokFillim: key in migratedStock
-                        ? (migratedStock[key] || 0) + (data.furnizime || 0)
-                        : data.stokFillim,
+                      stokFillim: CalculationService.calculateT1StokFillim(
+                        key in migratedStock ? (migratedStock[key] || 0) : undefined,
+                        data
+                      ),
                     }
                   ])
                 )
               };
+
 
             }
             
