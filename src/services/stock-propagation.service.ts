@@ -407,9 +407,18 @@ export class StockPropagationService {
     // Mos e zero-o mulliriFillim nga T1.mulliriPerfund=0
     const nextMulliriFillim = t1.mulliriPerfund > 0 ? t1.mulliriPerfund : t2.mulliriFillim;
 
+    // ROJË: baza e T2 është (T1.stokFillim − T1.shiriti); furnizimet e T2 duhet
+    // të jenë gjithmonë sipër saj.
+    const t2Base: { [key: string]: number } = {};
+    Object.entries(t1.products).forEach(([name, d]) => {
+      const p = d as ProductData;
+      t2Base[name] = p.stokFillim - p.shiriti;
+    });
+    const guardedProducts = CalculationService.enforceFurnizimeInStok(updatedProducts, t2Base);
+
     return {
       ...t2,
-      products: updatedProducts,
+      products: guardedProducts,
       mulliriFillim: nextMulliriFillim
     };
   }
