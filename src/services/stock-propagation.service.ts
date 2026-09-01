@@ -365,9 +365,16 @@ export class StockPropagationService {
       }
     });
 
+    // ROJË përfundimtare: furnizimet duhet të jenë GJITHMONË brenda stokFillim,
+    // edhe nëse turni është i kyçur ose një rrugë tjetër i ka humbur.
+    const guardedProducts = CalculationService.enforceFurnizimeInStok(
+      updatedProducts,
+      newStock
+    );
+
     return {
       ...t1,
-      products: updatedProducts,
+      products: guardedProducts,
       mulliriFillim: newMulliri
     };
   }
