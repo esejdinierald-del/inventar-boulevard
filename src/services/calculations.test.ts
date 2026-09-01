@@ -253,3 +253,27 @@ describe("CalculationService", () => {
     });
   });
 });
+
+describe("Rasti 29/08 — furnizimet e T1 mbi turn të kyçur", () => {
+  it("T1.stokFillim përfshin furnizimet dhe Dif del 0", () => {
+    const stok = CalculationService.calculateT1StokFillim(106, {
+      stokFillim: 106, furnizime: 120, gjendje: 192, shiriti: 34,
+    });
+    expect(stok).toBe(226);
+    expect(CalculationService.calculateDif(stok, 120, 192, 34)).toBe(0);
+  });
+
+  it("roja e korrigjon edhe kur turni ishte i kyçur", () => {
+    const fixed = CalculationService.enforceFurnizimeInStok(
+      { "Heineken shishe": { stokFillim: 9, furnizime: 48, gjendje: 52, shiriti: 5 } },
+      { "Heineken shishe": 9 }
+    );
+    expect(fixed["Heineken shishe"].stokFillim).toBe(57);
+  });
+
+  it("T2 e trashëgon stokun pa e humbur furnizimin e vet", () => {
+    const t1 = { stokFillim: 226, furnizime: 120, gjendje: 192, shiriti: 34 };
+    expect(CalculationService.calculateT2StokFillim(t1, { stokFillim: 0, furnizime: 0, gjendje: 157, shiriti: 35 })).toBe(192);
+    expect(CalculationService.calculateT2StokFillim(t1, { stokFillim: 0, furnizime: 144, gjendje: 0, shiriti: 0 })).toBe(336);
+  });
+});
